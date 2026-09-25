@@ -16,7 +16,7 @@ CREATE TABLE fingerprints (
     algorithm_version TEXT NOT NULL,
     computed_at TEXT NOT NULL,
     FOREIGN KEY (local_file_id) REFERENCES local_files(id) ON DELETE CASCADE,
-    UNIQUE (local_file_id, kind, value)
+    UNIQUE (local_file_id, kind)
 );
 
 INSERT INTO fingerprints (
@@ -34,7 +34,13 @@ SELECT
     value,
     algorithm_version,
     computed_at
-FROM fingerprints_v3;
+FROM fingerprints_v3 legacy
+WHERE legacy.id = (
+    SELECT MAX(current.id)
+    FROM fingerprints_v3 current
+    WHERE current.local_file_id = legacy.local_file_id
+      AND current.kind = legacy.kind
+);
 
 DROP TABLE fingerprints_v3;
 
