@@ -2,6 +2,7 @@ mod dbpf;
 mod game;
 mod scanner;
 mod storage;
+mod ts4script;
 
 use std::{path::PathBuf, sync::Arc};
 
