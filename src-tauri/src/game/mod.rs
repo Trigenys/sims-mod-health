@@ -1,7 +1,6 @@
 use std::{
     collections::HashSet,
-    env,
-    fs,
+    env, fs,
     path::{Path, PathBuf},
 };
 
@@ -96,9 +95,7 @@ fn candidate_document_roots() -> Vec<(PathBuf, DiscoverySource)> {
     deduplicate_roots(roots)
 }
 
-fn deduplicate_roots(
-    roots: Vec<(PathBuf, DiscoverySource)>,
-) -> Vec<(PathBuf, DiscoverySource)> {
+fn deduplicate_roots(roots: Vec<(PathBuf, DiscoverySource)>) -> Vec<(PathBuf, DiscoverySource)> {
     let mut seen = HashSet::new();
 
     roots
@@ -126,7 +123,9 @@ fn discover_from_document_roots(
 fn sims_root_from_documents(documents: &Path) -> PathBuf {
     SIMS_RELATIVE_PATH
         .iter()
-        .fold(documents.to_path_buf(), |current, segment| current.join(segment))
+        .fold(documents.to_path_buf(), |current, segment| {
+            current.join(segment)
+        })
 }
 
 fn normalize_selected_root(path: &Path) -> PathBuf {
@@ -232,17 +231,19 @@ mod tests {
 
     #[test]
     fn parses_labeled_game_version() {
-        let version = parse_game_version("GameVersion = 1.128.90.1030\n")
-            .expect("valid labeled version");
+        let version =
+            parse_game_version("GameVersion = 1.128.90.1030\n").expect("valid labeled version");
 
         assert_eq!(version.normalized, "1.128.90.1030");
-        assert_eq!((version.major, version.minor, version.patch, version.build), (1, 128, 90, 1030));
+        assert_eq!(
+            (version.major, version.minor, version.patch, version.build),
+            (1, 128, 90, 1030)
+        );
     }
 
     #[test]
     fn parses_raw_game_version_and_normalizes_leading_zeroes() {
-        let version = parse_game_version("\u{feff}01.128.090.1030\r\n")
-            .expect("valid raw version");
+        let version = parse_game_version("\u{feff}01.128.090.1030\r\n").expect("valid raw version");
 
         assert_eq!(version.normalized, "1.128.90.1030");
     }
@@ -304,8 +305,7 @@ mod tests {
     fn manual_override_accepts_direct_sims_root() {
         let temp = create_sims_root();
         let root = temp.path().join("Electronic Arts").join("The Sims 4");
-        fs::write(root.join(GAME_VERSION_FILE), "1.128.90.1030")
-            .expect("write version fixture");
+        fs::write(root.join(GAME_VERSION_FILE), "1.128.90.1030").expect("write version fixture");
 
         let result = inspect_manual_path(&root);
 
