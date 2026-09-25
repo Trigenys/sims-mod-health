@@ -66,13 +66,29 @@ impl PackageMetadata {
 #[derive(Debug)]
 pub(crate) enum DbpfError {
     Io(io::Error),
-    FileTooSmall { actual: u64, minimum: u64 },
+    FileTooSmall {
+        actual: u64,
+        minimum: u64,
+    },
     InvalidMagic,
-    UnsupportedVersion { major: u32, minor: u32 },
-    TooManyResources { count: u32, maximum: u32 },
-    IndexTooLarge { size: u64, maximum: u64 },
-    MissingIndex { count: u32 },
-    UnsupportedIndexFlags { flags: u32 },
+    UnsupportedVersion {
+        major: u32,
+        minor: u32,
+    },
+    TooManyResources {
+        count: u32,
+        maximum: u32,
+    },
+    IndexTooLarge {
+        size: u64,
+        maximum: u64,
+    },
+    MissingIndex {
+        count: u32,
+    },
+    UnsupportedIndexFlags {
+        flags: u32,
+    },
     ArithmeticOverflow(&'static str),
     IndexOutOfBounds {
         offset: u64,
@@ -96,7 +112,10 @@ impl Display for DbpfError {
         match self {
             Self::Io(error) => write!(formatter, "DBPF I/O error: {error}"),
             Self::FileTooSmall { actual, minimum } => {
-                write!(formatter, "DBPF file is {actual} bytes; minimum is {minimum}")
+                write!(
+                    formatter,
+                    "DBPF file is {actual} bytes; minimum is {minimum}"
+                )
             }
             Self::InvalidMagic => write!(formatter, "file does not start with DBPF magic"),
             Self::UnsupportedVersion { major, minor } => {
@@ -111,7 +130,10 @@ impl Display for DbpfError {
                 "DBPF index is {size} bytes; maximum supported is {maximum}"
             ),
             Self::MissingIndex { count } => {
-                write!(formatter, "DBPF declares {count} resources but no index offset")
+                write!(
+                    formatter,
+                    "DBPF declares {count} resources but no index offset"
+                )
             }
             Self::UnsupportedIndexFlags { flags } => {
                 write!(formatter, "DBPF index uses unsupported flags 0x{flags:08x}")
@@ -657,10 +679,7 @@ mod tests {
                 deleted: true,
             },
         ];
-        let bytes = package(
-            CONST_TYPE | CONST_GROUP | CONST_INSTANCE_HIGH,
-            &entries,
-        );
+        let bytes = package(CONST_TYPE | CONST_GROUP | CONST_INSTANCE_HIGH, &entries);
 
         let parsed = parse_bytes(&bytes).expect("parse constant-field index");
 
@@ -683,10 +702,7 @@ mod tests {
         put_u32(&mut unsupported, 4, 3);
         assert!(matches!(
             parse_bytes(&unsupported),
-            Err(DbpfError::UnsupportedVersion {
-                major: 3,
-                minor: 1
-            })
+            Err(DbpfError::UnsupportedVersion { major: 3, minor: 1 })
         ));
     }
 
