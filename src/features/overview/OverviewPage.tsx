@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Topbar } from "../../components/layout/Topbar";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
@@ -28,7 +29,7 @@ export function OverviewPage() {
           <div
             className="score-ring"
             aria-hidden="true"
-            style={{ "--health-score": `${data.healthScore}%` } as React.CSSProperties}
+            style={{ "--health-score": `${data.healthScore}%` } as CSSProperties}
           >
             <span>{data.healthScore}</span><small>%</small>
           </div>
