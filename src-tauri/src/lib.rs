@@ -10,10 +10,7 @@ fn health() -> &'static str {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let database_path = app
-                .path()
-                .app_data_dir()?
-                .join("sims-mod-health.sqlite3");
+            let database_path = app.path().app_data_dir()?.join("sims-mod-health.sqlite3");
 
             storage::initialize(&database_path)?;
             Ok(())
