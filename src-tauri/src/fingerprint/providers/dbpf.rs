@@ -5,8 +5,7 @@ use sha2::{Digest, Sha256};
 use crate::dbpf;
 
 use super::super::domain::{
-    FingerprintError, FingerprintKind, FingerprintProvider,
-    DBPF_RESOURCE_SIGNATURE_VERSION,
+    FingerprintError, FingerprintKind, FingerprintProvider, DBPF_RESOURCE_SIGNATURE_VERSION,
 };
 
 #[derive(Debug, Default)]
