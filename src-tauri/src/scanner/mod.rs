@@ -1036,6 +1036,58 @@ mod tests {
     }
 
     #[test]
+    fn changed_file_invalidates_cached_structural_fingerprints() {
+        let (_temp, sims_root, database_path) = fixture();
+        let mods_root = sims_root.join("Mods");
+        write_mod(&mods_root, "a.package", b"alpha");
+
+        let control = ScannerControl::default();
+        scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("initial scan");
+
+        let connection = storage::open(&database_path).expect("open scanner database");
+        let local_file_id: i64 = connection
+            .query_row(
+                "SELECT id FROM local_files WHERE relative_path = 'a.package'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("local file id");
+        connection
+            .execute(
+                "INSERT INTO fingerprints (
+                    local_file_id, kind, value, algorithm_version, computed_at
+                 )
+                 VALUES (?1, 'resource_signature', 'stale', 'dbpf-resource-keys-v1', 'now')",
+                [local_file_id],
+            )
+            .expect("insert stale structural fingerprint");
+        drop(connection);
+
+        write_mod(&mods_root, "a.package", b"alpha changed and larger");
+        let rescanned = scan_path(
+            &database_path,
+            &sims_root,
+            ScanMode::Incremental,
+            &control,
+            |_| {},
+        )
+        .expect("rescan changed artifact");
+        assert_eq!(rescanned.files_hashed, 1);
+
+        let connection = storage::open(&database_path).expect("open scanner database");
+        let stale: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM fingerprints
+                 WHERE local_file_id = ?1 AND kind = 'resource_signature'",
+                [local_file_id],
+                |row| row.get(0),
+            )
+            .expect("count stale structural fingerprints");
+        assert_eq!(stale, 0);
+    }
+
+    #[test]
     fn full_scan_bypasses_incremental_cache() {
         let (_temp, sims_root, database_path) = fixture();
         write_mod(&sims_root.join("Mods"), "a.package", b"alpha");
