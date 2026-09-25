@@ -329,12 +329,7 @@ where
         let size_bytes = i64::try_from(metadata.len()).unwrap_or(i64::MAX);
         let modified_ns = modified_ns(&metadata);
         let cache = load_cache(&transaction, installation_id, &relative_path)?;
-        let cache_hit = mode == ScanMode::Incremental
-            && cache.as_ref().is_some_and(|cached| {
-                cached.size_bytes == Some(size_bytes)
-                    && cached.modified_ns == modified_ns
-                    && cached.has_sha256
-            });
+        let cache_hit = is_incremental_cache_hit(mode, cache.as_ref(), size_bytes, modified_ns);
 
         let local_file_id = upsert_local_file(
             &transaction,
@@ -632,6 +627,21 @@ fn modified_ns(metadata: &fs::Metadata) -> Option<i64> {
         .map(|duration| i64::try_from(duration.as_nanos()).unwrap_or(i64::MAX))
 }
 
+fn is_incremental_cache_hit(
+    mode: ScanMode,
+    cache: Option<&LocalCache>,
+    size_bytes: i64,
+    modified_ns: Option<i64>,
+) -> bool {
+    mode == ScanMode::Incremental
+        && modified_ns.is_some()
+        && cache.is_some_and(|cached| {
+            cached.size_bytes == Some(size_bytes)
+                && cached.modified_ns == modified_ns
+                && cached.has_sha256
+        })
+}
+
 fn load_cache(
     connection: &Connection,
     installation_id: i64,
@@ -647,11 +657,12 @@ fn load_cache(
                     FROM fingerprints f
                     WHERE f.local_file_id = lf.id
                       AND f.kind = 'sha256'
+                      AND f.algorithm_version = ?3
                 )
              FROM local_files lf
              WHERE lf.installation_id = ?1
                AND lf.relative_path = ?2",
-            params![installation_id, relative_path],
+            params![installation_id, relative_path, HASH_ALGORITHM_VERSION],
             |row| {
                 Ok(LocalCache {
                     size_bytes: row.get(0)?,
@@ -1027,6 +1038,54 @@ mod tests {
         assert_eq!(first.files_hashed, 2);
         assert_eq!(second.files_hashed, 0);
         assert_eq!(second.files_skipped, 2);
+    }
+
+    #[test]
+    fn incremental_cache_never_hits_without_a_modification_time() {
+        let cache = LocalCache {
+            size_bytes: Some(42),
+            modified_ns: None,
+            has_sha256: true,
+        };
+
+        assert!(!is_incremental_cache_hit(
+            ScanMode::Incremental,
+            Some(&cache),
+            42,
+            None
+        ));
+    }
+
+    #[test]
+    fn outdated_hash_algorithm_is_recomputed() {
+        let (_temp, sims_root, database_path) = fixture();
+        write_mod(&sims_root.join("Mods"), "a.package", b"alpha");
+
+        let control = ScannerControl::default();
+        scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("initial scan");
+
+        let connection = storage::open(&database_path).expect("open scanner database");
+        connection
+            .execute(
+                "UPDATE fingerprints
+                 SET algorithm_version = 'sha256-v0'
+                 WHERE kind = 'sha256'",
+                [],
+            )
+            .expect("downgrade fixture algorithm");
+
+        let incremental = scan_path(
+            &database_path,
+            &sims_root,
+            ScanMode::Incremental,
+            &control,
+            |_| {},
+        )
+        .expect("incremental verification");
+
+        assert_eq!(incremental.files_hashed, 1);
+        assert_eq!(incremental.files_skipped, 0);
     }
 
     #[test]
