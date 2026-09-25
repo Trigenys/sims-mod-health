@@ -325,8 +325,7 @@ fn preflight_archive<R: Read + Seek>(reader: &mut R) -> Result<usize, Ts4ScriptE
             continue;
         }
 
-        let comment_length =
-            u16::from_le_bytes([tail[offset + 20], tail[offset + 21]]) as usize;
+        let comment_length = u16::from_le_bytes([tail[offset + 20], tail[offset + 21]]) as usize;
         let expected_end = offset
             .checked_add(ZIP_EOCD_MIN_BYTES)
             .and_then(|value| value.checked_add(comment_length))
@@ -336,8 +335,7 @@ fn preflight_archive<R: Read + Seek>(reader: &mut R) -> Result<usize, Ts4ScriptE
             continue;
         }
 
-        let total_entries =
-            u16::from_le_bytes([tail[offset + 10], tail[offset + 11]]) as usize;
+        let total_entries = u16::from_le_bytes([tail[offset + 10], tail[offset + 11]]) as usize;
         validate_entry_count(total_entries)?;
         declared_entries = Some(total_entries);
         break;
@@ -690,7 +688,10 @@ mod tests {
                 .expect("start count-limit entry");
         }
 
-        let bytes = writer.finish().expect("finish count-limit ZIP").into_inner();
+        let bytes = writer
+            .finish()
+            .expect("finish count-limit ZIP")
+            .into_inner();
 
         assert!(matches!(
             inspect_bytes(&bytes),
