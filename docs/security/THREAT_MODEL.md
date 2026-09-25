@@ -64,6 +64,18 @@ Controls:
 - inspect names/metadata with bounded reads;
 - do not shell out to Python to load the mod.
 
+Current TS4Script inspector limits:
+- physical archive: 256 MiB;
+- archive entries: 4,096;
+- single expanded entry: 64 MiB;
+- total declared expanded bytes: 512 MiB;
+- maximum compression ratio: 500:1;
+- path depth: 32 components;
+- entry-name length: 1,024 bytes;
+- individual metadata read: 64 KiB;
+- total metadata reads: 256 KiB;
+- nested archives are never recursively opened.
+
 ### Archive bombs
 
 Threat: extreme expansion ratio or deeply nested archive content.
