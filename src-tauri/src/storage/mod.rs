@@ -290,6 +290,62 @@ mod tests {
     }
 
     #[test]
+    fn version_three_upgrades_fingerprint_schema_without_losing_rows() {
+        let mut connection = in_memory_database();
+        apply_migrations_through(&mut connection, 3).expect("apply v3");
+
+        connection
+            .execute(
+                "INSERT INTO installations (
+                    game_root, mods_root, platform, discovered_at, last_seen_at
+                 )
+                 VALUES ('game', 'mods', 'windows', 'now', 'now')",
+                [],
+            )
+            .expect("insert installation");
+        connection
+            .execute(
+                "INSERT INTO local_files (
+                    installation_id, relative_path, file_kind
+                 )
+                 VALUES (1, 'mod.package', 'package')",
+                [],
+            )
+            .expect("insert local file");
+        connection
+            .execute(
+                "INSERT INTO fingerprints (
+                    local_file_id, kind, value, algorithm_version, computed_at
+                 )
+                 VALUES (1, 'sha256', 'abc', 'sha256-v1', 'now')",
+                [],
+            )
+            .expect("insert v3 fingerprint");
+
+        migrate(&mut connection).expect("upgrade to v4");
+
+        let preserved: String = connection
+            .query_row(
+                "SELECT value FROM fingerprints
+                 WHERE local_file_id = 1 AND kind = 'sha256'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("preserved SHA fingerprint");
+        assert_eq!(preserved, "abc");
+
+        connection
+            .execute(
+                "INSERT INTO fingerprints (
+                    local_file_id, kind, value, algorithm_version, computed_at
+                 )
+                 VALUES (1, 'script_signature', 'script-id', 'v1', 'now')",
+                [],
+            )
+            .expect("v4 accepts script signature");
+    }
+
+    #[test]
     fn incremental_cache_key_is_indexed() {
         let mut connection = in_memory_database();
         migrate(&mut connection).expect("migrate database");
