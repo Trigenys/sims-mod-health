@@ -1137,10 +1137,7 @@ mod tests {
         .expect("finalize with protected prefix");
         transaction.commit().expect("commit cleanup transaction");
 
-        assert_eq!(
-            current_files(&database_path),
-            vec!["Locked/keep.package"]
-        );
+        assert_eq!(current_files(&database_path), vec!["Locked/keep.package"]);
     }
 
     #[test]
