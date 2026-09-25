@@ -243,15 +243,11 @@ fn inspect_reader<R: Read + Seek>(reader: R) -> Result<ScriptArchiveMetadata, Ts
                     metadata_budget_exhausted = true;
                 } else {
                     let mut bytes = Vec::with_capacity(expanded_size as usize);
-                    entry
-                        .by_ref()
-                        .take(expanded_size)
-                        .read_to_end(&mut bytes)?;
-                    metadata_bytes_read = metadata_bytes_read
-                        .checked_add(bytes.len() as u64)
-                        .ok_or(Ts4ScriptError::ArithmeticOverflow(
-                            "TS4Script metadata read budget",
-                        ))?;
+                    entry.by_ref().take(expanded_size).read_to_end(&mut bytes)?;
+                    metadata_bytes_read =
+                        metadata_bytes_read.checked_add(bytes.len() as u64).ok_or(
+                            Ts4ScriptError::ArithmeticOverflow("TS4Script metadata read budget"),
+                        )?;
 
                     if let Ok(text) = std::str::from_utf8(&bytes) {
                         for value in extract_version_hints(text) {
@@ -359,12 +355,14 @@ fn validate_entry_path(name: &str) -> Result<(), Ts4ScriptError> {
     }
 
     let path = Path::new(name);
-    if path.is_absolute() || path.components().any(|component| {
-        matches!(
-            component,
-            std::path::Component::ParentDir | std::path::Component::RootDir
-        )
-    }) {
+    if path.is_absolute()
+        || path.components().any(|component| {
+            matches!(
+                component,
+                std::path::Component::ParentDir | std::path::Component::RootDir
+            )
+        })
+    {
         return Err(Ts4ScriptError::UnsafePath {
             name: name.to_string(),
         });
@@ -497,16 +495,14 @@ fn extract_version_hints(text: &str) -> Vec<String> {
 
         let tail = &line[version_offset + "version".len()..];
         let trimmed = tail.trim_start_matches(|character: char| {
-            character.is_whitespace()
-                || matches!(character, ':' | '=' | '"' | '\'' | '_' | '-')
+            character.is_whitespace() || matches!(character, ':' | '=' | '"' | '\'' | '_' | '-')
         });
 
         let token = trimmed
             .trim_start_matches(['v', 'V'])
             .chars()
             .take_while(|character| {
-                character.is_ascii_alphanumeric()
-                    || matches!(character, '.' | '-' | '_' | '+')
+                character.is_ascii_alphanumeric() || matches!(character, '.' | '-' | '_' | '+')
             })
             .take(64)
             .collect::<String>();
@@ -538,18 +534,14 @@ mod tests {
     fn archive(entries: &[(&str, &[u8])]) -> Vec<u8> {
         let cursor = Cursor::new(Vec::new());
         let mut writer = ZipWriter::new(cursor);
-        let options =
-            SimpleFileOptions::default().compression_method(CompressionMethod::DEFLATE);
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::DEFLATE);
 
         for (name, content) in entries {
             writer.start_file(*name, options).expect("start ZIP entry");
             writer.write_all(content).expect("write ZIP entry");
         }
 
-        writer
-            .finish()
-            .expect("finish ZIP fixture")
-            .into_inner()
+        writer.finish().expect("finish ZIP fixture").into_inner()
     }
 
     fn inspect_bytes(bytes: &[u8]) -> Result<ScriptArchiveMetadata, Ts4ScriptError> {
@@ -666,20 +658,12 @@ mod tests {
     #[test]
     fn archive_bomb_limits_reject_large_entries_and_ratios() {
         assert!(matches!(
-            validate_entry_limits(
-                "huge.pyc",
-                1024,
-                MAX_ENTRY_EXPANDED_BYTES + 1
-            ),
+            validate_entry_limits("huge.pyc", 1024, MAX_ENTRY_EXPANDED_BYTES + 1),
             Err(Ts4ScriptError::EntryTooLarge { .. })
         ));
 
         assert!(matches!(
-            validate_entry_limits(
-                "ratio.pyc",
-                1024,
-                1024 * (MAX_COMPRESSION_RATIO + 1)
-            ),
+            validate_entry_limits("ratio.pyc", 1024, 1024 * (MAX_COMPRESSION_RATIO + 1)),
             Err(Ts4ScriptError::CompressionRatioExceeded { .. })
         ));
 
@@ -714,10 +698,7 @@ mod tests {
         let result = inspect_path(&path);
 
         assert!(matches!(result, Err(Ts4ScriptError::Zip(_))));
-        assert_eq!(
-            std::fs::read(&path).expect("read malformed source"),
-            bytes
-        );
+        assert_eq!(std::fs::read(&path).expect("read malformed source"), bytes);
     }
 
     #[test]
@@ -755,9 +736,7 @@ mod tests {
         let mut state = 0xa341_316c_u32;
 
         for iteration in 0..1_024_u32 {
-            state = state
-                .wrapping_mul(1_664_525)
-                .wrapping_add(1_013_904_223);
+            state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
             let mut candidate = seed.clone();
 
             if iteration % 3 == 0 {
