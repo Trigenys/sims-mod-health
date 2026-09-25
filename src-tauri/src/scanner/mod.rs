@@ -4,7 +4,7 @@ use std::{
     io::{self, BufReader, Read},
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
-    time::{SystemTime, UNIX_EPOCH},
+    time::UNIX_EPOCH,
 };
 
 use rusqlite::{params, Connection, OptionalExtension};
@@ -171,7 +171,6 @@ impl FileKind {
 
 #[derive(Debug)]
 struct LocalCache {
-    local_file_id: i64,
     size_bytes: Option<i64>,
     modified_ns: Option<i64>,
     has_sha256: bool,
@@ -323,9 +322,11 @@ where
         if cache_hit {
             progress.files_skipped += 1;
         } else {
+            delete_sha256(&transaction, local_file_id)?;
+
             match sha256_file(&absolute_path, control) {
                 Ok(Some(hash)) => {
-                    replace_sha256(&transaction, local_file_id, &hash)?;
+                    store_sha256(&transaction, local_file_id, &hash)?;
                     transaction.execute(
                         "UPDATE local_files
                          SET hashed_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
@@ -349,6 +350,13 @@ where
                     return Ok(summary);
                 }
                 Err(error) => {
+                    if error.kind() == io::ErrorKind::NotFound {
+                        transaction.execute(
+                            "DELETE FROM local_files WHERE id = ?1",
+                            [local_file_id],
+                        )?;
+                    }
+
                     insert_observation(
                         &transaction,
                         scan_session_id,
@@ -432,10 +440,22 @@ fn collect_supported_files(
             }
         };
 
-        let mut entries = entries.filter_map(Result::ok).collect::<Vec<_>>();
-        entries.sort_by_key(|entry| entry.file_name().to_string_lossy().to_lowercase());
+        let mut collected_entries = Vec::new();
+        for entry in entries {
+            match entry {
+                Ok(entry) => collected_entries.push(entry),
+                Err(error) => observations.push(PendingObservation {
+                    relative_path: relative_string(mods_root, &directory),
+                    kind: observation_kind_for_io(&error),
+                    detail: error.to_string(),
+                }),
+            }
+        }
 
-        for entry in entries.into_iter().rev() {
+        collected_entries
+            .sort_by_key(|entry| entry.file_name().to_string_lossy().to_lowercase());
+
+        for entry in collected_entries.into_iter().rev() {
             if control.is_cancelled() {
                 break;
             }
@@ -460,7 +480,7 @@ fn collect_supported_files(
             if file_type.is_dir() {
                 if path
                     .file_name()
-                    .is_some_and(|name| name.eq_ignore_ascii_case("Mods"))
+                    .is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case("Mods"))
                     && path != mods_root
                 {
                     observations.push(PendingObservation {
@@ -539,7 +559,6 @@ fn load_cache(
             params![installation_id, relative_path],
             |row| {
                 Ok(LocalCache {
-                    local_file_id: row.get(0)?,
                     size_bytes: row.get(1)?,
                     modified_ns: row.get(2)?,
                     has_sha256: row.get::<_, i64>(3)? != 0,
@@ -595,16 +614,20 @@ fn upsert_local_file(
     )
 }
 
-fn replace_sha256(
-    connection: &Connection,
-    local_file_id: i64,
-    hash: &str,
-) -> Result<(), rusqlite::Error> {
+fn delete_sha256(connection: &Connection, local_file_id: i64) -> Result<(), rusqlite::Error> {
     connection.execute(
         "DELETE FROM fingerprints
          WHERE local_file_id = ?1 AND kind = 'sha256'",
         [local_file_id],
     )?;
+    Ok(())
+}
+
+fn store_sha256(
+    connection: &Connection,
+    local_file_id: i64,
+    hash: &str,
+) -> Result<(), rusqlite::Error> {
     connection.execute(
         "INSERT INTO fingerprints (
             local_file_id,
@@ -704,9 +727,9 @@ fn insert_observation(
          VALUES (?1, ?2, ?3, ?4)",
         params![
             scan_session_id,
-            observation.relative_path,
+            observation.relative_path.as_deref(),
             observation.kind,
-            observation.detail
+            observation.detail.as_str()
         ],
     )?;
     Ok(())
@@ -792,9 +815,9 @@ fn finish_scan_session(
         params![
             summary.scan_session_id,
             status,
-            summary.files_seen,
-            summary.files_hashed,
-            summary.observations
+            counter_to_i64(summary.files_seen),
+            counter_to_i64(summary.files_hashed),
+            counter_to_i64(summary.observations)
         ],
     )?;
     Ok(())
@@ -810,6 +833,10 @@ fn mark_scan_failed(connection: &Connection, scan_session_id: i64) -> Result<(),
         [scan_session_id],
     )?;
     Ok(())
+}
+
+fn counter_to_i64(value: u64) -> i64 {
+    i64::try_from(value).unwrap_or(i64::MAX)
 }
 
 fn emit_progress_if_needed<F>(progress: &ScanProgress, on_progress: &mut F)
