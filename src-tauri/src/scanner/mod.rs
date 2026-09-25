@@ -1,7 +1,6 @@
 use std::{
     fmt::{Display, Formatter},
-    fs,
-    io,
+    fs, io,
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
     time::UNIX_EPOCH,
@@ -659,7 +658,11 @@ fn load_cache(
              FROM local_files lf
              WHERE lf.installation_id = ?1
                AND lf.relative_path = ?2",
-            params![installation_id, relative_path, fingerprint::SHA256_ALGORITHM_VERSION],
+            params![
+                installation_id,
+                relative_path,
+                fingerprint::SHA256_ALGORITHM_VERSION
+            ],
             |row| {
                 Ok(LocalCache {
                     size_bytes: row.get(0)?,
