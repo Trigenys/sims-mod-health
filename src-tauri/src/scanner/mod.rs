@@ -77,8 +77,13 @@ impl Display for ScanError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::AlreadyRunning => write!(formatter, "a Mods scan is already running"),
-            Self::InvalidInstallation(reason) => write!(formatter, "invalid Sims installation: {reason}"),
-            Self::ModsUnavailable => write!(formatter, "the selected Sims installation has no Mods directory"),
+            Self::InvalidInstallation(reason) => {
+                write!(formatter, "invalid Sims installation: {reason}")
+            }
+            Self::ModsUnavailable => write!(
+                formatter,
+                "the selected Sims installation has no Mods directory"
+            ),
             Self::Io(error) => write!(formatter, "scanner I/O error: {error}"),
             Self::Sqlite(error) => write!(formatter, "scanner SQLite error: {error}"),
             Self::Storage(error) => write!(formatter, "{error}"),
@@ -351,10 +356,8 @@ where
                 }
                 Err(error) => {
                     if error.kind() == io::ErrorKind::NotFound {
-                        transaction.execute(
-                            "DELETE FROM local_files WHERE id = ?1",
-                            [local_file_id],
-                        )?;
+                        transaction
+                            .execute("DELETE FROM local_files WHERE id = ?1", [local_file_id])?;
                     }
 
                     insert_observation(
@@ -452,8 +455,7 @@ fn collect_supported_files(
             }
         }
 
-        collected_entries
-            .sort_by_key(|entry| entry.file_name().to_string_lossy().to_lowercase());
+        collected_entries.sort_by_key(|entry| entry.file_name().to_string_lossy().to_lowercase());
 
         for entry in collected_entries.into_iter().rev() {
             if control.is_cancelled() {
@@ -486,7 +488,8 @@ fn collect_supported_files(
                     observations.push(PendingObservation {
                         relative_path: relative_string(mods_root, &path),
                         kind: "nestedModsDirectory",
-                        detail: "A Mods directory is nested inside the active Mods directory.".to_string(),
+                        detail: "A Mods directory is nested inside the active Mods directory."
+                            .to_string(),
                     });
                 }
                 pending_directories.push(path);
@@ -857,8 +860,7 @@ mod tests {
         let sims_root = temp.path().join("The Sims 4");
         let mods_root = sims_root.join("Mods");
         fs::create_dir_all(&mods_root).expect("create Mods directory");
-        fs::write(sims_root.join("GameVersion.txt"), "1.128.90.1030")
-            .expect("write game version");
+        fs::write(sims_root.join("GameVersion.txt"), "1.128.90.1030").expect("write game version");
         let database_path = temp.path().join("scanner.sqlite3");
         storage::initialize(&database_path).expect("initialize scanner database");
         (temp, sims_root, database_path)
@@ -895,14 +897,8 @@ mod tests {
         write_mod(&mods_root, "ignore.txt", b"ignored");
 
         let control = ScannerControl::default();
-        let summary = scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("scan succeeds");
+        let summary = scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("scan succeeds");
 
         assert_eq!(summary.status, ScanStatus::Completed);
         assert_eq!(summary.files_seen, 3);
@@ -924,14 +920,8 @@ mod tests {
         write_mod(&mods_root, "b.ts4script", b"beta");
 
         let control = ScannerControl::default();
-        let first = scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("initial scan");
+        let first = scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("initial scan");
         let second = scan_path(
             &database_path,
             &sims_root,
@@ -952,22 +942,10 @@ mod tests {
         write_mod(&sims_root.join("Mods"), "a.package", b"alpha");
 
         let control = ScannerControl::default();
-        scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("initial scan");
-        let verification = scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("full verification scan");
+        scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("initial scan");
+        let verification = scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("full verification scan");
 
         assert_eq!(verification.files_hashed, 1);
         assert_eq!(verification.files_skipped, 0);
@@ -980,14 +958,8 @@ mod tests {
         write_mod(&mods_root, "stable.package", b"stable");
 
         let control = ScannerControl::default();
-        scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("baseline scan");
+        scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("baseline scan");
 
         write_mod(&mods_root, "new-a.package", b"a");
         write_mod(&mods_root, "new-b.package", b"b");
@@ -1027,14 +999,8 @@ mod tests {
         write_mod(&mods_root, "remove.package", b"remove");
 
         let control = ScannerControl::default();
-        scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("initial scan");
+        scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("initial scan");
 
         fs::remove_file(mods_root.join("remove.package")).expect("remove fixture");
         scan_path(
@@ -1057,14 +1023,8 @@ mod tests {
         write_mod(&mods_root, "1/2/3/4/5/6/deep.package", b"package");
 
         let control = ScannerControl::default();
-        let summary = scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("scan succeeds with observations");
+        let summary = scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("scan succeeds with observations");
 
         assert_eq!(summary.files_seen, 2);
         assert_eq!(summary.observations, 2);
@@ -1110,14 +1070,8 @@ mod tests {
         let control = ScannerControl::default();
 
         let full_started = Instant::now();
-        let full = scan_path(
-            &database_path,
-            &sims_root,
-            ScanMode::Full,
-            &control,
-            |_| {},
-        )
-        .expect("full benchmark scan");
+        let full = scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("full benchmark scan");
         let full_elapsed = full_started.elapsed();
 
         let incremental_started = Instant::now();
