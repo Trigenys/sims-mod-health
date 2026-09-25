@@ -17,7 +17,11 @@ It never imports, executes or evaluates embedded Python.
 
 ## ZIP implementation
 
-The native layer uses the Rust `zip` crate with only normal Stored/Deflate reading enabled for our dependency. The inspector relies on central-directory metadata and opens archive entries only when a small text metadata file qualifies for bounded reading.
+The native layer uses the Rust `zip` crate with only normal Stored/Deflate reading enabled for our dependency.
+
+Before constructing `ZipArchive`, the inspector reads only the bounded ZIP end-of-central-directory search window and checks the declared entry count. This enforces the 4,096-entry product limit **before** the ZIP library allocates its central-directory collection.
+
+After that preflight, the inspector relies on central-directory metadata and opens archive entries only when a small text metadata file qualifies for bounded reading.
 
 No archive entry is ever extracted to disk.
 
@@ -127,7 +131,8 @@ Native tests cover:
 - `__pycache__` normalization;
 - traversal / absolute / drive-path rejection;
 - path-depth limit;
-- archive-bomb size and ratio limits;
+- preflight entry-count enforcement before central-directory allocation;
+- archive-bomb size, cumulative expanded-data and ratio limits;
 - bounded metadata reads;
 - malformed archive immutability;
 - read-only archive inspection;
