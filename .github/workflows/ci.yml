@@ -31,3 +31,42 @@ jobs:
         run: cargo check --manifest-path src-tauri/Cargo.toml
       - name: Run native tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
+
+
+  registry:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: registry
+          POSTGRES_PASSWORD: registry
+          POSTGRES_DB: sims_mod_health
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U registry -d sims_mod_health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      REGISTRY_DATABASE_URL: postgresql+psycopg://registry:registry@localhost:5432/sims_mod_health
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install registry API
+        working-directory: services/registry-api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Verify fresh and reversible Alembic migration
+        working-directory: services/registry-api
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+      - name: Run registry tests
+        working-directory: services/registry-api
+        run: pytest -q
