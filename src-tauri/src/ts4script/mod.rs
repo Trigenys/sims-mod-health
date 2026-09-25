@@ -762,7 +762,13 @@ mod tests {
 
     #[test]
     fn metadata_reads_are_bounded_and_non_metadata_payloads_remain_unread() {
-        let large_binary = vec![0x7f; 512 * 1024];
+        let mut state = 0x9e37_79b9_u32;
+        let large_binary = (0..512 * 1024)
+            .map(|_| {
+                state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                (state >> 24) as u8
+            })
+            .collect::<Vec<_>>();
         let bytes = archive(&[
             ("payload.pyc", &large_binary),
             ("version.txt", b"Version = 7.8.9"),
