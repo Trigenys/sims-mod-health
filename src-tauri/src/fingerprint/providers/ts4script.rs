@@ -1,15 +1,11 @@
-use std::{
-    collections::BTreeSet,
-    path::Path,
-};
+use std::{collections::BTreeSet, path::Path};
 
 use sha2::{Digest, Sha256};
 
 use crate::ts4script;
 
 use super::super::domain::{
-    FingerprintError, FingerprintKind, FingerprintProvider,
-    TS4SCRIPT_SIGNATURE_VERSION,
+    FingerprintError, FingerprintKind, FingerprintProvider, TS4SCRIPT_SIGNATURE_VERSION,
 };
 
 #[derive(Debug, Default)]
