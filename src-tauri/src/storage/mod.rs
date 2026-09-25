@@ -252,12 +252,24 @@ mod tests {
         );
 
         let columns = column_names(&connection, "local_files");
-        for required in ["size_bytes", "modified_ns", "quick_fingerprint", "hashed_at"] {
-            assert!(columns.contains(required), "missing cache column {required}");
+        for required in [
+            "size_bytes",
+            "modified_ns",
+            "quick_fingerprint",
+            "hashed_at",
+        ] {
+            assert!(
+                columns.contains(required),
+                "missing cache column {required}"
+            );
         }
 
         let relative_path: String = connection
-            .query_row("SELECT relative_path FROM local_files WHERE id = 1", [], |row| row.get(0))
+            .query_row(
+                "SELECT relative_path FROM local_files WHERE id = 1",
+                [],
+                |row| row.get(0),
+            )
             .expect("local file survives migration");
 
         assert_eq!(relative_path, "Gameplay/example.package");
