@@ -248,7 +248,8 @@ pub(crate) fn store_fingerprint(
             computed_at
          )
          VALUES (?1, ?2, ?3, ?4, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-         ON CONFLICT(local_file_id, kind, value) DO UPDATE SET
+         ON CONFLICT(local_file_id, kind) DO UPDATE SET
+            value = excluded.value,
             algorithm_version = excluded.algorithm_version,
             computed_at = excluded.computed_at",
         params![
@@ -592,6 +593,28 @@ mod tests {
             provider.compute(&left).expect("left script signature"),
             provider.compute(&right).expect("right script signature")
         );
+    }
+
+    #[test]
+    fn storing_same_fingerprint_kind_replaces_previous_value() {
+        let (_db_temp, connection, installation_id) = database_fixture();
+        let local_file_id = insert_local_file(&connection, installation_id, "A/mod.package");
+
+        store_sha256(&connection, local_file_id, "old").expect("store old SHA");
+        store_sha256(&connection, local_file_id, "new").expect("replace SHA");
+
+        let values = connection
+            .prepare(
+                "SELECT value FROM fingerprints
+                 WHERE local_file_id = ?1 AND kind = 'sha256'",
+            )
+            .expect("prepare current SHA query")
+            .query_map([local_file_id], |row| row.get::<_, String>(0))
+            .expect("query current SHA")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("collect current SHA");
+
+        assert_eq!(values, vec!["new"]);
     }
 
     #[test]
