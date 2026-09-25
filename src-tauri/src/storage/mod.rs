@@ -7,7 +7,7 @@ use std::{
 
 use rusqlite::Connection;
 
-pub(crate) const LATEST_SCHEMA_VERSION: u32 = 2;
+pub(crate) const LATEST_SCHEMA_VERSION: u32 = 3;
 
 struct Migration {
     version: u32,
@@ -22,6 +22,10 @@ const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 2,
         sql: include_str!("../../migrations/0002_incremental_scan_cache.sql"),
+    },
+    Migration {
+        version: 3,
+        sql: include_str!("../../migrations/0003_scan_observations.sql"),
     },
 ];
 
@@ -73,6 +77,11 @@ impl From<rusqlite::Error> for StorageError {
 }
 
 pub(crate) fn initialize(path: &Path) -> Result<(), StorageError> {
+    let _ = open(path)?;
+    Ok(())
+}
+
+pub(crate) fn open(path: &Path) -> Result<Connection, StorageError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -81,7 +90,7 @@ pub(crate) fn initialize(path: &Path) -> Result<(), StorageError> {
     configure_connection(&connection)?;
     migrate(&mut connection)?;
 
-    Ok(())
+    Ok(connection)
 }
 
 fn configure_connection(connection: &Connection) -> Result<(), StorageError> {
@@ -201,6 +210,7 @@ mod tests {
             "local_files".to_string(),
             "preferences".to_string(),
             "restore_points".to_string(),
+            "scan_observations".to_string(),
             "scan_sessions".to_string(),
         ]);
 
