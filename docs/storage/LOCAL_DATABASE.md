@@ -76,7 +76,8 @@ Migrations are versioned SQL files embedded into the Rust binary and tracked wit
 Current versions:
 
 1. initial local persistence model;
-2. incremental-scan cache metadata and index.
+2. incremental-scan cache metadata and index;
+3. recoverable scan observations tied to scan sessions.
 
 Migrations are **forward-only**.
 
