@@ -96,7 +96,7 @@ The scanner currently observes these placement rules:
 
 These limits follow EA's current Mods-folder guidance. The observation is a layout warning; it is not a claim that the mod itself is broken.
 
-Source: EA Forums, “How to Use Mods and CC”, section “Install in the Right Place in Mods: Script Files and Your Folder Structure”.
+Source: [EA Forums — How to Use Mods and CC](https://forums.ea.com/discussions/the-sims-4-mods-and-custom-content-en/info-how-to-use-mods-and-cc/9360653), section “Install in the Right Place in Mods: Script Files and Your Folder Structure”.
 
 ## Hashing
 
