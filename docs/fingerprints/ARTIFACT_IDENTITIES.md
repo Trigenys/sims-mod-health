@@ -15,6 +15,33 @@ Only SHA-256 drives the **Exact duplicate** label.
 
 A resource or script signature can help canonical matching later, but it must never be presented as proof that two files are byte-for-byte duplicates.
 
+## Internal architecture
+
+The fingerprint domain is intentionally split by responsibility:
+
+```text
+fingerprint/
+├── mod.rs                 # narrow facade / exports
+├── domain.rs              # kinds, values, errors, provider contract
+├── sha256.rs              # streaming exact-content hash
+├── providers/
+│   ├── dbpf.rs            # DBPF resource-key Strategy
+│   └── ts4script.rs       # TS4Script module-identity Strategy
+├── repository.rs          # SQLite Repository for persisted identities
+└── duplicates.rs          # exact-duplicate Query Service
+```
+
+Patterns used:
+
+- **Strategy** — `FingerprintProvider` lets structural/source providers vary independently.
+- **Repository** — `FingerprintRepository` owns fingerprint persistence and invalidation SQL.
+- **Query Service** — `ExactDuplicateQuery` owns duplicate grouping without leaking SQL into the scanner/UI.
+- **Facade** — `fingerprint/mod.rs` exposes a small crate-level API instead of implementation details.
+
+The inventory scanner remains responsible for discovery, cache-key comparison and exact SHA-256 hashing. It invalidates stale locally-derived structural fingerprints when file identity changes.
+
+DBPF and TS4Script structural signatures are recomputed **on demand** through the fingerprint domain rather than on every inventory scan. This keeps the scanner hot path fast and prevents malformed package/script parsing from changing basic inventory semantics.
+
 ## SHA-256
 
 The scanner computes SHA-256 with a 64 KiB streaming buffer.
