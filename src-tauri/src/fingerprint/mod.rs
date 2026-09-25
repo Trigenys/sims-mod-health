@@ -196,10 +196,7 @@ impl From<ts4script::Ts4ScriptError> for FingerprintError {
     }
 }
 
-pub(crate) fn sha256_file<F>(
-    path: &Path,
-    mut is_cancelled: F,
-) -> Result<Option<String>, io::Error>
+pub(crate) fn sha256_file<F>(path: &Path, mut is_cancelled: F) -> Result<Option<String>, io::Error>
 where
     F: FnMut() -> bool,
 {
@@ -441,8 +438,7 @@ mod tests {
     fn ts4script(entries: &[(&str, &[u8])]) -> Vec<u8> {
         let cursor = Cursor::new(Vec::new());
         let mut writer = ZipWriter::new(cursor);
-        let options =
-            SimpleFileOptions::default().compression_method(CompressionMethod::DEFLATE);
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::DEFLATE);
 
         for (name, content) in entries {
             writer.start_file(*name, options).expect("start ZIP entry");
@@ -672,7 +668,9 @@ mod tests {
     #[ignore = "large-library benchmark; run in dedicated scanner benchmark workflow"]
     fn benchmark_5000_file_duplicate_grouping() {
         let (_db_temp, mut connection, installation_id) = database_fixture();
-        let transaction = connection.transaction().expect("start benchmark transaction");
+        let transaction = connection
+            .transaction()
+            .expect("start benchmark transaction");
 
         for index in 0..5_000_i64 {
             transaction
