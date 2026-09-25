@@ -46,6 +46,14 @@ Controls:
 - reject malformed structures cleanly;
 - maintain adversarial fixtures and fuzz targets.
 
+Current DBPF parser limits:
+- at most 1,000,000 declared resource entries;
+- at most 128 MiB declared index bytes;
+- fixed 96-byte header read;
+- scalar 2/4-byte index reads only;
+- zero resource-payload bytes read during metadata parsing;
+- unknown index-layout flag bits are rejected rather than guessed.
+
 ### TS4Script execution
 
 Threat: executing bundled Python or native payload while trying to inspect it.
