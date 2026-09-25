@@ -9,8 +9,8 @@ use std::{path::PathBuf, sync::Arc};
 
 use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
-use scanner::{ScanMode, ScanSummary, ScannerControl};
 use rusqlite::OptionalExtension;
+use scanner::{ScanMode, ScanSummary, ScannerControl};
 use tauri::{Emitter, Manager, State};
 
 struct AppState {
