@@ -3,12 +3,9 @@ mod ts4script;
 
 use std::path::Path;
 
-use super::domain::{
-    ArtifactKind, FingerprintError, FingerprintProvider, FingerprintValue,
-};
+use super::domain::{ArtifactKind, FingerprintError, FingerprintProvider, FingerprintValue};
 
-static DBPF_PROVIDER: dbpf::DbpfResourceSignatureProvider =
-    dbpf::DbpfResourceSignatureProvider;
+static DBPF_PROVIDER: dbpf::DbpfResourceSignatureProvider = dbpf::DbpfResourceSignatureProvider;
 static TS4SCRIPT_PROVIDER: ts4script::Ts4ScriptIdentityProvider =
     ts4script::Ts4ScriptIdentityProvider;
 
