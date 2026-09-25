@@ -77,6 +77,8 @@ Progress is throttled to the first file, every 50 files and final completion/can
 
 Filesystem problems do not automatically abort the entire inventory.
 
+If a directory or previously known file is temporarily unreadable, the scanner records the observation **and preserves the last known inventory beneath that path** during stale-file cleanup. A confirmed `NotFound`/disappeared path is allowed to age out normally. This prevents a transient permission or I/O problem from looking like a mass mod deletion.
+
 Examples:
 
 - `permissionDenied`;
