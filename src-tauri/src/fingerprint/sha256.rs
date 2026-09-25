@@ -8,10 +8,7 @@ use sha2::{Digest, Sha256};
 
 const HASH_BUFFER_SIZE: usize = 64 * 1024;
 
-pub(crate) fn sha256_file<F>(
-    path: &Path,
-    mut is_cancelled: F,
-) -> Result<Option<String>, io::Error>
+pub(crate) fn sha256_file<F>(path: &Path, mut is_cancelled: F) -> Result<Option<String>, io::Error>
 where
     F: FnMut() -> bool,
 {
@@ -48,7 +45,8 @@ mod tests {
         let right = temp.path().join("B/two.package");
 
         std::fs::create_dir_all(left.parent().expect("left parent")).expect("create left parent");
-        std::fs::create_dir_all(right.parent().expect("right parent")).expect("create right parent");
+        std::fs::create_dir_all(right.parent().expect("right parent"))
+            .expect("create right parent");
         std::fs::write(&left, b"same artifact bytes").expect("write left fixture");
         std::fs::write(&right, b"same artifact bytes").expect("write right fixture");
 
