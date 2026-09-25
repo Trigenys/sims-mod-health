@@ -237,6 +237,46 @@ mod tests {
     }
 
     #[test]
+    fn invalidation_preserves_source_owned_fingerprints() {
+        let (_temp, connection, local_file_id) = database_fixture();
+        let repository = FingerprintRepository::new(&connection);
+
+        repository.store_sha256(local_file_id, "local-sha").expect("store SHA");
+        repository
+            .store(
+                local_file_id,
+                &FingerprintValue {
+                    kind: FingerprintKind::CurseForge,
+                    value: "source-owned".to_string(),
+                    algorithm_version: "curseforge-v1",
+                },
+            )
+            .expect("store source fingerprint");
+
+        repository
+            .invalidate_local_derived(local_file_id)
+            .expect("invalidate local derived fingerprints");
+
+        let remaining: Vec<(String, String)> = connection
+            .prepare(
+                "SELECT kind, value
+                 FROM fingerprints
+                 WHERE local_file_id = ?1
+                 ORDER BY kind",
+            )
+            .expect("prepare remaining fingerprint query")
+            .query_map([local_file_id], |row| Ok((row.get(0)?, row.get(1)?)))
+            .expect("query remaining fingerprints")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("collect remaining fingerprints");
+
+        assert_eq!(
+            remaining,
+            vec![("curseforge".to_string(), "source-owned".to_string())]
+        );
+    }
+
+    #[test]
     fn structural_fingerprint_is_persisted_with_algorithm_version() {
         let temp = TempDir::new().expect("create DBPF temp directory");
         let path = temp.path().join("mod.package");
