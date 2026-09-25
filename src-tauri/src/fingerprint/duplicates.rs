@@ -87,7 +87,8 @@ impl<'a> ExactDuplicateQuery<'a> {
         }
 
         Ok(groups)
-    }}
+    }
+}
 
 pub(crate) fn exact_duplicate_groups(
     connection: &Connection,
