@@ -51,8 +51,9 @@ impl<'a> ExactDuplicateQuery<'a> {
              ORDER BY f.value, lf.relative_path, lf.id",
         )?;
 
-        let rows =
-            statement.query_map(params![installation_id, SHA256_ALGORITHM_VERSION], |row| {
+        let rows = statement.query_map(
+            params![installation_id, SHA256_ALGORITHM_VERSION],
+            |row| {
                 Ok((
                     row.get::<_, String>(0)?,
                     DuplicateFile {
@@ -60,14 +61,18 @@ impl<'a> ExactDuplicateQuery<'a> {
                         relative_path: row.get(2)?,
                     },
                 ))
-            })?;
+            },
+        )?;
 
         let mut groups: Vec<ExactDuplicateGroup> = Vec::new();
 
         for row in rows {
             let (sha256, file) = row?;
 
-            if groups.last().is_none_or(|group| group.sha256 != sha256) {
+            if groups
+                .last()
+                .is_none_or(|group| group.sha256 != sha256)
+            {
                 groups.push(ExactDuplicateGroup {
                     sha256: sha256.clone(),
                     files: Vec::new(),
@@ -143,12 +148,8 @@ mod tests {
         let second = insert_local_file(&connection, installation_id, "B/beta.package");
         let third = insert_local_file(&connection, installation_id, "C/alpha.package");
 
-        repository
-            .store_sha256(first, "same")
-            .expect("store first hash");
-        repository
-            .store_sha256(second, "same")
-            .expect("store second hash");
+        repository.store_sha256(first, "same").expect("store first hash");
+        repository.store_sha256(second, "same").expect("store second hash");
         repository
             .store_sha256(third, "different")
             .expect("store third hash");
@@ -176,12 +177,8 @@ mod tests {
         let left = insert_local_file(&connection, installation_id, "CreatorA/shared.package");
         let right = insert_local_file(&connection, installation_id, "CreatorB/shared.package");
 
-        repository
-            .store_sha256(left, "first")
-            .expect("store left hash");
-        repository
-            .store_sha256(right, "second")
-            .expect("store right hash");
+        repository.store_sha256(left, "first").expect("store left hash");
+        repository.store_sha256(right, "second").expect("store right hash");
 
         assert!(ExactDuplicateQuery::new(&connection)
             .for_installation(installation_id)
