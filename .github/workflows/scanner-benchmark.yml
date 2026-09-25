@@ -1,0 +1,27 @@
+name: Scanner benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src-tauri/src/scanner/**"
+      - "src-tauri/src/storage/**"
+      - "src-tauri/migrations/**"
+      - "src-tauri/Cargo.toml"
+      - ".github/workflows/scanner-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run 5k-file scanner benchmark
+        run: >
+          cargo test
+          --manifest-path src-tauri/Cargo.toml
+          scanner::tests::benchmark_5000_file_full_and_incremental_scan
+          -- --ignored --nocapture
