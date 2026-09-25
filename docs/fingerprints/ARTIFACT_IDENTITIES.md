@@ -91,6 +91,8 @@ Fingerprints are stored against `local_file_id` with:
 - algorithm version;
 - computation timestamp.
 
+The database enforces one current row per `(local_file_id, kind)`. Recomputing the same kind replaces its value atomically instead of accumulating stale identities.
+
 Migration v4 adds `script_signature` as a persisted fingerprint kind.
 
 When a scanner cache miss indicates changed file identity, the scanner removes stale:
