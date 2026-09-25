@@ -99,6 +99,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 - [Architecture](docs/ARCHITECTURE.md)
 - [Architecture decisions](docs/adr/README.md)
 - [Architecture baseline acceptance](docs/architecture/BASELINE_ACCEPTANCE.md)
+- [Local SQLite database](docs/storage/LOCAL_DATABASE.md)
 - [Design Target](docs/design/TARGET_UI.md)
 - [PERT](docs/planning/PERT.md)
 - [Proof of Done](docs/governance/PROOF_OF_DONE.md)

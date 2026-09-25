@@ -29,3 +29,5 @@ jobs:
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - name: Check native crate
         run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: Run native tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
