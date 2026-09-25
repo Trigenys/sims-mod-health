@@ -1109,6 +1109,41 @@ mod tests {
     }
 
     #[test]
+    fn unreadable_prefix_preserves_last_known_inventory_during_cleanup() {
+        let (_temp, sims_root, database_path) = fixture();
+        let mods_root = sims_root.join("Mods");
+        write_mod(&mods_root, "Locked/keep.package", b"keep");
+        write_mod(&mods_root, "Elsewhere/remove.package", b"remove");
+
+        let control = ScannerControl::default();
+        scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("baseline scan");
+
+        let mut connection = storage::open(&database_path).expect("open scanner database");
+        let installation_id: i64 = connection
+            .query_row("SELECT id FROM installations LIMIT 1", [], |row| row.get(0))
+            .expect("installation id");
+        let scan_session_id =
+            create_scan_session(&connection, installation_id, ScanMode::Incremental)
+                .expect("create cleanup session");
+
+        let transaction = connection.transaction().expect("start cleanup transaction");
+        finalize_inventory(
+            &transaction,
+            installation_id,
+            scan_session_id,
+            &["Locked".to_string()],
+        )
+        .expect("finalize with protected prefix");
+        transaction.commit().expect("commit cleanup transaction");
+
+        assert_eq!(
+            current_files(&database_path),
+            vec!["Locked/keep.package"]
+        );
+    }
+
+    #[test]
     fn invalid_depths_become_observations_not_fatal_errors() {
         let (_temp, sims_root, database_path) = fixture();
         let mods_root = sims_root.join("Mods");
