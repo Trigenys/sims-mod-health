@@ -1,7 +1,7 @@
 use std::{
     fmt::{Display, Formatter},
-    fs::{self, File},
-    io::{self, BufReader, Read},
+    fs,
+    io,
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
     time::UNIX_EPOCH,
@@ -9,15 +9,12 @@ use std::{
 
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
 use crate::{
+    fingerprint,
     game::{self, ManualInspection, VersionState},
     storage::{self, StorageError},
 };
-
-const HASH_BUFFER_SIZE: usize = 64 * 1024;
-const HASH_ALGORITHM_VERSION: &str = "sha256-v1";
 const PROGRESS_INTERVAL: u64 = 50;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
@@ -344,11 +341,11 @@ where
         if cache_hit {
             progress.files_skipped += 1;
         } else {
-            delete_sha256(&transaction, local_file_id)?;
+            fingerprint::delete_cached_fingerprints(&transaction, local_file_id)?;
 
-            match sha256_file(&absolute_path, control) {
+            match fingerprint::sha256_file(&absolute_path, || control.is_cancelled()) {
                 Ok(Some(hash)) => {
-                    store_sha256(&transaction, local_file_id, &hash)?;
+                    fingerprint::store_sha256(&transaction, local_file_id, &hash)?;
                     transaction.execute(
                         "UPDATE local_files
                          SET hashed_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
@@ -662,7 +659,7 @@ fn load_cache(
              FROM local_files lf
              WHERE lf.installation_id = ?1
                AND lf.relative_path = ?2",
-            params![installation_id, relative_path, HASH_ALGORITHM_VERSION],
+            params![installation_id, relative_path, fingerprint::SHA256_ALGORITHM_VERSION],
             |row| {
                 Ok(LocalCache {
                     size_bytes: row.get(0)?,
@@ -718,56 +715,6 @@ fn upsert_local_file(
         ],
         |row| row.get(0),
     )
-}
-
-fn delete_sha256(connection: &Connection, local_file_id: i64) -> Result<(), rusqlite::Error> {
-    connection.execute(
-        "DELETE FROM fingerprints
-         WHERE local_file_id = ?1 AND kind = 'sha256'",
-        [local_file_id],
-    )?;
-    Ok(())
-}
-
-fn store_sha256(
-    connection: &Connection,
-    local_file_id: i64,
-    hash: &str,
-) -> Result<(), rusqlite::Error> {
-    connection.execute(
-        "INSERT INTO fingerprints (
-            local_file_id,
-            kind,
-            value,
-            algorithm_version,
-            computed_at
-         )
-         VALUES (?1, 'sha256', ?2, ?3, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
-        params![local_file_id, hash, HASH_ALGORITHM_VERSION],
-    )?;
-    Ok(())
-}
-
-fn sha256_file(path: &Path, control: &ScannerControl) -> Result<Option<String>, io::Error> {
-    let file = File::open(path)?;
-    let mut reader = BufReader::with_capacity(HASH_BUFFER_SIZE, file);
-    let mut hasher = Sha256::new();
-    let mut buffer = [0_u8; HASH_BUFFER_SIZE];
-
-    loop {
-        if control.is_cancelled() {
-            return Ok(None);
-        }
-
-        let bytes_read = reader.read(&mut buffer)?;
-        if bytes_read == 0 {
-            break;
-        }
-
-        hasher.update(&buffer[..bytes_read]);
-    }
-
-    Ok(Some(format!("{:x}", hasher.finalize())))
 }
 
 fn record_depth_observation(
