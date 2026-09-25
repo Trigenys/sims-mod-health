@@ -2,10 +2,7 @@ mod game;
 mod scanner;
 mod storage;
 
-use std::{
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 
 use game::{InstallationCandidate, ManualInspection};
 use scanner::{ScanMode, ScanSummary, ScannerControl};
