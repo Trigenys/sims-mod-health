@@ -233,3 +233,37 @@ A UI issue is not done until:
 - keyboard navigation is verified;
 - screenshots or visual-regression evidence are attached to the PR;
 - status wording follows the product state model.
+
+
+## 14. Implemented primitive map
+
+The target shell is implemented through reusable production boundaries rather than one monolithic page:
+
+- `src/components/layout/AppShell.tsx` — persistent application frame;
+- `src/components/layout/Sidebar.tsx` — primary navigation and registry state;
+- `src/components/layout/Topbar.tsx` — game context, search and scan action;
+- `src/components/ui/Button.tsx` — primary, secondary and text actions;
+- `src/components/ui/Panel.tsx` — semantic surface primitive;
+- `src/components/ui/SearchField.tsx` — labelled search control;
+- `src/components/ui/StatusBadge.tsx` — text + symbol + color status treatment;
+- `src/design/tokens.css` — canonical visual tokens;
+- `src/features/overview/OverviewPage.tsx` — composition only;
+- `src/features/overview/overview.fixture.ts` — static fixture isolated from presentation until real scanner data exists.
+
+The fixture is intentionally not a fake backend. Issue #17 will replace it with real health data.
+
+## 15. Visual evidence automation
+
+Pull requests that change the UI trigger `.github/workflows/visual-evidence.yml`.
+
+The workflow:
+
+1. builds the production frontend;
+2. starts the Vite preview server;
+3. launches Playwright Chromium;
+4. verifies no horizontal overflow at 1024×700 and 1440×900;
+5. verifies the active navigation destination remains exposed;
+6. captures full-page screenshots;
+7. uploads them as the `overview-visual-evidence` artifact.
+
+This provides repeatable evidence for UI acceptance without requiring a manual local screenshot workflow.

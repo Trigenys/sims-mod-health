@@ -1,0 +1,45 @@
+name: Visual evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/capture-visual-evidence.mjs"
+      - "package.json"
+      - "vite.config.ts"
+      - "vitest.config.ts"
+      - ".github/workflows/visual-evidence.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start preview server
+        run: |
+          npm run preview -- --host 127.0.0.1 > /tmp/sims-mod-health-vite.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173 > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/sims-mod-health-vite.log
+          exit 1
+      - run: npm run visual:verify
+      - uses: actions/upload-artifact@v6
+        with:
+          name: overview-visual-evidence
+          path: visual-evidence/*.png
+          if-no-files-found: error
+          retention-days: 14
