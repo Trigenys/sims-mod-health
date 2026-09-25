@@ -1,3 +1,4 @@
+mod dbpf;
 mod game;
 mod scanner;
 mod storage;
