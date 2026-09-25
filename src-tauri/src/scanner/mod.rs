@@ -159,6 +159,13 @@ struct PendingObservation {
     detail: String,
 }
 
+#[derive(Debug)]
+struct CollectedFiles {
+    files: Vec<(String, PathBuf, FileKind)>,
+    observations: Vec<PendingObservation>,
+    preserve_prefixes: Vec<String>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum FileKind {
     Package,
@@ -253,7 +260,11 @@ where
     F: FnMut(&ScanProgress),
 {
     let transaction = connection.transaction()?;
-    let (mut files, observations) = collect_supported_files(mods_root, control);
+    let CollectedFiles {
+        mut files,
+        observations,
+        preserve_prefixes,
+    } = collect_supported_files(mods_root, control);
 
     let mut progress = ScanProgress {
         files_seen: 0,
@@ -289,15 +300,26 @@ where
         let metadata = match fs::metadata(&absolute_path) {
             Ok(metadata) => metadata,
             Err(error) => {
+                let observation_kind = observation_kind_for_io(&error);
                 insert_observation(
                     &transaction,
                     scan_session_id,
                     &PendingObservation {
                         relative_path: Some(relative_path.clone()),
-                        kind: observation_kind_for_io(&error),
+                        kind: observation_kind,
                         detail: error.to_string(),
                     },
                 )?;
+
+                if observation_kind != "disappeared" {
+                    mark_existing_file_seen(
+                        &transaction,
+                        installation_id,
+                        scan_session_id,
+                        &relative_path,
+                    )?;
+                }
+
                 progress.observations += 1;
                 emit_progress_if_needed(&progress, on_progress);
                 continue;
@@ -398,11 +420,11 @@ where
         return Ok(summary);
     }
 
-    transaction.execute(
-        "DELETE FROM local_files
-         WHERE installation_id = ?1
-           AND (last_seen_scan_id IS NULL OR last_seen_scan_id <> ?2)",
-        params![installation_id, scan_session_id],
+    finalize_inventory(
+        &transaction,
+        installation_id,
+        scan_session_id,
+        &preserve_prefixes,
     )?;
 
     transaction.commit()?;
@@ -418,13 +440,11 @@ where
     })
 }
 
-fn collect_supported_files(
-    mods_root: &Path,
-    control: &ScannerControl,
-) -> (Vec<(String, PathBuf, FileKind)>, Vec<PendingObservation>) {
+fn collect_supported_files(mods_root: &Path, control: &ScannerControl) -> CollectedFiles {
     let mut pending_directories = vec![mods_root.to_path_buf()];
     let mut files = Vec::new();
     let mut observations = Vec::new();
+    let mut preserve_prefixes = Vec::new();
 
     while let Some(directory) = pending_directories.pop() {
         if control.is_cancelled() {
@@ -434,8 +454,14 @@ fn collect_supported_files(
         let entries = match fs::read_dir(&directory) {
             Ok(entries) => entries,
             Err(error) => {
+                let relative_path = relative_string(mods_root, &directory);
+                if observation_kind_for_io(&error) != "disappeared" {
+                    if let Some(prefix) = relative_path.clone() {
+                        preserve_prefixes.push(prefix);
+                    }
+                }
                 observations.push(PendingObservation {
-                    relative_path: relative_string(mods_root, &directory),
+                    relative_path,
                     kind: observation_kind_for_io(&error),
                     detail: error.to_string(),
                 });
@@ -447,11 +473,19 @@ fn collect_supported_files(
         for entry in entries {
             match entry {
                 Ok(entry) => collected_entries.push(entry),
-                Err(error) => observations.push(PendingObservation {
-                    relative_path: relative_string(mods_root, &directory),
-                    kind: observation_kind_for_io(&error),
-                    detail: error.to_string(),
-                }),
+                Err(error) => {
+                    let relative_path = relative_string(mods_root, &directory);
+                    if observation_kind_for_io(&error) != "disappeared" {
+                        if let Some(prefix) = relative_path.clone() {
+                            preserve_prefixes.push(prefix);
+                        }
+                    }
+                    observations.push(PendingObservation {
+                        relative_path,
+                        kind: observation_kind_for_io(&error),
+                        detail: error.to_string(),
+                    });
+                }
             }
         }
 
@@ -466,8 +500,14 @@ fn collect_supported_files(
             let file_type = match entry.file_type() {
                 Ok(file_type) => file_type,
                 Err(error) => {
+                    let relative_path = relative_string(mods_root, &path);
+                    if observation_kind_for_io(&error) != "disappeared" {
+                        if let Some(prefix) = relative_path.clone() {
+                            preserve_prefixes.push(prefix);
+                        }
+                    }
                     observations.push(PendingObservation {
-                        relative_path: relative_string(mods_root, &path),
+                        relative_path,
                         kind: observation_kind_for_io(&error),
                         detail: error.to_string(),
                     });
@@ -511,7 +551,60 @@ fn collect_supported_files(
         }
     }
 
-    (files, observations)
+    preserve_prefixes.sort();
+    preserve_prefixes.dedup();
+
+    CollectedFiles {
+        files,
+        observations,
+        preserve_prefixes,
+    }
+}
+
+fn mark_existing_file_seen(
+    connection: &Connection,
+    installation_id: i64,
+    scan_session_id: i64,
+    relative_path: &str,
+) -> Result<(), rusqlite::Error> {
+    connection.execute(
+        "UPDATE local_files
+         SET last_seen_scan_id = ?2
+         WHERE installation_id = ?1
+           AND relative_path = ?3",
+        params![installation_id, scan_session_id, relative_path],
+    )?;
+    Ok(())
+}
+
+fn finalize_inventory(
+    connection: &Connection,
+    installation_id: i64,
+    scan_session_id: i64,
+    preserve_prefixes: &[String],
+) -> Result<(), rusqlite::Error> {
+    for prefix in preserve_prefixes {
+        connection.execute(
+            "UPDATE local_files
+             SET last_seen_scan_id = ?2
+             WHERE installation_id = ?1
+               AND (
+                    ?3 = ''
+                    OR relative_path = ?3
+                    OR substr(relative_path, 1, length(?3) + 1) = ?3 || '/'
+               )",
+            params![installation_id, scan_session_id, prefix],
+        )?;
+    }
+
+    connection.execute(
+        "DELETE FROM local_files
+         WHERE installation_id = ?1
+           AND (last_seen_scan_id IS NULL OR last_seen_scan_id <> ?2)",
+        params![installation_id, scan_session_id],
+    )?;
+
+    Ok(())
 }
 
 fn file_kind(path: &Path) -> Option<FileKind> {
