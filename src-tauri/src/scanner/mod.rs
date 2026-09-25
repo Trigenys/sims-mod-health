@@ -544,7 +544,6 @@ fn load_cache(
     connection
         .query_row(
             "SELECT
-                lf.id,
                 lf.size_bytes,
                 lf.modified_ns,
                 EXISTS(
@@ -559,9 +558,9 @@ fn load_cache(
             params![installation_id, relative_path],
             |row| {
                 Ok(LocalCache {
-                    size_bytes: row.get(1)?,
-                    modified_ns: row.get(2)?,
-                    has_sha256: row.get::<_, i64>(3)? != 0,
+                    size_bytes: row.get(0)?,
+                    modified_ns: row.get(1)?,
+                    has_sha256: row.get::<_, i64>(2)? != 0,
                 })
             },
         )
@@ -741,6 +740,9 @@ fn upsert_installation(
     mods_root: &Path,
     game_version: Option<&str>,
 ) -> Result<i64, rusqlite::Error> {
+    let root = root.to_string_lossy().into_owned();
+    let mods_root = mods_root.to_string_lossy().into_owned();
+
     connection.query_row(
         "INSERT INTO installations (
             game_root,
@@ -762,11 +764,7 @@ fn upsert_installation(
             game_version = excluded.game_version,
             last_seen_at = excluded.last_seen_at
          RETURNING id",
-        params![
-            root.to_string_lossy(),
-            mods_root.to_string_lossy(),
-            game_version
-        ],
+        params![root, mods_root, game_version],
         |row| row.get(0),
     )
 }
