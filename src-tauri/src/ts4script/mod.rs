@@ -198,12 +198,7 @@ pub(crate) fn inspect_path(path: &Path) -> Result<ScriptArchiveMetadata, Ts4Scri
 fn inspect_reader<R: Read + Seek>(reader: R) -> Result<ScriptArchiveMetadata, Ts4ScriptError> {
     let mut archive = ZipArchive::new(reader)?;
 
-    if archive.len() > MAX_ARCHIVE_ENTRIES {
-        return Err(Ts4ScriptError::TooManyEntries {
-            count: archive.len(),
-            maximum: MAX_ARCHIVE_ENTRIES,
-        });
-    }
+    validate_entry_count(archive.len())?;
 
     let mut entries = Vec::with_capacity(archive.len());
     let mut module_names = BTreeSet::new();
@@ -231,18 +226,7 @@ fn inspect_reader<R: Read + Seek>(reader: R) -> Result<ScriptArchiveMetadata, Ts
         let expanded_size = entry.size();
         validate_entry_limits(&name, compressed_size, expanded_size)?;
 
-        total_expanded_bytes = total_expanded_bytes
-            .checked_add(expanded_size)
-            .ok_or(Ts4ScriptError::ArithmeticOverflow(
-                "total TS4Script expanded bytes",
-            ))?;
-
-        if total_expanded_bytes > MAX_TOTAL_EXPANDED_BYTES {
-            return Err(Ts4ScriptError::ExpandedBudgetExceeded {
-                expanded: total_expanded_bytes,
-                maximum: MAX_TOTAL_EXPANDED_BYTES,
-            });
-        }
+        total_expanded_bytes = add_expanded_budget(total_expanded_bytes, expanded_size)?;
 
         let directory = entry.is_dir();
         if !directory {
@@ -303,6 +287,34 @@ fn inspect_reader<R: Read + Seek>(reader: R) -> Result<ScriptArchiveMetadata, Ts
         metadata_bytes_read,
         metadata_budget_exhausted,
     })
+}
+
+fn validate_entry_count(count: usize) -> Result<(), Ts4ScriptError> {
+    if count > MAX_ARCHIVE_ENTRIES {
+        return Err(Ts4ScriptError::TooManyEntries {
+            count,
+            maximum: MAX_ARCHIVE_ENTRIES,
+        });
+    }
+
+    Ok(())
+}
+
+fn add_expanded_budget(current: u64, next: u64) -> Result<u64, Ts4ScriptError> {
+    let expanded = current
+        .checked_add(next)
+        .ok_or(Ts4ScriptError::ArithmeticOverflow(
+            "total TS4Script expanded bytes",
+        ))?;
+
+    if expanded > MAX_TOTAL_EXPANDED_BYTES {
+        return Err(Ts4ScriptError::ExpandedBudgetExceeded {
+            expanded,
+            maximum: MAX_TOTAL_EXPANDED_BYTES,
+        });
+    }
+
+    Ok(expanded)
 }
 
 fn validate_entry_path(name: &str) -> Result<(), Ts4ScriptError> {
@@ -606,6 +618,35 @@ mod tests {
                 "path should be rejected: {path}"
             );
         }
+    }
+
+    #[test]
+    fn full_archive_rejects_parent_traversal_entry() {
+        let bytes = archive(&[("../escape.pyc", b"compiled")]);
+
+        assert!(matches!(
+            inspect_bytes(&bytes),
+            Err(Ts4ScriptError::UnsafePath { .. })
+        ));
+    }
+
+    #[test]
+    fn entry_count_and_total_expanded_budgets_are_enforced() {
+        assert!(matches!(
+            validate_entry_count(MAX_ARCHIVE_ENTRIES + 1),
+            Err(Ts4ScriptError::TooManyEntries { .. })
+        ));
+
+        assert_eq!(
+            add_expanded_budget(MAX_TOTAL_EXPANDED_BYTES - 1, 1)
+                .expect("exact expanded-data budget"),
+            MAX_TOTAL_EXPANDED_BYTES
+        );
+
+        assert!(matches!(
+            add_expanded_budget(MAX_TOTAL_EXPANDED_BYTES, 1),
+            Err(Ts4ScriptError::ExpandedBudgetExceeded { .. })
+        ));
     }
 
     #[test]
