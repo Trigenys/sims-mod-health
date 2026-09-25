@@ -103,6 +103,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 - [Windows Sims 4 discovery](docs/game-discovery/WINDOWS_DISCOVERY.md)
 - [Read-only DBPF parser](docs/dbpf/READ_ONLY_PARSER.md)
 - [Safe TS4Script archive inspector](docs/ts4script/SAFE_INSPECTOR.md)
+- [Artifact fingerprints and exact duplicates](docs/fingerprints/ARTIFACT_IDENTITIES.md)
 - [Incremental Mods scanner](docs/scanner/INCREMENTAL_SCANNER.md)
 - [Design Target](docs/design/TARGET_UI.md)
 - [PERT](docs/planning/PERT.md)

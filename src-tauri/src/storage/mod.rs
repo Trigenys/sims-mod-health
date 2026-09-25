@@ -7,7 +7,7 @@ use std::{
 
 use rusqlite::Connection;
 
-pub(crate) const LATEST_SCHEMA_VERSION: u32 = 3;
+pub(crate) const LATEST_SCHEMA_VERSION: u32 = 4;
 
 struct Migration {
     version: u32,
@@ -26,6 +26,10 @@ const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 3,
         sql: include_str!("../../migrations/0003_scan_observations.sql"),
+    },
+    Migration {
+        version: 4,
+        sql: include_str!("../../migrations/0004_script_fingerprints.sql"),
     },
 ];
 
@@ -283,6 +287,62 @@ mod tests {
             .expect("local file survives migration");
 
         assert_eq!(relative_path, "Gameplay/example.package");
+    }
+
+    #[test]
+    fn version_three_upgrades_fingerprint_schema_without_losing_rows() {
+        let mut connection = in_memory_database();
+        apply_migrations_through(&mut connection, 3).expect("apply v3");
+
+        connection
+            .execute(
+                "INSERT INTO installations (
+                    game_root, mods_root, platform, discovered_at, last_seen_at
+                 )
+                 VALUES ('game', 'mods', 'windows', 'now', 'now')",
+                [],
+            )
+            .expect("insert installation");
+        connection
+            .execute(
+                "INSERT INTO local_files (
+                    installation_id, relative_path, file_kind
+                 )
+                 VALUES (1, 'mod.package', 'package')",
+                [],
+            )
+            .expect("insert local file");
+        connection
+            .execute(
+                "INSERT INTO fingerprints (
+                    local_file_id, kind, value, algorithm_version, computed_at
+                 )
+                 VALUES (1, 'sha256', 'abc', 'sha256-v1', 'now')",
+                [],
+            )
+            .expect("insert v3 fingerprint");
+
+        migrate(&mut connection).expect("upgrade to v4");
+
+        let preserved: String = connection
+            .query_row(
+                "SELECT value FROM fingerprints
+                 WHERE local_file_id = 1 AND kind = 'sha256'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("preserved SHA fingerprint");
+        assert_eq!(preserved, "abc");
+
+        connection
+            .execute(
+                "INSERT INTO fingerprints (
+                    local_file_id, kind, value, algorithm_version, computed_at
+                 )
+                 VALUES (1, 'script_signature', 'script-id', 'v1', 'now')",
+                [],
+            )
+            .expect("v4 accepts script signature");
     }
 
     #[test]

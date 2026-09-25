@@ -51,7 +51,7 @@ Parsed technical metadata for a local file, independent of a canonical cloud ide
 
 ### fingerprints
 
-Locally computed SHA-256, CurseForge, quick or resource-signature identities.
+Locally computed SHA-256, CurseForge, quick, DBPF resource-signature or TS4Script identity-signature fingerprints.
 
 ### conflict_observations
 
@@ -77,7 +77,8 @@ Current versions:
 
 1. initial local persistence model;
 2. incremental-scan cache metadata and index;
-3. recoverable scan observations tied to scan sessions.
+3. recoverable scan observations tied to scan sessions;
+4. persisted TS4Script identity fingerprints while preserving existing fingerprint rows.
 
 Migrations are **forward-only**.
 
@@ -106,7 +107,7 @@ The schema intentionally contains no required cloud account, creator, canonical 
 Rust tests cover:
 
 - migration from zero to the latest schema;
-- forward migration from v1 to v2 with data preservation;
+- forward migration with data preservation, including fingerprint schema v4;
 - presence of the incremental cache index;
 - foreign-key enforcement;
 - refusal to downgrade a future schema version.
