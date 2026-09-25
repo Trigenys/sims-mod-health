@@ -30,60 +30,64 @@ impl<'a> ExactDuplicateQuery<'a> {
         &self,
         installation_id: i64,
     ) -> Result<Vec<ExactDuplicateGroup>, rusqlite::Error> {
-        let mut hashes = self.connection.prepare(
-            "SELECT f.value
+        let mut statement = self.connection.prepare(
+            "SELECT f.value, lf.id, lf.relative_path
              FROM fingerprints f
              JOIN local_files lf ON lf.id = f.local_file_id
              WHERE lf.installation_id = ?1
                AND f.kind = 'sha256'
                AND f.algorithm_version = ?2
-             GROUP BY f.value
-             HAVING COUNT(*) > 1
-             ORDER BY f.value",
+               AND f.value IN (
+                    SELECT duplicate.value
+                    FROM fingerprints duplicate
+                    JOIN local_files duplicate_file
+                      ON duplicate_file.id = duplicate.local_file_id
+                    WHERE duplicate_file.installation_id = ?1
+                      AND duplicate.kind = 'sha256'
+                      AND duplicate.algorithm_version = ?2
+                    GROUP BY duplicate.value
+                    HAVING COUNT(*) > 1
+               )
+             ORDER BY f.value, lf.relative_path, lf.id",
         )?;
 
-        let duplicate_hashes = hashes
-            .query_map(
-                params![installation_id, SHA256_ALGORITHM_VERSION],
-                |row| row.get::<_, String>(0),
-            )?
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let mut groups = Vec::with_capacity(duplicate_hashes.len());
-
-        for sha256 in duplicate_hashes {
-            let mut files = self.connection.prepare(
-                "SELECT lf.id, lf.relative_path
-                 FROM local_files lf
-                 JOIN fingerprints f ON f.local_file_id = lf.id
-                 WHERE lf.installation_id = ?1
-                   AND f.kind = 'sha256'
-                   AND f.algorithm_version = ?2
-                   AND f.value = ?3
-                 ORDER BY lf.relative_path, lf.id",
-            )?;
-
-            let members = files
-                .query_map(
-                    params![installation_id, SHA256_ALGORITHM_VERSION, sha256],
-                    |row| {
-                        Ok(DuplicateFile {
-                            local_file_id: row.get(0)?,
-                            relative_path: row.get(1)?,
-                        })
+        let rows = statement.query_map(
+            params![installation_id, SHA256_ALGORITHM_VERSION],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    DuplicateFile {
+                        local_file_id: row.get(1)?,
+                        relative_path: row.get(2)?,
                     },
-                )?
-                .collect::<Result<Vec<_>, _>>()?;
+                ))
+            },
+        )?;
 
-            groups.push(ExactDuplicateGroup {
-                sha256,
-                files: members,
-            });
+        let mut groups: Vec<ExactDuplicateGroup> = Vec::new();
+
+        for row in rows {
+            let (sha256, file) = row?;
+
+            if groups
+                .last()
+                .is_none_or(|group| group.sha256 != sha256)
+            {
+                groups.push(ExactDuplicateGroup {
+                    sha256: sha256.clone(),
+                    files: Vec::new(),
+                });
+            }
+
+            groups
+                .last_mut()
+                .expect("duplicate group exists after insertion")
+                .files
+                .push(file);
         }
 
         Ok(groups)
-    }
-}
+    }}
 
 pub(crate) fn exact_duplicate_groups(
     connection: &Connection,
