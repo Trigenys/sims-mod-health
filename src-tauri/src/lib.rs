@@ -1,10 +1,24 @@
+mod game;
 mod storage;
 
+use std::path::PathBuf;
+
+use game::{InstallationCandidate, ManualInspection};
 use tauri::Manager;
 
 #[tauri::command]
 fn health() -> &'static str {
     "ok"
+}
+
+#[tauri::command]
+fn discover_sims_installations() -> Vec<InstallationCandidate> {
+    game::discover_installations()
+}
+
+#[tauri::command]
+fn inspect_sims_installation(path: String) -> ManualInspection {
+    game::inspect_manual_path(&PathBuf::from(path))
 }
 
 pub fn run() {
@@ -15,7 +29,11 @@ pub fn run() {
             storage::initialize(&database_path)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![health])
+        .invoke_handler(tauri::generate_handler![
+            health,
+            discover_sims_installations,
+            inspect_sims_installation
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");
 }
