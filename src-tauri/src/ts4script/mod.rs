@@ -2,7 +2,7 @@ use std::{
     collections::BTreeSet,
     fmt::{Display, Formatter},
     fs::File,
-    io::{self, Read, Seek},
+    io::{self, Read, Seek, SeekFrom},
     path::{Path, PathBuf},
 };
 
@@ -19,6 +19,10 @@ pub(crate) const MAX_ENTRY_NAME_BYTES: usize = 1_024;
 pub(crate) const MAX_METADATA_ENTRY_BYTES: u64 = 64 * 1024;
 pub(crate) const MAX_TOTAL_METADATA_BYTES: u64 = 256 * 1024;
 pub(crate) const MAX_VERSION_HINTS: usize = 16;
+
+const ZIP_EOCD_MIN_BYTES: usize = 22;
+const ZIP_MAX_COMMENT_BYTES: usize = u16::MAX as usize;
+const ZIP_EOCD_SIGNATURE: [u8; 4] = [0x50, 0x4b, 0x05, 0x06];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -53,6 +57,7 @@ pub(crate) struct ScriptArchiveMetadata {
 pub(crate) enum Ts4ScriptError {
     Io(io::Error),
     Zip(ZipError),
+    MalformedArchive(&'static str),
     ArchiveTooLarge {
         actual: u64,
         maximum: u64,
@@ -102,6 +107,9 @@ impl Display for Ts4ScriptError {
         match self {
             Self::Io(error) => write!(formatter, "TS4Script I/O error: {error}"),
             Self::Zip(error) => write!(formatter, "invalid TS4Script ZIP archive: {error}"),
+            Self::MalformedArchive(reason) => {
+                write!(formatter, "invalid TS4Script ZIP archive: {reason}")
+            }
             Self::ArchiveTooLarge { actual, maximum } => write!(
                 formatter,
                 "TS4Script archive is {actual} bytes; maximum supported is {maximum}"
@@ -182,23 +190,19 @@ impl From<ZipError> for Ts4ScriptError {
 }
 
 pub(crate) fn inspect_path(path: &Path) -> Result<ScriptArchiveMetadata, Ts4ScriptError> {
-    let file = File::open(path)?;
-    let archive_size = file.metadata()?.len();
-
-    if archive_size > MAX_ARCHIVE_BYTES {
-        return Err(Ts4ScriptError::ArchiveTooLarge {
-            actual: archive_size,
-            maximum: MAX_ARCHIVE_BYTES,
-        });
-    }
-
-    inspect_reader(file)
+    inspect_reader(File::open(path)?)
 }
 
-fn inspect_reader<R: Read + Seek>(reader: R) -> Result<ScriptArchiveMetadata, Ts4ScriptError> {
+fn inspect_reader<R: Read + Seek>(mut reader: R) -> Result<ScriptArchiveMetadata, Ts4ScriptError> {
+    let declared_entries = preflight_archive(&mut reader)?;
     let mut archive = ZipArchive::new(reader)?;
 
     validate_entry_count(archive.len())?;
+    if archive.len() != declared_entries {
+        return Err(Ts4ScriptError::MalformedArchive(
+            "central-directory entry count does not match EOCD",
+        ));
+    }
 
     let mut entries = Vec::with_capacity(archive.len());
     let mut module_names = BTreeSet::new();
@@ -283,6 +287,68 @@ fn inspect_reader<R: Read + Seek>(reader: R) -> Result<ScriptArchiveMetadata, Ts
         metadata_bytes_read,
         metadata_budget_exhausted,
     })
+}
+
+fn preflight_archive<R: Read + Seek>(reader: &mut R) -> Result<usize, Ts4ScriptError> {
+    let archive_size = reader.seek(SeekFrom::End(0))?;
+
+    if archive_size > MAX_ARCHIVE_BYTES {
+        return Err(Ts4ScriptError::ArchiveTooLarge {
+            actual: archive_size,
+            maximum: MAX_ARCHIVE_BYTES,
+        });
+    }
+
+    let maximum_tail = ZIP_EOCD_MIN_BYTES
+        .checked_add(ZIP_MAX_COMMENT_BYTES)
+        .ok_or(Ts4ScriptError::ArithmeticOverflow("ZIP EOCD search window"))?;
+    let tail_size = usize::try_from(archive_size.min(maximum_tail as u64))
+        .map_err(|_| Ts4ScriptError::ArithmeticOverflow("ZIP tail size"))?;
+
+    if tail_size < ZIP_EOCD_MIN_BYTES {
+        return Err(Ts4ScriptError::MalformedArchive(
+            "end-of-central-directory record not found",
+        ));
+    }
+
+    let start = archive_size
+        .checked_sub(tail_size as u64)
+        .ok_or(Ts4ScriptError::ArithmeticOverflow("ZIP tail offset"))?;
+    reader.seek(SeekFrom::Start(start))?;
+
+    let mut tail = vec![0_u8; tail_size];
+    reader.read_exact(&mut tail)?;
+
+    let mut declared_entries = None;
+    for offset in (0..=tail.len() - ZIP_EOCD_MIN_BYTES).rev() {
+        if tail[offset..offset + 4] != ZIP_EOCD_SIGNATURE {
+            continue;
+        }
+
+        let comment_length =
+            u16::from_le_bytes([tail[offset + 20], tail[offset + 21]]) as usize;
+        let expected_end = offset
+            .checked_add(ZIP_EOCD_MIN_BYTES)
+            .and_then(|value| value.checked_add(comment_length))
+            .ok_or(Ts4ScriptError::ArithmeticOverflow("ZIP EOCD length"))?;
+
+        if expected_end != tail.len() {
+            continue;
+        }
+
+        let total_entries =
+            u16::from_le_bytes([tail[offset + 10], tail[offset + 11]]) as usize;
+        validate_entry_count(total_entries)?;
+        declared_entries = Some(total_entries);
+        break;
+    }
+
+    let declared_entries = declared_entries.ok_or(Ts4ScriptError::MalformedArchive(
+        "end-of-central-directory record not found",
+    ))?;
+
+    reader.seek(SeekFrom::Start(0))?;
+    Ok(declared_entries)
 }
 
 fn validate_entry_count(count: usize) -> Result<(), Ts4ScriptError> {
@@ -613,6 +679,26 @@ mod tests {
     }
 
     #[test]
+    fn entry_count_limit_is_checked_before_zip_archive_construction() {
+        let cursor = Cursor::new(Vec::new());
+        let mut writer = ZipWriter::new(cursor);
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+
+        for index in 0..=MAX_ARCHIVE_ENTRIES {
+            writer
+                .start_file(format!("module_{index}.pyc"), options)
+                .expect("start count-limit entry");
+        }
+
+        let bytes = writer.finish().expect("finish count-limit ZIP").into_inner();
+
+        assert!(matches!(
+            inspect_bytes(&bytes),
+            Err(Ts4ScriptError::TooManyEntries { .. })
+        ));
+    }
+
+    #[test]
     fn full_archive_rejects_parent_traversal_entry() {
         let bytes = archive(&[("../escape.pyc", b"compiled")]);
 
@@ -697,7 +783,10 @@ mod tests {
 
         let result = inspect_path(&path);
 
-        assert!(matches!(result, Err(Ts4ScriptError::Zip(_))));
+        assert!(matches!(
+            result,
+            Err(Ts4ScriptError::MalformedArchive(_)) | Err(Ts4ScriptError::Zip(_))
+        ));
         assert_eq!(std::fs::read(&path).expect("read malformed source"), bytes);
     }
 
