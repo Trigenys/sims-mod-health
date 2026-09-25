@@ -7,7 +7,7 @@ use std::{
 
 use rusqlite::Connection;
 
-pub(crate) const LATEST_SCHEMA_VERSION: u32 = 3;
+pub(crate) const LATEST_SCHEMA_VERSION: u32 = 4;
 
 struct Migration {
     version: u32,
@@ -26,6 +26,10 @@ const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 3,
         sql: include_str!("../../migrations/0003_scan_observations.sql"),
+    },
+    Migration {
+        version: 4,
+        sql: include_str!("../../migrations/0004_script_fingerprints.sql"),
     },
 ];
 
