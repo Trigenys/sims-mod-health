@@ -4,8 +4,7 @@ use rusqlite::{params, Connection};
 
 use super::{
     domain::{
-        ArtifactKind, FingerprintError, FingerprintKind, FingerprintValue,
-        SHA256_ALGORITHM_VERSION,
+        ArtifactKind, FingerprintError, FingerprintKind, FingerprintValue, SHA256_ALGORITHM_VERSION,
     },
     providers,
 };
@@ -187,8 +186,12 @@ mod tests {
         let (_temp, connection, local_file_id) = database_fixture();
         let repository = FingerprintRepository::new(&connection);
 
-        repository.store_sha256(local_file_id, "old").expect("store old SHA");
-        repository.store_sha256(local_file_id, "new").expect("replace SHA");
+        repository
+            .store_sha256(local_file_id, "old")
+            .expect("store old SHA");
+        repository
+            .store_sha256(local_file_id, "new")
+            .expect("replace SHA");
 
         let values = connection
             .prepare(
@@ -209,7 +212,9 @@ mod tests {
         let (_temp, connection, local_file_id) = database_fixture();
         let repository = FingerprintRepository::new(&connection);
 
-        repository.store_sha256(local_file_id, "old-sha").expect("store SHA");
+        repository
+            .store_sha256(local_file_id, "old-sha")
+            .expect("store SHA");
         repository
             .store(
                 local_file_id,
@@ -241,7 +246,9 @@ mod tests {
         let (_temp, connection, local_file_id) = database_fixture();
         let repository = FingerprintRepository::new(&connection);
 
-        repository.store_sha256(local_file_id, "local-sha").expect("store SHA");
+        repository
+            .store_sha256(local_file_id, "local-sha")
+            .expect("store SHA");
         repository
             .store(
                 local_file_id,
