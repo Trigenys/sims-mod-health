@@ -607,8 +607,8 @@ mod tests {
             "../escape.pyc",
             "safe/../../escape.pyc",
             "/absolute.pyc",
-            "\\server\share\evil.pyc",
-            "C:\\Windows\\evil.pyc",
+            r"\\server\share\evil.pyc",
+            r"C:\Windows\evil.pyc",
         ] {
             assert!(
                 matches!(
