@@ -1054,8 +1054,7 @@ async fn resolve_installed_releases(
     installation_id: i64,
     client: &RegistryClient,
 ) -> Result<InstalledResolution, MutationError> {
-    let (eligible_count, probes) =
-        load_installed_resolution_input(database_path, installation_id)?;
+    let (eligible_count, probes) = load_installed_resolution_input(database_path, installation_id)?;
     let resolutions = client.resolve_artifacts(&probes).await?;
     Ok(collect_deterministic_releases(eligible_count, &resolutions))
 }
