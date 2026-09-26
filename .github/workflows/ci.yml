@@ -10,30 +10,110 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.scope.outputs.frontend }}
+      rust: ${{ steps.scope.outputs.rust }}
+      registry: ${{ steps.scope.outputs.registry }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect affected stacks
+        id: scope
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+            echo "registry=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          changed_files="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+
+          frontend=false
+          rust=false
+          registry=false
+
+          while IFS= read -r file; do
+            case "$file" in
+              src/*|package.json|package-lock.json|index.html|vite.config.*|tsconfig*.json)
+                frontend=true
+                ;;
+            esac
+
+            case "$file" in
+              src-tauri/*)
+                rust=true
+                ;;
+            esac
+
+            case "$file" in
+              services/registry-api/*)
+                registry=true
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "rust=$rust" >> "$GITHUB_OUTPUT"
+          echo "registry=$registry" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### CI scope"
+            echo
+            echo "| Stack | Run |"
+            echo "| --- | --- |"
+            echo "| Frontend | $frontend |"
+            echo "| Rust / Tauri | $rust |"
+            echo "| Registry API | $registry |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - run: npm install
+          cache: npm
+      - run: npm ci
       - run: npm run build
       - run: npm test
 
   rust:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+
+      - name: Cache Rust dependencies and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Check Rust formatting
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
-      - name: Check native crate
-        run: cargo check --manifest-path src-tauri/Cargo.toml
-      - name: Run native tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
 
+      - name: Run native tests
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
 
   registry:
+    needs: changes
+    if: needs.changes.outputs.registry == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
