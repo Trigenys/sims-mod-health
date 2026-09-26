@@ -212,14 +212,14 @@ fn load_package_files(
          ORDER BY relative_path, id",
     )?;
 
-    statement
-        .query_map(params![installation_id], |row| {
-            Ok(PackageFile {
-                local_file_id: row.get(0)?,
-                relative_path: row.get(1)?,
-            })
-        })?
-        .collect()
+    let rows = statement.query_map(params![installation_id], |row| {
+        Ok(PackageFile {
+            local_file_id: row.get(0)?,
+            relative_path: row.get(1)?,
+        })
+    })?;
+    let packages = rows.collect::<Result<Vec<_>, _>>()?;
+    Ok(packages)
 }
 
 fn safe_relative_path(value: &str) -> bool {
