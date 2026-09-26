@@ -16,16 +16,43 @@ permissions:
   contents: read
 
 jobs:
-  benchmark:
+  scanner:
+    name: 5k-file scanner
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Cache Rust dependencies and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
       - name: Run 5k-file scanner benchmark
         run: >
           cargo test
           --manifest-path src-tauri/Cargo.toml
           scanner::tests::benchmark_5000_file_full_and_incremental_scan
           -- --ignored --nocapture
+
+  duplicates:
+    name: 5k-row duplicate grouping
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Cache Rust dependencies and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
       - name: Run 5k-row duplicate grouping benchmark
         run: >
           cargo test
