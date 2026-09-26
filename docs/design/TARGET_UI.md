@@ -247,14 +247,16 @@ The target shell is implemented through reusable production boundaries rather th
 - `src/components/ui/SearchField.tsx` — labelled search control;
 - `src/components/ui/StatusBadge.tsx` — text + symbol + color status treatment;
 - `src/design/tokens.css` — canonical visual tokens;
-- `src/features/overview/OverviewPage.tsx` — composition only;
-- `src/features/overview/overview.fixture.ts` — static fixture isolated from presentation until real scanner data exists;
+- `src/features/overview/OverviewPage.tsx` — real-data triage composition with scan/registry states;
+- `src/features/overview/overview.gateway.ts` — Tauri snapshot, scan command and progress-event boundary;
+- `src/features/overview/overview.types.ts` — frontend contract for real Overview data;
+- `src/features/overview/overview.visual.ts` — visual-test-only fixture, never the default runtime data source;
 - `src/features/library/LibraryPage.tsx` — searchable/filterable local inventory;
 - `src/features/library/ModDetailPage.tsx` — evidence-first detail surface;
 - `src/features/library/LibraryStateNotice.tsx` — offline, partial and failure resilience states;
 - `src/features/library/library.fixture.ts` — product-surface fixture isolated from future scanner/registry adapters.
 
-The fixtures are intentionally not fake backends. Issue #17 will replace Overview fixture data with real health data, while Library adapters can be wired to resolved local inventory without changing the presentation contract.
+The Overview now uses the local scanner plus registry resolution, compatibility and dependency/conflict engines. Its fixture exists only for deterministic visual evidence. Library adapters can be wired to resolved scanner/registry data without changing the presentation contract.
 
 ## 15. Visual evidence automation
 

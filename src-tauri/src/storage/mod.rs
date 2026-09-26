@@ -7,7 +7,7 @@ use std::{
 
 use rusqlite::Connection;
 
-pub(crate) const LATEST_SCHEMA_VERSION: u32 = 4;
+pub(crate) const LATEST_SCHEMA_VERSION: u32 = 5;
 
 struct Migration {
     version: u32,
@@ -30,6 +30,10 @@ const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 4,
         sql: include_str!("../../migrations/0004_script_fingerprints.sql"),
+    },
+    Migration {
+        version: 5,
+        sql: include_str!("../../migrations/0005_overview_scan_summary.sql"),
     },
 ];
 
@@ -287,6 +291,10 @@ mod tests {
             .expect("local file survives migration");
 
         assert_eq!(relative_path, "Gameplay/example.package");
+
+        let scan_columns = column_names(&connection, "scan_sessions");
+        assert!(scan_columns.contains("files_skipped"));
+        assert!(scan_columns.contains("observation_count"));
     }
 
     #[test]

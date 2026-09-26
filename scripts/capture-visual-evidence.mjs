@@ -5,8 +5,8 @@ const baseUrl = process.env.VISUAL_BASE_URL ?? "http://127.0.0.1:4173";
 const outputDir = process.env.VISUAL_OUTPUT_DIR ?? "visual-evidence";
 
 const cases = [
-  { name: "overview-1024x700", width: 1024, height: 700, path: "/", active: "Overview" },
-  { name: "overview-1440x900", width: 1440, height: 900, path: "/", active: "Overview" },
+  { name: "overview-1024x700", width: 1024, height: 700, path: "/?visual=overview", active: "Overview" },
+  { name: "overview-1440x900", width: 1440, height: 900, path: "/?visual=overview", active: "Overview" },
   { name: "library-1024x700", width: 1024, height: 700, path: "/?surface=library", active: "Library" },
   { name: "library-1440x900", width: 1440, height: 900, path: "/?surface=library", active: "Library" },
   { name: "detail-1024x700", width: 1024, height: 700, path: "/?surface=detail&mod=rpo", active: "Library" },
@@ -29,6 +29,10 @@ try {
   for (const testCase of cases) {
     await page.setViewportSize({ width: testCase.width, height: testCase.height });
     await page.goto(new URL(testCase.path, baseUrl).toString(), { waitUntil: "networkidle" });
+
+    if (testCase.path.includes("visual=overview")) {
+      await page.locator("#overview-title").waitFor();
+    }
 
     const layout = await page.evaluate(() => ({
       viewportWidth: window.innerWidth,
