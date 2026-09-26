@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   changes:
@@ -17,49 +18,44 @@ jobs:
       rust: ${{ steps.scope.outputs.rust }}
       registry: ${{ steps.scope.outputs.registry }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
       - name: Detect affected stacks
         id: scope
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "frontend=true" >> "$GITHUB_OUTPUT"
-            echo "rust=true" >> "$GITHUB_OUTPUT"
-            echo "registry=true" >> "$GITHUB_OUTPUT"
-            exit 0
+            changed_files=""
+            frontend=true
+            rust=true
+            registry=true
+          else
+            changed_files="$(gh api --paginate               -H "Accept: application/vnd.github+json"               "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100"               --jq '.[].filename')"
+
+            frontend=false
+            rust=false
+            registry=false
+
+            while IFS= read -r file; do
+              case "$file" in
+                src/*|package.json|package-lock.json|index.html|vite.config.*|tsconfig*.json)
+                  frontend=true
+                  ;;
+              esac
+
+              case "$file" in
+                src-tauri/*)
+                  rust=true
+                  ;;
+              esac
+
+              case "$file" in
+                services/registry-api/*)
+                  registry=true
+                  ;;
+              esac
+            done <<< "$changed_files"
           fi
-
-          base_sha="${{ github.event.pull_request.base.sha }}"
-          head_sha="${{ github.event.pull_request.head.sha }}"
-          changed_files="$(git diff --name-only "$base_sha...$head_sha")"
-
-          frontend=false
-          rust=false
-          registry=false
-
-          while IFS= read -r file; do
-            case "$file" in
-              src/*|package.json|package-lock.json|index.html|vite.config.*|tsconfig*.json)
-                frontend=true
-                ;;
-            esac
-
-            case "$file" in
-              src-tauri/*)
-                rust=true
-                ;;
-            esac
-
-            case "$file" in
-              services/registry-api/*)
-                registry=true
-                ;;
-            esac
-          done <<< "$changed_files"
 
           echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
           echo "rust=$rust" >> "$GITHUB_OUTPUT"
