@@ -148,7 +148,7 @@ class GitHubReleasesIngestionRepository:
         self._session.execute(
             delete(Fingerprint).where(
                 Fingerprint.artifact_id == artifact.id,
-                Fingerprint.algorithm_version == "sha256-github-asset-digest-v1",
+                Fingerprint.kind == "sha256",
             )
         )
 
