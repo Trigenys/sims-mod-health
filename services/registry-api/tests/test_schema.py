@@ -35,3 +35,14 @@ def test_health_affecting_tables_require_provenance() -> None:
     for columns in [patch_columns, report_columns]:
         assert columns["source_id"]["nullable"] is False
         assert columns["retrieved_at"]["nullable"] is False
+
+
+def test_compatibility_report_supports_exact_patch_or_range_scope() -> None:
+    columns = {
+        column["name"]: column
+        for column in inspect(engine).get_columns("compatibility_reports")
+    }
+
+    assert columns["patch_id"]["nullable"] is True
+    assert columns["patch_min_version"]["nullable"] is True
+    assert columns["patch_max_version"]["nullable"] is True

@@ -142,6 +142,30 @@ Probabilistic candidates retain structured evidence, confidence and score. Ambig
 
 See `docs/registry/MATCHING_ENGINE.md` for scoring, batching and candidate-bound details.
 
+## Health evaluation contract
+
+Endpoint:
+
+```text
+POST /v1/health/evaluate
+```
+
+The desktop sends resolved registry release IDs and the current normalized Sims patch:
+
+```json
+{
+  "patch_version": "1.128.90.1030",
+  "platform": "windows",
+  "installed_release_ids": ["<uuid>"]
+}
+```
+
+Each item returns the final triage state separately from the underlying compatibility state. Update availability is computed independently and includes the target release compatibility state, so a newer version is never mistaken for a confirmed-compatible version.
+
+Compatibility evidence is patch-scoped, source-provenanced and inspectable. Exact-patch evidence outranks range evidence. Conflicting current evidence is returned as `unknown` with `disputed: true` instead of silently picking one source.
+
+See `docs/health/PATCH_COMPATIBILITY_ENGINE.md`.
+
 ## Validation errors
 
 Pydantic validation errors are normalized to:

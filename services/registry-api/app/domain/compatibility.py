@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -34,15 +34,25 @@ class CompatibilityReport(Base):
             "patch_id",
             "retrieved_at",
         ),
+        CheckConstraint(
+            "("
+            "(patch_id IS NOT NULL AND patch_min_version IS NULL AND patch_max_version IS NULL)"
+            " OR "
+            "(patch_id IS NULL AND (patch_min_version IS NOT NULL OR patch_max_version IS NOT NULL))"
+            ")",
+            name="ck_compatibility_patch_scope",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     release_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("mod_releases.id", ondelete="CASCADE"), index=True
     )
-    patch_id: Mapped[uuid.UUID] = mapped_column(
+    patch_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("game_patches.id", ondelete="CASCADE"), index=True
     )
+    patch_min_version: Mapped[str | None] = mapped_column(String(96))
+    patch_max_version: Mapped[str | None] = mapped_column(String(96))
     status: Mapped[str] = mapped_column(String(48))
     source_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("sources.id", ondelete="RESTRICT"), index=True
