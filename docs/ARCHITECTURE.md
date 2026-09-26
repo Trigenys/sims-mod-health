@@ -49,7 +49,7 @@ Planned native modules:
 - DBPF read-only parser
 - TS4Script archive inspector
 - SHA-256 and source-specific fingerprints
-- duplicate and resource-key analysis
+- duplicate and resource-key analysis (local exact duplicate + Potential conflict evidence)
 - diagnostics parsing
 - SQLite persistence
 - backup and rollback
@@ -131,6 +131,8 @@ Core entities:
 - UserReport
 
 A compatibility statement must include provenance and scope. A status without evidence is not authoritative.
+
+Dependency and known-incompatibility rules also retain provenance. File-level DBPF overlap stays in the local trust domain; the registry receives resolved release IDs rather than local resource keys.
 
 ## 8. Resolution pipeline
 

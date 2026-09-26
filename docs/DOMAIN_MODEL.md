@@ -78,13 +78,17 @@ Every report requires provenance. Exact patch evidence is more specific than ran
 
 Update availability is derived from release ordering and remains separate from compatibility evidence.
 
-### Dependency
+### DependencyRule
 
-Directed relation between releases/mods with optional version constraints.
+A provenance-bearing required relation from one release to either a canonical target Mod or a source identity that has not yet been canonicalized.
+
+The target may carry minimum/maximum version constraints. Installation analysis distinguishes missing, outdated and version-mismatch states.
 
 ### ConflictRule
 
-Known incompatibility stronger than a generic overlapping-resource observation.
+A provenance-bearing known incompatibility from one release to a target Mod/source identity with optional target-version constraints.
+
+A known incompatibility is stronger evidence than generic DBPF resource overlap. Resource overlap remains a local `Potential conflict` observation and never becomes a confirmed incompatibility by itself.
 
 ### LocalArtifact
 

@@ -4,7 +4,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.domain import Artifact, CompatibilityReport, Fingerprint, ModRelease, Source
+from app.domain import (
+    Artifact,
+    CompatibilityReport,
+    ConflictRule,
+    DependencyRule,
+    Fingerprint,
+    ModRelease,
+    Source,
+)
 from app.main import app
 from app.services.curseforge_sync import CurseForgeSyncService
 from app.sources.curseforge.client import CurseForgeUnavailable
@@ -46,7 +54,10 @@ class SuccessfulClient:
                     "fileLength": 1234,
                     "downloadUrl": "https://example.test/file",
                     "gameVersions": ["1.116.240"],
-                    "dependencies": [{"modId": 77, "relationType": 3}],
+                    "dependencies": [
+                        {"modId": 77, "relationType": 3},
+                        {"modId": 88, "relationType": 5},
+                    ],
                     "fileFingerprint": 987654321,
                     "modules": [],
                 }
@@ -66,7 +77,7 @@ class UnavailableClient:
         )
 
 
-def test_sync_persists_provenance_source_ids_and_fingerprints(
+def test_sync_persists_provenance_source_ids_fingerprints_and_relationships(
     db_session: Session,
 ) -> None:
     result = CurseForgeSyncService(db_session, SuccessfulClient()).sync_mod(
@@ -103,13 +114,28 @@ def test_sync_persists_provenance_source_ids_and_fingerprints(
         ("sha1", "aaaa"),
     ]
 
+    dependency = db_session.scalar(select(DependencyRule))
+    conflict = db_session.scalar(select(ConflictRule))
+    assert dependency is not None
+    assert dependency.release_id == release.id
+    assert dependency.target_source_kind == "curseforge"
+    assert dependency.target_source_external_id == "77"
+    assert dependency.source_id == source.id
+    assert dependency.retrieved_at is not None
+
+    assert conflict is not None
+    assert conflict.release_id == release.id
+    assert conflict.target_source_kind == "curseforge"
+    assert conflict.target_source_external_id == "88"
+    assert conflict.source_id == source.id
+
     compatibility_count = db_session.scalar(
         select(func.count()).select_from(CompatibilityReport)
     )
     assert compatibility_count == 0
 
 
-def test_reingestion_is_idempotent_for_release_and_artifact(
+def test_reingestion_is_idempotent_for_release_artifact_and_relationships(
     db_session: Session,
 ) -> None:
     service = CurseForgeSyncService(db_session, SuccessfulClient())
@@ -120,6 +146,8 @@ def test_reingestion_is_idempotent_for_release_and_artifact(
     assert db_session.scalar(select(func.count()).select_from(ModRelease)) == 1
     assert db_session.scalar(select(func.count()).select_from(Artifact)) == 1
     assert db_session.scalar(select(func.count()).select_from(Fingerprint)) == 3
+    assert db_session.scalar(select(func.count()).select_from(DependencyRule)) == 1
+    assert db_session.scalar(select(func.count()).select_from(ConflictRule)) == 1
 
 
 def test_unavailable_source_is_isolated_and_creates_no_health_claim(
@@ -131,6 +159,8 @@ def test_unavailable_source_is_isolated_and_creates_no_health_claim(
     assert result.retry_after_seconds == 30
     assert db_session.scalar(select(func.count()).select_from(Source)) == 0
     assert db_session.scalar(select(func.count()).select_from(CompatibilityReport)) == 0
+    assert db_session.scalar(select(func.count()).select_from(DependencyRule)) == 0
+    assert db_session.scalar(select(func.count()).select_from(ConflictRule)) == 0
 
     response = TestClient(app).post(
         "/v1/artifacts/resolve",

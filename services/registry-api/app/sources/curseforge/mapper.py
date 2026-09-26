@@ -28,6 +28,13 @@ class MappedFingerprint:
 
 
 @dataclass(frozen=True, slots=True)
+class MappedRelationship:
+    target_source_external_id: str
+    relation: str
+    relation_type: int
+
+
+@dataclass(frozen=True, slots=True)
 class MappedFile:
     source_record_id: str
     display_name: str
@@ -38,6 +45,7 @@ class MappedFile:
     released_at: datetime
     changelog: str | None
     fingerprints: tuple[MappedFingerprint, ...]
+    relationships: tuple[MappedRelationship, ...]
     metadata: dict[str, Any]
 
 
@@ -140,16 +148,24 @@ class CurseForgeMapper:
                 )
             )
 
-        dependencies = [
-            {
-                "mod_id": dependency.modId,
-                "relation_type": dependency.relationType,
-                "relation": RELATION_NAMES.get(
+        relationships = tuple(
+            MappedRelationship(
+                target_source_external_id=str(dependency.modId),
+                relation=RELATION_NAMES.get(
                     dependency.relationType,
                     f"unknown_{dependency.relationType}",
                 ),
-            }
+                relation_type=dependency.relationType,
+            )
             for dependency in file.dependencies
+        )
+        dependencies = [
+            {
+                "mod_id": int(relationship.target_source_external_id),
+                "relation_type": relationship.relation_type,
+                "relation": relationship.relation,
+            }
+            for relationship in relationships
         ]
 
         return MappedFile(
@@ -162,6 +178,7 @@ class CurseForgeMapper:
             released_at=file.fileDate,
             changelog=changelog,
             fingerprints=tuple(fingerprints),
+            relationships=relationships,
             metadata={
                 "curseforge": {
                     "file_id": file.id,

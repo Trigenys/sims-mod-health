@@ -5,8 +5,17 @@ from datetime import datetime
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.domain import Artifact, Creator, Fingerprint, Mod, ModRelease, Source
-from app.sources.curseforge.mapper import MappedProject
+from app.domain import (
+    Artifact,
+    ConflictRule,
+    Creator,
+    DependencyRule,
+    Fingerprint,
+    Mod,
+    ModRelease,
+    Source,
+)
+from app.sources.curseforge.mapper import MappedFile, MappedProject
 
 
 class CurseForgeIngestionRepository:
@@ -76,6 +85,12 @@ class CurseForgeIngestionRepository:
             artifacts_upserted += 1
 
             self._replace_source_fingerprints(artifact, mapped_file.fingerprints)
+            self._replace_relationship_rules(
+                source,
+                release,
+                mapped_file,
+                retrieved_at=retrieved_at,
+            )
 
         source.name = project.mod_name
         source.base_url = project.source_url
@@ -158,3 +173,50 @@ class CurseForgeIngestionRepository:
                     algorithm_version=mapped.algorithm_version,
                 )
             )
+
+    def _replace_relationship_rules(
+        self,
+        source: Source,
+        release: ModRelease,
+        mapped_file: MappedFile,
+        *,
+        retrieved_at: datetime,
+    ) -> None:
+        self._session.execute(
+            delete(DependencyRule).where(
+                DependencyRule.release_id == release.id,
+                DependencyRule.source_id == source.id,
+            )
+        )
+        self._session.execute(
+            delete(ConflictRule).where(
+                ConflictRule.release_id == release.id,
+                ConflictRule.source_id == source.id,
+            )
+        )
+
+        for relationship in mapped_file.relationships:
+            common = {
+                "release_id": release.id,
+                "target_mod_id": None,
+                "target_source_kind": "curseforge",
+                "target_source_external_id": relationship.target_source_external_id,
+                "min_version": None,
+                "max_version": None,
+                "source_id": source.id,
+                "source_url": source.base_url,
+                "source_record_id": (
+                    f"{mapped_file.source_record_id}:"
+                    f"{relationship.target_source_external_id}:"
+                    f"{relationship.relation}"
+                ),
+                "retrieved_at": retrieved_at,
+                "notes": (
+                    "Normalized from the CurseForge file dependency relation "
+                    f"{relationship.relation}."
+                ),
+            }
+            if relationship.relation == "required_dependency":
+                self._session.add(DependencyRule(**common))
+            elif relationship.relation == "incompatible":
+                self._session.add(ConflictRule(**common))
