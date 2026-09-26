@@ -9,7 +9,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 const ARTIFACT_BATCH: usize = 100;
 const HEALTH_BATCH: usize = 100;
-const RELATIONSHIP_BATCH: usize = 500;
+const RELATIONSHIP_MAX: usize = 500;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -86,6 +86,7 @@ struct HealthResponse {
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct DependencyFinding {
+    pub(crate) rule_id: String,
     pub(crate) required_by_release_id: String,
     pub(crate) status: String,
     pub(crate) action: String,
@@ -93,20 +94,30 @@ pub(crate) struct DependencyFinding {
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct KnownIncompatibilityFinding {
+    pub(crate) rule_id: String,
     pub(crate) left_release_id: String,
     pub(crate) right_release_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct ReverseDependencyUsage {
+    pub(crate) dependency_release_id: String,
+    pub(crate) used_by_count: usize,
+    pub(crate) used_by_release_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct RelationshipResponse {
     pub(crate) dependency_findings: Vec<DependencyFinding>,
     pub(crate) known_incompatibilities: Vec<KnownIncompatibilityFinding>,
+    pub(crate) reverse_usage: Vec<ReverseDependencyUsage>,
 }
 
 #[derive(Debug)]
 pub(crate) enum RegistryError {
     Transport(reqwest::Error),
     Status { status: u16, body: String },
+    UnsafeRelationshipBatch { count: usize, maximum: usize },
 }
 
 impl RegistryError {
@@ -122,6 +133,10 @@ impl Display for RegistryError {
             Self::Status { status, body } => {
                 write!(formatter, "registry returned HTTP {status}: {body}")
             }
+            Self::UnsafeRelationshipBatch { count, maximum } => write!(
+                formatter,
+                "relationship analysis requires one complete installed set; {count} releases exceeds the safe limit of {maximum}"
+            ),
         }
     }
 }
@@ -130,7 +145,7 @@ impl Error for RegistryError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Transport(error) => Some(error),
-            Self::Status { .. } => None,
+            Self::Status { .. } | Self::UnsafeRelationshipBatch { .. } => None,
         }
     }
 }
@@ -216,31 +231,20 @@ impl RegistryClient {
         &self,
         release_ids: &[String],
     ) -> Result<RelationshipResponse, RegistryError> {
-        let mut dependency_findings = Vec::new();
-        let mut known_incompatibilities = Vec::new();
+        validate_relationship_set_size(release_ids.len())?;
 
-        for chunk in release_ids.chunks(RELATIONSHIP_BATCH) {
-            #[derive(Serialize)]
-            struct RelationshipRequest<'a> {
-                installed_release_ids: &'a [String],
-            }
-
-            let response: RelationshipResponse = self
-                .post_json(
-                    "/v1/health/relationships/evaluate",
-                    &RelationshipRequest {
-                        installed_release_ids: chunk,
-                    },
-                )
-                .await?;
-            dependency_findings.extend(response.dependency_findings);
-            known_incompatibilities.extend(response.known_incompatibilities);
+        #[derive(Serialize)]
+        struct RelationshipRequest<'a> {
+            installed_release_ids: &'a [String],
         }
 
-        Ok(RelationshipResponse {
-            dependency_findings,
-            known_incompatibilities,
-        })
+        self.post_json(
+            "/v1/health/relationships/evaluate",
+            &RelationshipRequest {
+                installed_release_ids: release_ids,
+            },
+        )
+        .await
     }
 
     async fn post_json<Request, Response>(
@@ -269,5 +273,35 @@ impl RegistryClient {
         }
 
         Ok(response.json::<Response>().await?)
+    }
+}
+
+fn validate_relationship_set_size(count: usize) -> Result<(), RegistryError> {
+    if count > RELATIONSHIP_MAX {
+        return Err(RegistryError::UnsafeRelationshipBatch {
+            count,
+            maximum: RELATIONSHIP_MAX,
+        });
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn relationship_graph_is_never_split_across_unsafe_batches() {
+        let error = validate_relationship_set_size(RELATIONSHIP_MAX + 1)
+            .expect_err("oversized relationship set must fail before network access");
+
+        assert!(matches!(
+            error,
+            RegistryError::UnsafeRelationshipBatch {
+                count,
+                maximum: RELATIONSHIP_MAX
+            } if count == RELATIONSHIP_MAX + 1
+        ));
     }
 }

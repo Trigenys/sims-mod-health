@@ -89,26 +89,32 @@ Controls:
 
 ### Path traversal
 
-Threat: archive member or update package writes outside a staging directory.
+Threat: archive member or update package writes outside a staging directory or Mods target.
 
 Controls:
 - normalize and validate every destination;
-- reject parent traversal and absolute paths;
+- reject parent traversal, dot components, absolute paths and unsupported target extensions;
+- generated staging destinations never reuse remote filenames;
+- canonical staging directories must remain under app data;
+- existing Mods target parents may not traverse symlinks;
 - stage before install;
 - prefer Rust-native file operations.
 
 ### Untrusted downloads
 
-Threat: compromised mirror or malicious replacement.
+Threat: compromised mirror, redirect abuse or malicious replacement.
 
 Controls:
-- allowlisted source adapters;
-- HTTPS;
-- source provenance;
-- expected hash/fingerprint verification when available;
-- download size limits;
-- staged install;
-- backup before mutation.
+- source-adapter-specific HTTPS host allowlists;
+- every redirect is revalidated against the same allowlist;
+- credential-bearing URLs and non-standard ports are rejected;
+- signed/tokenized query strings are not persisted in mutation logs;
+- source provenance is journaled;
+- expected SHA-256 verification when available;
+- observed SHA-256 is always recorded and rechecked at install time;
+- 256 MiB download limit;
+- generated staging filenames under app-controlled storage;
+- verified restore point before download/mutation.
 
 ### Registry poisoning
 

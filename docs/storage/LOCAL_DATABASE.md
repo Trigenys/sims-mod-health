@@ -63,7 +63,15 @@ Parsed local diagnostic observations and redacted summaries. The schema does not
 
 ### restore_points
 
-Metadata for future recoverable mutation/update operations.
+Verified backup metadata for recoverable mutation/update operations.
+
+### update_transactions
+
+Persistent staged-update journal. It records the restore point, relative target, sanitized source provenance, current/replacement release IDs, expected/observed/original SHA-256 values, lifecycle state and recoverable failure information.
+
+### update_events
+
+Append-only local evidence for update phases such as restore-point creation, source validation, integrity verification, dependency checks, archive/install, startup recovery and rollback.
 
 ### preferences
 
@@ -78,7 +86,9 @@ Current versions:
 1. initial local persistence model;
 2. incremental-scan cache metadata and index;
 3. recoverable scan observations tied to scan sessions;
-4. persisted TS4Script identity fingerprints while preserving existing fingerprint rows.
+4. persisted TS4Script identity fingerprints while preserving existing fingerprint rows;
+5. persisted incremental-scan skipped/observation counters for real Overview state;
+6. staged-update transaction and event journals linked to restore points.
 
 Migrations are **forward-only**.
 

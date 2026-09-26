@@ -7,7 +7,7 @@ use std::{
 
 use rusqlite::Connection;
 
-pub(crate) const LATEST_SCHEMA_VERSION: u32 = 5;
+pub(crate) const LATEST_SCHEMA_VERSION: u32 = 6;
 
 struct Migration {
     version: u32,
@@ -34,6 +34,10 @@ const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 5,
         sql: include_str!("../../migrations/0005_overview_scan_summary.sql"),
+    },
+    Migration {
+        version: 6,
+        sql: include_str!("../../migrations/0006_update_transactions.sql"),
     },
 ];
 
@@ -220,6 +224,8 @@ mod tests {
             "restore_points".to_string(),
             "scan_observations".to_string(),
             "scan_sessions".to_string(),
+            "update_events".to_string(),
+            "update_transactions".to_string(),
         ]);
 
         assert_eq!(table_names(&connection), expected);
@@ -295,6 +301,25 @@ mod tests {
         let scan_columns = column_names(&connection, "scan_sessions");
         assert!(scan_columns.contains("files_skipped"));
         assert!(scan_columns.contains("observation_count"));
+
+        let update_columns = column_names(&connection, "update_transactions");
+        for required in [
+            "restore_point_id",
+            "target_relative_path",
+            "source_kind",
+            "source_url",
+            "current_release_id",
+            "replacement_release_id",
+            "expected_sha256",
+            "observed_sha256",
+            "original_sha256",
+            "status",
+        ] {
+            assert!(
+                update_columns.contains(required),
+                "missing update transaction column {required}"
+            );
+        }
     }
 
     #[test]
