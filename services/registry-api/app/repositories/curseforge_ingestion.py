@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.domain import Artifact, Creator, Fingerprint, Mod, ModRelease, Source
@@ -142,16 +142,12 @@ class CurseForgeIngestionRepository:
 
     def _replace_source_fingerprints(self, artifact: Artifact, fingerprints: tuple) -> None:
         source_kinds = {"curseforge", "sha1", "md5"}
-        existing = list(
-            self._session.scalars(
-                select(Fingerprint).where(
-                    Fingerprint.artifact_id == artifact.id,
-                    Fingerprint.kind.in_(source_kinds),
-                )
+        self._session.execute(
+            delete(Fingerprint).where(
+                Fingerprint.artifact_id == artifact.id,
+                Fingerprint.kind.in_(source_kinds),
             )
         )
-        for fingerprint in existing:
-            self._session.delete(fingerprint)
 
         for mapped in fingerprints:
             self._session.add(
