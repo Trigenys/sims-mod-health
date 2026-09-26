@@ -236,9 +236,7 @@ pub(crate) fn prepare_latest(
     }))
 }
 
-pub(crate) async fn resolve_registry(
-    mut prepared: PreparedDiagnostics,
-) -> DiagnosticsSnapshot {
+pub(crate) async fn resolve_registry(mut prepared: PreparedDiagnostics) -> DiagnosticsSnapshot {
     if prepared.probes.is_empty() {
         return DiagnosticsSnapshot {
             installation_id: Some(prepared.installation_id),
@@ -502,9 +500,7 @@ fn classify_report_name(name: &str) -> Option<&'static str> {
         Some("last_ui_exception")
     } else if normalized.contains("mc_lastexception") || normalized.contains("mccc") {
         Some("mccc")
-    } else if normalized.contains("betterexception")
-        || normalized.contains("exceptionreport")
-    {
+    } else if normalized.contains("betterexception") || normalized.contains("exceptionreport") {
         Some("better_exceptions")
     } else if normalized.contains("lastexception") {
         Some("last_exception")
@@ -951,7 +947,10 @@ fn resolve_local_candidates(
     }
 
     if !module_refs.is_empty() {
-        for artifact in artifacts.iter().filter(|item| item.file_kind == "ts4script") {
+        for artifact in artifacts
+            .iter()
+            .filter(|item| item.file_kind == "ts4script")
+        {
             let metadata = match ts4script::inspect_path(&artifact.absolute_path) {
                 Ok(metadata) => metadata,
                 Err(_) => continue,
@@ -1022,9 +1021,11 @@ fn resolve_local_candidates(
     let mut result = candidates
         .into_values()
         .map(|mut accumulator| {
-            accumulator
-                .evidence
-                .sort_by(|left, right| left.kind.cmp(&right.kind).then(left.reference.cmp(&right.reference)));
+            accumulator.evidence.sort_by(|left, right| {
+                left.kind
+                    .cmp(&right.kind)
+                    .then(left.reference.cmp(&right.reference))
+            });
             let evidence_bonus = accumulator
                 .evidence
                 .len()
@@ -1228,8 +1229,10 @@ mod tests {
             </report>
         "#;
 
-        let (sanitized, redactions) =
-            sanitize_report_text(text, Path::new(r"C:\Users\Alice\Documents\Electronic Arts\The Sims 4"));
+        let (sanitized, redactions) = sanitize_report_text(
+            text,
+            Path::new(r"C:\Users\Alice\Documents\Electronic Arts\The Sims 4"),
+        );
         let observations = parse_observations(&sanitized);
 
         assert!(redactions > 0);
@@ -1331,8 +1334,7 @@ mod tests {
         let temp = TempDir::new().expect("resource diagnostic temp");
         let relative = "Overrides/Example.package";
         let path = temp.path().join(relative);
-        fs::create_dir_all(path.parent().expect("package parent"))
-            .expect("create package parent");
+        fs::create_dir_all(path.parent().expect("package parent")).expect("create package parent");
 
         let key = ResourceKey {
             resource_type: 0x545a_6b4a,
@@ -1368,10 +1370,7 @@ mod tests {
             classify_report_name("lastUIException.txt"),
             Some("last_ui_exception")
         );
-        assert_eq!(
-            classify_report_name("mc_lastexception.html"),
-            Some("mccc")
-        );
+        assert_eq!(classify_report_name("mc_lastexception.html"), Some("mccc"));
         assert_eq!(
             classify_report_name("BetterExceptions_ExceptionReport.html"),
             Some("better_exceptions")
@@ -1411,15 +1410,14 @@ mod tests {
             playerId=1234567890
             module: creator_mod
         "#;
-        let (sanitized, redactions) =
-            sanitize_report_text(text, Path::new(r"C:\Users\Jennifer\Documents\Electronic Arts\The Sims 4"));
+        let (sanitized, redactions) = sanitize_report_text(
+            text,
+            Path::new(r"C:\Users\Jennifer\Documents\Electronic Arts\The Sims 4"),
+        );
         let observations = parse_observations(&sanitized);
         let preview = DiagnosticTelemetryPreview {
             source_kind: "last_exception".to_string(),
-            observation_kinds: observations
-                .iter()
-                .map(|item| item.kind.clone())
-                .collect(),
+            observation_kinds: observations.iter().map(|item| item.kind.clone()).collect(),
             candidate_count: 0,
             redactions_applied: redactions,
         };
