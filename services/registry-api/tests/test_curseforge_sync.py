@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.domain import Artifact, CompatibilityReport, Fingerprint, ModRelease, Source
+from app.main import app
 from app.services.curseforge_sync import CurseForgeSyncService
 from app.sources.curseforge.client import CurseForgeUnavailable
 from app.sources.curseforge.models import CurseForgeFile, CurseForgeMod
@@ -129,3 +131,23 @@ def test_unavailable_source_is_isolated_and_creates_no_health_claim(
     assert result.retry_after_seconds == 30
     assert db_session.scalar(select(func.count()).select_from(Source)) == 0
     assert db_session.scalar(select(func.count()).select_from(CompatibilityReport)) == 0
+
+    response = TestClient(app).post(
+        "/v1/artifacts/resolve",
+        json={
+            "artifacts": [
+                {
+                    "client_ref": "still-works",
+                    "fingerprints": [
+                        {
+                            "kind": "sha256",
+                            "value": "f" * 64,
+                            "algorithm_version": "sha256-v1",
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["artifacts"][0]["matches"] == []
