@@ -1,11 +1,11 @@
 name: Rust CI
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
       - "src-tauri/**"
-      - ".github/workflows/ci-rust.yml"
 
 permissions:
   contents: read
