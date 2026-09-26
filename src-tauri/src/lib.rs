@@ -1,3 +1,4 @@
+mod conflicts;
 mod dbpf;
 mod fingerprint;
 mod game;
@@ -7,6 +8,7 @@ mod ts4script;
 
 use std::{path::PathBuf, sync::Arc};
 
+use conflicts::LocalConflictAnalysis;
 use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
 use rusqlite::OptionalExtension;
@@ -65,18 +67,11 @@ fn cancel_mod_scan(state: State<'_, AppState>) -> bool {
     state.scanner.cancel()
 }
 
-#[tauri::command]
-fn list_exact_duplicates(
-    state: State<'_, AppState>,
-    path: String,
-) -> Result<Vec<ExactDuplicateGroup>, String> {
-    let installation = match game::inspect_manual_path(&PathBuf::from(path)) {
-        ManualInspection::Available { installation } => installation,
-        ManualInspection::Unavailable { reason } => return Err(reason),
-    };
-
-    let connection = storage::open(&state.database_path).map_err(|error| error.to_string())?;
-    let installation_id = connection
+fn installed_id(
+    connection: &rusqlite::Connection,
+    installation: &InstallationCandidate,
+) -> Result<Option<i64>, String> {
+    connection
         .query_row(
             "SELECT id
              FROM installations
@@ -88,13 +83,49 @@ fn list_exact_duplicates(
             |row| row.get::<_, i64>(0),
         )
         .optional()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| error.to_string())
+}
 
-    let Some(installation_id) = installation_id else {
+#[tauri::command]
+fn list_exact_duplicates(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<Vec<ExactDuplicateGroup>, String> {
+    let installation = match game::inspect_manual_path(&PathBuf::from(path)) {
+        ManualInspection::Available { installation } => installation,
+        ManualInspection::Unavailable { reason } => return Err(reason),
+    };
+
+    let connection = storage::open(&state.database_path).map_err(|error| error.to_string())?;
+    let Some(installation_id) = installed_id(&connection, &installation)? else {
         return Ok(Vec::new());
     };
 
     fingerprint::exact_duplicate_groups(&connection, installation_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn analyze_local_conflicts(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<LocalConflictAnalysis, String> {
+    let installation = match game::inspect_manual_path(&PathBuf::from(path)) {
+        ManualInspection::Available { installation } => installation,
+        ManualInspection::Unavailable { reason } => return Err(reason),
+    };
+
+    let connection = storage::open(&state.database_path).map_err(|error| error.to_string())?;
+    let Some(installation_id) = installed_id(&connection, &installation)? else {
+        return Ok(LocalConflictAnalysis {
+            exact_duplicates: Vec::new(),
+            resource_overlaps: Vec::new(),
+            parse_failures: Vec::new(),
+            overlap_pairs_truncated: false,
+        });
+    };
+
+    conflicts::analyze_installation(&connection, installation_id, &installation.mods_root)
         .map_err(|error| error.to_string())
 }
 
@@ -116,7 +147,8 @@ pub fn run() {
             inspect_sims_installation,
             scan_sims_mods,
             cancel_mod_scan,
-            list_exact_duplicates
+            list_exact_duplicates,
+            analyze_local_conflicts
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");

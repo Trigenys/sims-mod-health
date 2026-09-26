@@ -50,6 +50,8 @@ Version 1 creates:
 - Source
 - GamePatch
 - CompatibilityReport
+- DependencyRule
+- ConflictRule
 
 ### Provenance
 
@@ -165,6 +167,20 @@ Each item returns the final triage state separately from the underlying compatib
 Compatibility evidence is patch-scoped, source-provenanced and inspectable. Exact-patch evidence outranks range evidence. Conflicting current evidence is returned as `unknown` with `disputed: true` instead of silently picking one source.
 
 See `docs/health/PATCH_COMPATIBILITY_ENGINE.md`.
+
+## Installation relationship contract
+
+Endpoint:
+
+```text
+POST /v1/health/relationships/evaluate
+```
+
+The request contains only resolved installed release IDs. The registry evaluates required dependencies and known incompatibility rules without receiving local file paths or DBPF resource keys.
+
+The response includes actionable missing/outdated dependency findings, version-constrained incompatibilities with provenance, reverse dependency usage (`used_by_count`) and detected dependency cycles.
+
+Exact duplicate hashes and DBPF resource overlap remain local desktop analysis. See `docs/health/DEPENDENCY_CONFLICT_ANALYSIS.md`.
 
 ## Validation errors
 
