@@ -57,6 +57,13 @@ class Mod(Base):
 
 class ModRelease(Base):
     __tablename__ = "mod_releases"
+    __table_args__ = (
+        UniqueConstraint(
+            "source_id",
+            "source_record_id",
+            name="uq_mod_release_source_record",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     mod_id: Mapped[uuid.UUID] = mapped_column(
@@ -67,6 +74,7 @@ class ModRelease(Base):
     source_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("sources.id", ondelete="SET NULL"), index=True
     )
+    source_record_id: Mapped[str | None] = mapped_column(String(240))
     source_url: Mapped[str | None] = mapped_column(String(2048))
     retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     changelog: Mapped[str | None] = mapped_column(Text)
@@ -77,6 +85,13 @@ class ModRelease(Base):
 
 class Artifact(Base):
     __tablename__ = "artifacts"
+    __table_args__ = (
+        UniqueConstraint(
+            "source_id",
+            "source_record_id",
+            name="uq_artifact_source_record",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     release_id: Mapped[uuid.UUID] = mapped_column(
@@ -88,6 +103,7 @@ class Artifact(Base):
     source_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("sources.id", ondelete="SET NULL"), index=True
     )
+    source_record_id: Mapped[str | None] = mapped_column(String(240))
     source_url: Mapped[str | None] = mapped_column(String(2048))
     retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
