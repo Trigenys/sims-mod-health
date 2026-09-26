@@ -1,5 +1,6 @@
 mod conflicts;
 mod dbpf;
+mod diagnostics;
 mod fingerprint;
 mod game;
 mod mutation;
@@ -12,6 +13,7 @@ mod ts4script;
 use std::{path::PathBuf, sync::Arc};
 
 use conflicts::LocalConflictAnalysis;
+use diagnostics::DiagnosticsSnapshot;
 use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
@@ -71,6 +73,33 @@ async fn scan_sims_mods(
 #[tauri::command]
 fn cancel_mod_scan(state: State<'_, AppState>) -> bool {
     state.scanner.cancel()
+}
+
+#[tauri::command]
+async fn analyze_latest_diagnostics(
+    state: State<'_, AppState>,
+) -> Result<DiagnosticsSnapshot, String> {
+    let database_path = state.database_path.clone();
+    let prepared = tauri::async_runtime::spawn_blocking(move || {
+        diagnostics::prepare_latest(&database_path).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| format!("diagnostic preparation worker failed: {error}"))??;
+
+    let Some(prepared) = prepared else {
+        return Ok(diagnostics::empty_snapshot());
+    };
+
+    let mut snapshot = diagnostics::resolve_registry(prepared).await;
+    let database_path = state.database_path.clone();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        diagnostics::persist_snapshot(&database_path, &mut snapshot)
+            .map_err(|error| error.to_string())?;
+        Ok::<DiagnosticsSnapshot, String>(snapshot)
+    })
+    .await
+    .map_err(|error| format!("diagnostic persistence worker failed: {error}"))?
 }
 
 #[tauri::command]
@@ -230,6 +259,7 @@ pub fn run() {
             scan_sims_mods,
             scan_current_sims_mods,
             cancel_mod_scan,
+            analyze_latest_diagnostics,
             apply_mod_update,
             rollback_mod_update,
             get_mod_update_transaction,

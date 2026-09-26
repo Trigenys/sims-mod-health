@@ -17,6 +17,20 @@ const cases = [
     height: 700,
     path: "/?surface=library&state=offline",
     active: "Library"
+  },
+  {
+    name: "diagnostics-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=diagnostics&visual=diagnostics",
+    active: "Diagnostics"
+  },
+  {
+    name: "diagnostics-1440x900",
+    width: 1440,
+    height: 900,
+    path: "/?surface=diagnostics&visual=diagnostics",
+    active: "Diagnostics"
   }
 ];
 
@@ -64,6 +78,19 @@ try {
       }));
       if (!focus.active || focus.ring === "none") {
         throw new Error(testCase.name + " does not expose a visible keyboard focus state");
+      }
+    }
+
+    if (testCase.path.includes("surface=diagnostics")) {
+      await page.locator("#diagnostics-title").waitFor();
+      const analyze = page.getByRole("button", { name: "Analyze reports" });
+      await analyze.focus();
+      const focus = await analyze.evaluate((element) => ({
+        active: document.activeElement === element,
+        ring: getComputedStyle(element).boxShadow
+      }));
+      if (!focus.active || focus.ring === "none") {
+        throw new Error(testCase.name + " does not expose a visible Diagnostics focus state");
       }
     }
 

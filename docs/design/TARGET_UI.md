@@ -253,6 +253,7 @@ The target shell is implemented through reusable production boundaries rather th
 - `src/features/overview/overview.visual.ts` — visual-test-only fixture, never the default runtime data source;
 - `src/features/library/LibraryPage.tsx` — searchable/filterable local inventory;
 - `src/features/library/ModDetailPage.tsx` — evidence-first detail surface;
+- `src/features/diagnostics/DiagnosticsPage.tsx` — correlation-first diagnostic evidence surface;
 - `src/features/library/LibraryStateNotice.tsx` — offline, partial and failure resilience states;
 - `src/features/library/library.fixture.ts` — product-surface fixture isolated from future scanner/registry adapters.
 
@@ -275,3 +276,10 @@ The workflow:
 9. uploads them as the `product-surfaces-visual-evidence` artifact.
 
 This provides repeatable evidence for UI acceptance without requiring a manual local screenshot workflow.
+
+
+## Diagnostics evidence language
+
+Diagnostic traceback/module/resource matches are presented as implicated or correlated candidates. The UI does not transform correlation evidence into a causal statement.
+
+The Diagnostics surface exposes malformed/unsupported states without crashing, keeps local candidates visible while the Registry is offline, and shows privacy-redaction evidence for optional telemetry summaries.

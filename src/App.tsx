@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
+import { DiagnosticsPage } from "./features/diagnostics/DiagnosticsPage";
 import { LibraryPage } from "./features/library/LibraryPage";
 import { ModDetailPage } from "./features/library/ModDetailPage";
 import {
@@ -9,12 +10,13 @@ import {
 import type { LibraryRegistryState } from "./features/library/LibraryStateNotice";
 import { OverviewPage } from "./features/overview/OverviewPage";
 
-type Surface = "Overview" | "Library" | "Detail";
+type Surface = "Overview" | "Library" | "Detail" | "Diagnostics";
 
 function initialSurface(): Surface {
   const value = new URLSearchParams(window.location.search).get("surface");
   if (value === "library") return "Library";
   if (value === "detail") return "Detail";
+  if (value === "diagnostics") return "Diagnostics";
   return "Overview";
 }
 
@@ -35,7 +37,7 @@ function App() {
   const registryState = initialRegistryState();
 
   const navigate = (label: string) => {
-    if (label === "Overview" || label === "Library") {
+    if (label === "Overview" || label === "Library" || label === "Diagnostics") {
       setSurface(label);
     }
   };
@@ -45,11 +47,17 @@ function App() {
     setSurface("Detail");
   };
 
-  const activeItem = surface === "Overview" ? "Overview" : "Library";
+  const activeItem =
+    surface === "Detail"
+      ? "Library"
+      : surface === "Diagnostics"
+        ? "Diagnostics"
+        : surface;
 
   return (
     <AppShell activeItem={activeItem} onNavigate={navigate}>
       {surface === "Overview" && <OverviewPage />}
+      {surface === "Diagnostics" && <DiagnosticsPage />}
       {surface === "Library" && (
         <LibraryPage
           onOpenItem={openItem}
