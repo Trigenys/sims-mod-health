@@ -167,18 +167,23 @@ When a new Sims patch is released, compatibility inherited from earlier patches 
 
 ## 10. Update safety
 
-Automatic update is not part of the first scanner MVP.
+Single-artifact automatic update is implemented behind a narrow Rust/Tauri mutation boundary.
 
-When introduced, the operation must be transactional:
+The operation is transactional:
 
-1. create restore point;
-2. download from an allowlisted source;
-3. verify expected fingerprint/hash where available;
-4. stage the replacement;
-5. disable or archive the old release;
-6. install the new release;
-7. validate resulting layout;
-8. allow one-click rollback.
+1. create and verify a restore point;
+2. download from a source-adapter-specific HTTPS allowlist;
+3. verify expected SHA-256 where available and always record observed SHA-256;
+4. stage the replacement under app-controlled storage;
+5. evaluate the current and hypothetical replacement dependency graph;
+6. archive the old release only after the dependency check passes;
+7. install through a same-directory temporary file;
+8. validate path containment, file type and SHA-256;
+9. retain a persistent journal and restore point for rollback.
+
+Startup marks unfinished transactions as interrupted instead of assuming success. Rollback verifies the backup before restoring it.
+
+Bulk update remains disabled. See `docs/security/STAGED_UPDATE_ROLLBACK.md`.
 
 ## 11. Performance strategy
 

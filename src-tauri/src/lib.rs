@@ -2,6 +2,7 @@ mod conflicts;
 mod dbpf;
 mod fingerprint;
 mod game;
+mod mutation;
 mod overview;
 mod registry;
 mod scanner;
@@ -13,12 +14,14 @@ use std::{path::PathBuf, sync::Arc};
 use conflicts::LocalConflictAnalysis;
 use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
+use mutation::{ApplyUpdateRequest, UpdateTransactionView};
 use overview::OverviewSnapshot;
 use rusqlite::OptionalExtension;
 use scanner::{ScanMode, ScanSummary, ScannerControl};
 use tauri::{Emitter, Manager, State};
 
 struct AppState {
+    app_data_dir: PathBuf,
     database_path: PathBuf,
     scanner: Arc<ScannerControl>,
 }
@@ -68,6 +71,34 @@ async fn scan_sims_mods(
 #[tauri::command]
 fn cancel_mod_scan(state: State<'_, AppState>) -> bool {
     state.scanner.cancel()
+}
+
+#[tauri::command]
+async fn apply_mod_update(
+    state: State<'_, AppState>,
+    request: ApplyUpdateRequest,
+) -> Result<UpdateTransactionView, String> {
+    mutation::apply_update(&state.database_path, &state.app_data_dir, request)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn rollback_mod_update(
+    state: State<'_, AppState>,
+    transaction_id: i64,
+) -> Result<UpdateTransactionView, String> {
+    mutation::rollback_update(&state.database_path, &state.app_data_dir, transaction_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn get_mod_update_transaction(
+    state: State<'_, AppState>,
+    transaction_id: i64,
+) -> Result<UpdateTransactionView, String> {
+    mutation::load_transaction(&state.database_path, transaction_id)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -180,10 +211,13 @@ fn analyze_local_conflicts(
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let database_path = app.path().app_data_dir()?.join("sims-mod-health.sqlite3");
+            let app_data_dir = app.path().app_data_dir()?;
+            let database_path = app_data_dir.join("sims-mod-health.sqlite3");
             storage::initialize(&database_path)?;
+            mutation::recover_interrupted_transactions(&database_path)?;
 
             app.manage(AppState {
+                app_data_dir,
                 database_path,
                 scanner: Arc::new(ScannerControl::default()),
             });
@@ -196,6 +230,9 @@ pub fn run() {
             scan_sims_mods,
             scan_current_sims_mods,
             cancel_mod_scan,
+            apply_mod_update,
+            rollback_mod_update,
+            get_mod_update_transaction,
             get_overview_snapshot,
             list_exact_duplicates,
             analyze_local_conflicts
