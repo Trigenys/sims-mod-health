@@ -10,6 +10,8 @@ class Settings:
     database_url: str
     curseforge_api_key: str | None = None
     curseforge_base_url: str = "https://api.curseforge.com"
+    github_releases_token: str | None = None
+    github_releases_base_url: str = "https://api.github.com"
     api_title: str = "Sims Mod Health Registry API"
     api_version: str = "0.1.0"
 
@@ -25,5 +27,10 @@ def get_settings() -> Settings:
         curseforge_base_url=os.getenv(
             "CURSEFORGE_BASE_URL",
             "https://api.curseforge.com",
+        ),
+        github_releases_token=os.getenv("GITHUB_RELEASES_TOKEN"),
+        github_releases_base_url=os.getenv(
+            "GITHUB_RELEASES_BASE_URL",
+            "https://api.github.com",
         ),
     )
