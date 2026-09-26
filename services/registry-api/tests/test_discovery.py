@@ -75,6 +75,9 @@ def compatible(
     *,
     status: str = "compatible",
 ) -> None:
+    if release.id is None:
+        session.flush()
+
     session.add(
         CompatibilityReport(
             release_id=release.id,
