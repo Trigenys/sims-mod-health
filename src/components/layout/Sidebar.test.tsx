@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 
 describe("Sidebar", () => {
@@ -10,5 +10,14 @@ describe("Sidebar", () => {
     expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "Library" })).not.toHaveAttribute("aria-current");
     expect(screen.getByLabelText("21 available updates")).toHaveTextContent("21");
+  });
+
+  it("emits the selected destination", () => {
+    const onNavigate = vi.fn();
+    render(<Sidebar activeItem="Overview" onNavigate={onNavigate} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Library" }));
+
+    expect(onNavigate).toHaveBeenCalledWith("Library");
   });
 });

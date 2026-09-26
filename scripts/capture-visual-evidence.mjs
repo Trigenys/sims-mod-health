@@ -5,8 +5,19 @@ const baseUrl = process.env.VISUAL_BASE_URL ?? "http://127.0.0.1:4173";
 const outputDir = process.env.VISUAL_OUTPUT_DIR ?? "visual-evidence";
 
 const cases = [
-  { name: "overview-1024x700", width: 1024, height: 700 },
-  { name: "overview-1440x900", width: 1440, height: 900 }
+  { name: "overview-1024x700", width: 1024, height: 700, path: "/", active: "Overview" },
+  { name: "overview-1440x900", width: 1440, height: 900, path: "/", active: "Overview" },
+  { name: "library-1024x700", width: 1024, height: 700, path: "/?surface=library", active: "Library" },
+  { name: "library-1440x900", width: 1440, height: 900, path: "/?surface=library", active: "Library" },
+  { name: "detail-1024x700", width: 1024, height: 700, path: "/?surface=detail&mod=rpo", active: "Library" },
+  { name: "detail-1440x900", width: 1440, height: 900, path: "/?surface=detail&mod=rpo", active: "Library" },
+  {
+    name: "library-offline-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=library&state=offline",
+    active: "Library"
+  }
 ];
 
 await mkdir(outputDir, { recursive: true });
@@ -17,7 +28,7 @@ const page = await browser.newPage();
 try {
   for (const testCase of cases) {
     await page.setViewportSize({ width: testCase.width, height: testCase.height });
-    await page.goto(baseUrl, { waitUntil: "networkidle" });
+    await page.goto(new URL(testCase.path, baseUrl).toString(), { waitUntil: "networkidle" });
 
     const layout = await page.evaluate(() => ({
       viewportWidth: window.innerWidth,
@@ -27,16 +38,45 @@ try {
 
     if (layout.documentWidth > layout.viewportWidth) {
       throw new Error(
-        `${testCase.name} has horizontal overflow: ${layout.documentWidth}px document in ${layout.viewportWidth}px viewport`
+        testCase.name + " has horizontal overflow: " +
+          layout.documentWidth + "px document in " +
+          layout.viewportWidth + "px viewport"
       );
     }
 
-    if (!layout.activeNavigation?.includes("Overview")) {
-      throw new Error(`${testCase.name} does not expose Overview as the active navigation destination`);
+    if (!layout.activeNavigation?.includes(testCase.active)) {
+      throw new Error(
+        testCase.name + " does not expose " + testCase.active +
+          " as the active navigation destination"
+      );
+    }
+
+    if (testCase.path.includes("surface=library")) {
+      const search = page.getByLabel("Search canonical name or filename");
+      await search.focus();
+      const focus = await search.evaluate((element) => ({
+        active: document.activeElement === element,
+        ring: getComputedStyle(element).boxShadow
+      }));
+      if (!focus.active || focus.ring === "none") {
+        throw new Error(testCase.name + " does not expose a visible keyboard focus state");
+      }
+    }
+
+    if (testCase.path.includes("surface=detail")) {
+      const back = page.getByRole("button", { name: "Back to Library" });
+      await back.focus();
+      const focus = await back.evaluate((element) => ({
+        active: document.activeElement === element,
+        ring: getComputedStyle(element).boxShadow
+      }));
+      if (!focus.active || focus.ring === "none") {
+        throw new Error(testCase.name + " does not expose a visible detail focus state");
+      }
     }
 
     await page.screenshot({
-      path: `${outputDir}/${testCase.name}.png`,
+      path: outputDir + "/" + testCase.name + ".png",
       fullPage: true
     });
   }
