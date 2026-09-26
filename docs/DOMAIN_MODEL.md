@@ -69,9 +69,14 @@ Kinds may include:
 
 ### CompatibilityReport
 
-A statement that a release is compatible, broken, unknown or otherwise scoped to a GamePatch.
+A sourced statement about one release's health on either:
 
-Every report requires provenance.
+- one exact `GamePatch`; or
+- an inclusive patch-version range with optional open minimum/maximum bounds.
+
+Every report requires provenance. Exact patch evidence is more specific than range evidence. If current evidence from different sources disagrees at the same specificity, the health engine surfaces `Unknown` with a disputed flag instead of inventing a source winner.
+
+Update availability is derived from release ordering and remains separate from compatibility evidence.
 
 ### Dependency
 
