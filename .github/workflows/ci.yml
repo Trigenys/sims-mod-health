@@ -1,79 +1,14 @@
-name: CI
+name: Full CI
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      frontend: ${{ steps.scope.outputs.frontend }}
-      rust: ${{ steps.scope.outputs.rust }}
-      registry: ${{ steps.scope.outputs.registry }}
-    steps:
-      - name: Detect affected stacks
-        id: scope
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            changed_files=""
-            frontend=true
-            rust=true
-            registry=true
-          else
-            changed_files="$(gh api --paginate               -H "Accept: application/vnd.github+json"               "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100"               --jq '.[].filename')"
-
-            frontend=false
-            rust=false
-            registry=false
-
-            while IFS= read -r file; do
-              case "$file" in
-                src/*|package.json|package-lock.json|index.html|vite.config.*|tsconfig*.json)
-                  frontend=true
-                  ;;
-              esac
-
-              case "$file" in
-                src-tauri/*)
-                  rust=true
-                  ;;
-              esac
-
-              case "$file" in
-                services/registry-api/*)
-                  registry=true
-                  ;;
-              esac
-            done <<< "$changed_files"
-          fi
-
-          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
-          echo "rust=$rust" >> "$GITHUB_OUTPUT"
-          echo "registry=$registry" >> "$GITHUB_OUTPUT"
-
-          {
-            echo "### CI scope"
-            echo
-            echo "| Stack | Run |"
-            echo "| --- | --- |"
-            echo "| Frontend | $frontend |"
-            echo "| Rust / Tauri | $rust |"
-            echo "| Registry API | $registry |"
-          } >> "$GITHUB_STEP_SUMMARY"
-
   frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -86,8 +21,6 @@ jobs:
       - run: npm test
 
   rust:
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -110,8 +43,6 @@ jobs:
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml
 
   registry:
-    needs: changes
-    if: needs.changes.outputs.registry == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
