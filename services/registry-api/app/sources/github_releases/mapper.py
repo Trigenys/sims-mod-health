@@ -144,7 +144,7 @@ class GitHubReleasesMapper:
                     MappedFingerprint(
                         kind="sha256",
                         value=value.lower(),
-                        algorithm_version="sha256-github-asset-digest-v1",
+                        algorithm_version="sha256-v1",
                     )
                 )
 

@@ -25,7 +25,7 @@ For each public release the registry retains:
 - release URL, publication timestamp and changelog body;
 - prerelease state and target commitish;
 - each release asset ID, filename, size, MIME type and public download URL;
-- GitHub-provided asset digest when available;
+- GitHub-provided asset digest when available, normalized to the registry's canonical `sha256-v1` identity;
 - observed repository tags and commit SHAs;
 - retrieval timestamp.
 

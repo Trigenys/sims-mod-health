@@ -86,6 +86,11 @@ A desktop probe may include only bounded technical metadata:
       "artifact_kind": "package",
       "filename": "renamed.package",
       "size_bytes": 12345,
+      "identity_hints": {
+        "creator": "Creator",
+        "mod_name": "Example Mod",
+        "version": "2.4.1"
+      },
       "fingerprints": [
         {
           "kind": "sha256",
@@ -108,18 +113,34 @@ The contract does **not** accept:
 
 Unknown fields are rejected by Pydantic with `extra="forbid"`.
 
-## Resolution semantics in #10
+## Resolution semantics
 
-This issue establishes the contract and deterministic exact lookup only.
+The resolver now implements the #13 evidence cascade.
 
-Exact evidence kinds:
+Deterministic evidence:
 
-- SHA-256
-- CurseForge source fingerprint
+- SHA-256;
+- CurseForge source fingerprint.
 
-Structural signatures are accepted in the contract so the desktop/cloud boundary does not need to change later, but they do not produce an `exact` match in this issue.
+Only deterministic fingerprint matches may return `confidence: "exact"`.
 
-The richer cascade/confidence model belongs to #13.
+Probabilistic evidence may include:
+
+- embedded creator/mod/version hints;
+- normalized filename and creator aliases;
+- DBPF resource signatures;
+- TS4Script identity signatures;
+- fuzzy filename/mod-name similarity.
+
+Every response reports a resolution state:
+
+- `resolved` when one candidate is safely selected;
+- `ambiguous` when candidates are too close to choose;
+- `unresolved` when evidence is insufficient.
+
+Probabilistic candidates retain structured evidence, confidence and score. Ambiguous candidates are never silently selected.
+
+See `docs/registry/MATCHING_ENGINE.md` for scoring, batching and candidate-bound details.
 
 ## Validation errors
 

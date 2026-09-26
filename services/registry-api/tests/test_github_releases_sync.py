@@ -127,7 +127,7 @@ def test_sync_persists_public_release_asset_and_provenance(
     assert artifact.metadata_json["github"]["release_id"] == 501
     assert fingerprint.kind == "sha256"
     assert fingerprint.value == "aaaa"
-    assert fingerprint.algorithm_version == "sha256-github-asset-digest-v1"
+    assert fingerprint.algorithm_version == "sha256-v1"
 
     assert db_session.scalar(
         select(func.count()).select_from(CompatibilityReport)

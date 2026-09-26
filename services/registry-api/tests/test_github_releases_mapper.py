@@ -74,7 +74,7 @@ def test_mapper_preserves_release_tag_asset_and_digest_provenance() -> None:
         (fingerprint.kind, fingerprint.value, fingerprint.algorithm_version)
         for fingerprint in mapped.releases[0].artifacts[0].fingerprints
     ] == [
-        ("sha256", "abcdef", "sha256-github-asset-digest-v1")
+        ("sha256", "abcdef", "sha256-v1")
     ]
     assert mapped.source_metadata["tags"] == [
         {
