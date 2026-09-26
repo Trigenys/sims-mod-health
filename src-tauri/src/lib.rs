@@ -125,12 +125,8 @@ fn analyze_local_conflicts(
         });
     };
 
-    conflicts::analyze_installation(
-        &connection,
-        installation_id,
-        &installation.mods_root,
-    )
-    .map_err(|error| error.to_string())
+    conflicts::analyze_installation(&connection, installation_id, &installation.mods_root)
+        .map_err(|error| error.to_string())
 }
 
 pub fn run() {

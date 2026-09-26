@@ -91,13 +91,11 @@ pub(crate) fn analyze_installation(
     installation_id: i64,
     mods_root: &Path,
 ) -> Result<LocalConflictAnalysis, ConflictAnalysisError> {
-    let exact_duplicates =
-        fingerprint::exact_duplicate_groups(connection, installation_id)?;
+    let exact_duplicates = fingerprint::exact_duplicate_groups(connection, installation_id)?;
     let package_files = load_package_files(connection, installation_id)?;
 
     let mut resource_owners: BTreeMap<ResourceKey, Vec<PackageFile>> = BTreeMap::new();
-    let mut overlap_pairs: BTreeMap<(i64, i64), ResourceOverlapAccumulator> =
-        BTreeMap::new();
+    let mut overlap_pairs: BTreeMap<(i64, i64), ResourceOverlapAccumulator> = BTreeMap::new();
     let mut parse_failures = Vec::new();
     let mut overlap_pairs_truncated = false;
 
@@ -138,15 +136,14 @@ pub(crate) fn analyze_installation(
                         continue;
                     }
 
-                    let accumulator =
-                        overlap_pairs
-                            .entry(pair_key)
-                            .or_insert_with(|| ResourceOverlapAccumulator {
-                                left: left.clone(),
-                                right: right.clone(),
-                                shared_resource_count: 0,
-                                sample_keys: Vec::new(),
-                            });
+                    let accumulator = overlap_pairs.entry(pair_key).or_insert_with(|| {
+                        ResourceOverlapAccumulator {
+                            left: left.clone(),
+                            right: right.clone(),
+                            shared_resource_count: 0,
+                            sample_keys: Vec::new(),
+                        }
+                    });
 
                     accumulator.shared_resource_count += 1;
                     if accumulator.sample_keys.len() < MAX_RESOURCE_KEY_SAMPLES {
@@ -155,7 +152,10 @@ pub(crate) fn analyze_installation(
                 }
             }
 
-            resource_owners.entry(key).or_default().push(package.clone());
+            resource_owners
+                .entry(key)
+                .or_default()
+                .push(package.clone());
         }
     }
 
@@ -188,8 +188,7 @@ pub(crate) fn analyze_installation(
     });
 
     parse_failures.sort_by(|left, right| {
-        (&left.relative_path, left.local_file_id)
-            .cmp(&(&right.relative_path, right.local_file_id))
+        (&left.relative_path, left.local_file_id).cmp(&(&right.relative_path, right.local_file_id))
     });
 
     Ok(LocalConflictAnalysis {
@@ -276,11 +275,7 @@ mod tests {
         bytes
     }
 
-    fn insert_file(
-        connection: &Connection,
-        installation_id: i64,
-        relative_path: &str,
-    ) -> i64 {
+    fn insert_file(connection: &Connection, installation_id: i64, relative_path: &str) -> i64 {
         connection
             .execute(
                 "INSERT INTO local_files (
@@ -331,8 +326,7 @@ mod tests {
 
         let first_bytes = minimal_dbpf(&[shared, second]);
         let third_bytes = minimal_dbpf(&[shared, third]);
-        std::fs::write(mods_root.join("a.package"), &first_bytes)
-            .expect("write first package");
+        std::fs::write(mods_root.join("a.package"), &first_bytes).expect("write first package");
         std::fs::write(mods_root.join("b.package"), &first_bytes)
             .expect("write exact duplicate package");
         std::fs::write(mods_root.join("c.package"), &third_bytes)
@@ -377,9 +371,7 @@ mod tests {
         let third_overlaps = analysis
             .resource_overlaps
             .iter()
-            .filter(|finding| {
-                finding.left_file_id == third_id || finding.right_file_id == third_id
-            })
+            .filter(|finding| finding.left_file_id == third_id || finding.right_file_id == third_id)
             .collect::<Vec<_>>();
         assert_eq!(third_overlaps.len(), 2);
         assert!(third_overlaps
