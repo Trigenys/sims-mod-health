@@ -16,9 +16,13 @@ const navItems: NavItem[] = [
 
 type SidebarProps = {
   activeItem?: string;
+  onNavigate?: (label: string) => void;
 };
 
-export function Sidebar({ activeItem = "Overview" }: SidebarProps) {
+export function Sidebar({
+  activeItem = "Overview",
+  onNavigate
+}: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -39,11 +43,12 @@ export function Sidebar({ activeItem = "Overview" }: SidebarProps) {
               aria-label={item.label}
               className={active ? "nav-item active" : "nav-item"}
               key={item.label}
+              onClick={() => onNavigate?.(item.label)}
             >
               <span className="nav-icon" aria-hidden="true">{item.icon}</span>
               <span className="nav-label">{item.label}</span>
               {item.count !== undefined && (
-                <span className="nav-count" aria-label={`${item.count} available updates`}>
+                <span className="nav-count" aria-label={item.count + " available updates"}>
                   {item.count}
                 </span>
               )}

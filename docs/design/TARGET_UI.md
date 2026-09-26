@@ -248,9 +248,13 @@ The target shell is implemented through reusable production boundaries rather th
 - `src/components/ui/StatusBadge.tsx` — text + symbol + color status treatment;
 - `src/design/tokens.css` — canonical visual tokens;
 - `src/features/overview/OverviewPage.tsx` — composition only;
-- `src/features/overview/overview.fixture.ts` — static fixture isolated from presentation until real scanner data exists.
+- `src/features/overview/overview.fixture.ts` — static fixture isolated from presentation until real scanner data exists;
+- `src/features/library/LibraryPage.tsx` — searchable/filterable local inventory;
+- `src/features/library/ModDetailPage.tsx` — evidence-first detail surface;
+- `src/features/library/LibraryStateNotice.tsx` — offline, partial and failure resilience states;
+- `src/features/library/library.fixture.ts` — product-surface fixture isolated from future scanner/registry adapters.
 
-The fixture is intentionally not a fake backend. Issue #17 will replace it with real health data.
+The fixtures are intentionally not fake backends. Issue #17 will replace Overview fixture data with real health data, while Library adapters can be wired to resolved local inventory without changing the presentation contract.
 
 ## 15. Visual evidence automation
 
@@ -264,6 +268,8 @@ The workflow:
 4. verifies no horizontal overflow at 1024×700 and 1440×900;
 5. verifies the active navigation destination remains exposed;
 6. captures full-page screenshots;
-7. uploads them as the `overview-visual-evidence` artifact.
+7. verifies visible keyboard focus on Library and Mod Detail;
+8. captures Overview, Library, Mod Detail and degraded-registry evidence;
+9. uploads them as the `product-surfaces-visual-evidence` artifact.
 
 This provides repeatable evidence for UI acceptance without requiring a manual local screenshot workflow.

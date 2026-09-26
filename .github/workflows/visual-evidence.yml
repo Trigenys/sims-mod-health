@@ -39,7 +39,7 @@ jobs:
       - run: npm run visual:verify
       - uses: actions/upload-artifact@v6
         with:
-          name: overview-visual-evidence
+          name: product-surfaces-visual-evidence
           path: visual-evidence/*.png
           if-no-files-found: error
           retention-days: 14
