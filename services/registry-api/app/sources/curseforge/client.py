@@ -164,7 +164,8 @@ class CurseForgeClient:
                         status_code=response.status_code,
                         retry_after_seconds=retry_after,
                     )
-                self._sleep(retry_after if retry_after is not None else self._backoff(attempt))
+                delay = retry_after if retry_after is not None else self._backoff(attempt)
+                self._sleep(min(delay, self._max_backoff_seconds))
                 continue
 
             if response.is_error:
