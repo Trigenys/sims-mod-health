@@ -865,13 +865,15 @@ fn finish_scan_session(
              status = ?2,
              files_seen = ?3,
              files_hashed = ?4,
-             error_count = ?5
+             files_skipped = ?5,
+             observation_count = ?6
          WHERE id = ?1",
         params![
             summary.scan_session_id,
             status,
             counter_to_i64(summary.files_seen),
             counter_to_i64(summary.files_hashed),
+            counter_to_i64(summary.files_skipped),
             counter_to_i64(summary.observations)
         ],
     )?;

@@ -2,6 +2,8 @@ mod conflicts;
 mod dbpf;
 mod fingerprint;
 mod game;
+mod overview;
+mod registry;
 mod scanner;
 mod storage;
 mod ts4script;
@@ -11,6 +13,7 @@ use std::{path::PathBuf, sync::Arc};
 use conflicts::LocalConflictAnalysis;
 use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
+use overview::OverviewSnapshot;
 use rusqlite::OptionalExtension;
 use scanner::{ScanMode, ScanSummary, ScannerControl};
 use tauri::{Emitter, Manager, State};
@@ -65,6 +68,51 @@ async fn scan_sims_mods(
 #[tauri::command]
 fn cancel_mod_scan(state: State<'_, AppState>) -> bool {
     state.scanner.cancel()
+}
+
+#[tauri::command]
+async fn scan_current_sims_mods(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    mode: ScanMode,
+) -> Result<ScanSummary, String> {
+    let lookup_database_path = state.database_path.clone();
+    let selected_path = tauri::async_runtime::spawn_blocking(move || {
+        overview::latest_installation_root(&lookup_database_path).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| format!("installation lookup worker failed: {error}"))??
+    .ok_or_else(|| "no scanned Sims installation is available".to_string())?;
+
+    let database_path = state.database_path.clone();
+    let scanner = Arc::clone(&state.scanner);
+
+    tauri::async_runtime::spawn_blocking(move || {
+        scanner::scan_path(
+            &database_path,
+            &selected_path,
+            mode,
+            scanner.as_ref(),
+            |progress| {
+                let _ = app.emit("scanner://progress", progress);
+            },
+        )
+        .map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| format!("scanner worker failed: {error}"))?
+}
+
+#[tauri::command]
+async fn get_overview_snapshot(state: State<'_, AppState>) -> Result<OverviewSnapshot, String> {
+    let database_path = state.database_path.clone();
+    let local = tauri::async_runtime::spawn_blocking(move || {
+        overview::load_local_context(&database_path).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| format!("overview worker failed: {error}"))??;
+
+    Ok(overview::build_snapshot(local).await)
 }
 
 fn installed_id(
@@ -146,7 +194,9 @@ pub fn run() {
             discover_sims_installations,
             inspect_sims_installation,
             scan_sims_mods,
+            scan_current_sims_mods,
             cancel_mod_scan,
+            get_overview_snapshot,
             list_exact_duplicates,
             analyze_local_conflicts
         ])

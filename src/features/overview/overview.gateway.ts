@@ -1,0 +1,93 @@
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { overviewVisualFixture } from "./overview.visual";
+import type { OverviewSnapshot, ScanProgress } from "./overview.types";
+
+export type OverviewGateway = {
+  load: () => Promise<OverviewSnapshot>;
+  scanCurrent: () => Promise<void>;
+  subscribeProgress: (
+    onProgress: (progress: ScanProgress) => void
+  ) => Promise<UnlistenFn>;
+};
+
+function isVisualHarness() {
+  return new URLSearchParams(window.location.search).get("visual") === "overview";
+}
+
+function browserEmptySnapshot(): OverviewSnapshot {
+  return {
+    hasInstallation: false,
+    gameVersion: null,
+    platform: "windows",
+    indexedCount: 0,
+    healthScore: null,
+    healthScoreExplanation:
+      "Health becomes available after an installation has been scanned and resolved against the registry.",
+    healthCounts: {
+      healthy: 0,
+      updates: 0,
+      conflicts: 0,
+      unknown: 0
+    },
+    attentionCount: 0,
+    attention: [],
+    installation: {
+      scriptMods: 0,
+      packageFiles: 0,
+      unidentified: null,
+      exactDuplicates: 0
+    },
+    registryState: "offline",
+    registryDetail:
+      "The browser preview has no Tauri runtime. Local scan data is available in the desktop application.",
+    scan: {
+      scanSessionId: null,
+      status: "empty",
+      startedAt: null,
+      completedAt: null,
+      filesSeen: 0,
+      filesHashed: 0,
+      filesSkipped: 0,
+      observations: 0,
+      stale: false,
+      partial: false
+    }
+  };
+}
+
+export const overviewGateway: OverviewGateway = {
+  async load() {
+    if (isVisualHarness()) {
+      return overviewVisualFixture;
+    }
+
+    try {
+      return await invoke<OverviewSnapshot>("get_overview_snapshot");
+    } catch {
+      return browserEmptySnapshot();
+    }
+  },
+
+  async scanCurrent() {
+    if (isVisualHarness()) {
+      return;
+    }
+
+    await invoke("scan_current_sims_mods", { mode: "incremental" });
+  },
+
+  async subscribeProgress(onProgress) {
+    if (isVisualHarness()) {
+      return () => undefined;
+    }
+
+    try {
+      return await listen<ScanProgress>("scanner://progress", (event) => {
+        onProgress(event.payload);
+      });
+    } catch {
+      return () => undefined;
+    }
+  }
+};
