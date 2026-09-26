@@ -14,7 +14,7 @@ describe("ModDetailPage", () => {
 
     expect(screen.getByText("Verified fact")).toBeVisible();
     expect(screen.getByText("Inferred identification")).toBeVisible();
-    expect(screen.getByText("Community report")).toBeVisible();
+    expect(screen.getAllByText("Community report")).toHaveLength(2);
     expect(screen.getByText("High confidence")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Why the app says this" })).toBeVisible();
   });
