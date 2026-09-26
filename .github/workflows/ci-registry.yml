@@ -1,11 +1,11 @@
 name: Registry CI
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
       - "services/registry-api/**"
-      - ".github/workflows/ci-registry.yml"
 
 permissions:
   contents: read
