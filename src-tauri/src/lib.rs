@@ -78,8 +78,7 @@ async fn scan_current_sims_mods(
 ) -> Result<ScanSummary, String> {
     let lookup_database_path = state.database_path.clone();
     let selected_path = tauri::async_runtime::spawn_blocking(move || {
-        overview::latest_installation_root(&lookup_database_path)
-            .map_err(|error| error.to_string())
+        overview::latest_installation_root(&lookup_database_path).map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| format!("installation lookup worker failed: {error}"))??
@@ -105,13 +104,10 @@ async fn scan_current_sims_mods(
 }
 
 #[tauri::command]
-async fn get_overview_snapshot(
-    state: State<'_, AppState>,
-) -> Result<OverviewSnapshot, String> {
+async fn get_overview_snapshot(state: State<'_, AppState>) -> Result<OverviewSnapshot, String> {
     let database_path = state.database_path.clone();
     let local = tauri::async_runtime::spawn_blocking(move || {
-        overview::load_local_context(&database_path)
-            .map_err(|error| error.to_string())
+        overview::load_local_context(&database_path).map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| format!("overview worker failed: {error}"))??;

@@ -1,4 +1,8 @@
-use std::{error::Error, fmt::{Display, Formatter}, time::Duration};
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+    time::Duration,
+};
 
 use reqwest::Client;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -145,9 +149,7 @@ pub(crate) struct RegistryClient {
 
 impl RegistryClient {
     pub(crate) fn new(base_url: String) -> Result<Self, RegistryError> {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(7))
-            .build()?;
+        let client = Client::builder().timeout(Duration::from_secs(7)).build()?;
 
         Ok(Self {
             base_url: base_url.trim_end_matches('/').to_string(),

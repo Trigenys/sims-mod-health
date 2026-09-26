@@ -177,22 +177,16 @@ pub(crate) fn load_local_context(
     let probes = load_registry_probes(&connection, installation.id)?;
 
     let (exact_duplicates, resource_overlaps, analysis_partial) =
-        match conflicts::analyze_installation(
-            &connection,
-            installation.id,
-            &installation.mods_root,
-        ) {
+        match conflicts::analyze_installation(&connection, installation.id, &installation.mods_root)
+        {
             Ok(analysis) => (
                 analysis.exact_duplicates,
                 analysis.resource_overlaps,
                 !analysis.parse_failures.is_empty() || analysis.overlap_pairs_truncated,
             ),
             Err(_) => (
-                crate::fingerprint::exact_duplicate_groups(
-                    &connection,
-                    installation.id,
-                )
-                .unwrap_or_default(),
+                crate::fingerprint::exact_duplicate_groups(&connection, installation.id)
+                    .unwrap_or_default(),
                 Vec::new(),
                 true,
             ),
@@ -220,9 +214,7 @@ pub(crate) fn latest_installation_root(
     Ok(latest_installation(&connection)?.map(|installation| installation.game_root))
 }
 
-pub(crate) async fn build_snapshot(
-    local: LocalOverviewContext,
-) -> OverviewSnapshot {
+pub(crate) async fn build_snapshot(local: LocalOverviewContext) -> OverviewSnapshot {
     let Some(installation) = local.installation.clone() else {
         return empty_snapshot(local.scan);
     };
@@ -326,7 +318,11 @@ pub(crate) async fn build_snapshot(
                     unidentified: None,
                     ..base_installation
                 },
-                if error.is_transport() { "offline" } else { "partial" },
+                if error.is_transport() {
+                    "offline"
+                } else {
+                    "partial"
+                },
                 &error.to_string(),
                 ranked_attention,
             );
@@ -376,7 +372,9 @@ pub(crate) async fn build_snapshot(
                 health_counts,
                 installation_counts,
                 "partial",
-                &format!("Artifact identity resolved, but health evaluation is incomplete: {error}"),
+                &format!(
+                    "Artifact identity resolved, but health evaluation is incomplete: {error}"
+                ),
                 ranked_attention,
             );
         }
@@ -399,7 +397,9 @@ pub(crate) async fn build_snapshot(
                 health_counts,
                 installation_counts,
                 "partial",
-                &format!("Compatibility is current, but dependency/conflict data is partial: {error}"),
+                &format!(
+                    "Compatibility is current, but dependency/conflict data is partial: {error}"
+                ),
                 ranked_attention,
             );
         }
@@ -616,16 +616,15 @@ fn load_registry_probes(
                 .and_then(|value| value.to_str())
                 .map(str::to_string);
 
-            let identity_hints =
-                if creator_hint.is_some() || embedded_version.is_some() {
-                    Some(RegistryIdentityHints {
-                        creator: creator_hint.clone(),
-                        mod_name: None,
-                        version: embedded_version.clone(),
-                    })
-                } else {
-                    None
-                };
+            let identity_hints = if creator_hint.is_some() || embedded_version.is_some() {
+                Some(RegistryIdentityHints {
+                    creator: creator_hint.clone(),
+                    mod_name: None,
+                    version: embedded_version.clone(),
+                })
+            } else {
+                None
+            };
 
             bindings.push(ProbeBinding {
                 local_file_id,
@@ -642,16 +641,17 @@ fn load_registry_probes(
             bindings.len() - 1
         });
 
-        if let (Some(kind), Some(value), Some(version)) = (
-            fingerprint_kind,
-            fingerprint_value,
-            algorithm_version,
-        ) {
-            bindings[index].probe.fingerprints.push(RegistryFingerprintProbe {
-                kind,
-                value,
-                algorithm_version: version,
-            });
+        if let (Some(kind), Some(value), Some(version)) =
+            (fingerprint_kind, fingerprint_value, algorithm_version)
+        {
+            bindings[index]
+                .probe
+                .fingerprints
+                .push(RegistryFingerprintProbe {
+                    kind,
+                    value,
+                    algorithm_version: version,
+                });
         }
     }
 
@@ -847,8 +847,7 @@ fn apply_health(
     }
 
     Some(
-        ((compatible_for_score.saturating_mul(100) + denominator / 2) / denominator)
-            .min(100) as u8,
+        ((compatible_for_score.saturating_mul(100) + denominator / 2) / denominator).min(100) as u8,
     )
 }
 
@@ -1004,11 +1003,16 @@ fn finalize_snapshot(
     mut ranked_attention: Vec<RankedAttention>,
 ) -> OverviewSnapshot {
     ranked_attention.sort_by(|left, right| {
-        (left.priority, left.item.name.as_str(), left.item.badge.as_str()).cmp(&(
-            right.priority,
-            right.item.name.as_str(),
-            right.item.badge.as_str(),
-        ))
+        (
+            left.priority,
+            left.item.name.as_str(),
+            left.item.badge.as_str(),
+        )
+            .cmp(&(
+                right.priority,
+                right.item.name.as_str(),
+                right.item.badge.as_str(),
+            ))
     });
 
     let attention_count = ranked_attention.len() as u64;
@@ -1070,10 +1074,7 @@ fn empty_snapshot(scan: OverviewScanState) -> OverviewSnapshot {
     }
 }
 
-fn release_name<'a>(
-    release_names: &'a HashMap<String, String>,
-    release_id: &str,
-) -> &'a str {
+fn release_name<'a>(release_names: &'a HashMap<String, String>, release_id: &str) -> &'a str {
     release_names
         .get(release_id)
         .map(String::as_str)
@@ -1117,38 +1118,44 @@ mod tests {
              ) VALUES ('game', 'mods', 'windows', '1.128.90', '2026-09-26T10:00:00Z', '2026-09-26T10:00:00Z')",
             [],
         ).expect("insert installation");
-        connection.execute(
-            "INSERT INTO scan_sessions (
+        connection
+            .execute(
+                "INSERT INTO scan_sessions (
                 installation_id, started_at, completed_at, status, mode,
                 files_seen, files_hashed, files_skipped, observation_count
              ) VALUES (
                 1, '2026-09-26T10:00:00Z', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
                 'completed', 'incremental', 3, 2, 1, 0
              )",
-            [],
-        ).expect("insert scan");
+                [],
+            )
+            .expect("insert scan");
 
         for (path, kind) in [
             ("Mods/A.package", "package"),
             ("Mods/B.package", "package"),
             ("Mods/C.ts4script", "ts4script"),
         ] {
-            connection.execute(
-                "INSERT INTO local_files (
+            connection
+                .execute(
+                    "INSERT INTO local_files (
                     installation_id, relative_path, file_kind, enabled
                  ) VALUES (1, ?1, ?2, 1)",
-                params![path, kind],
-            ).expect("insert local file");
+                    params![path, kind],
+                )
+                .expect("insert local file");
         }
-        connection.execute(
-            "INSERT INTO fingerprints (
+        connection
+            .execute(
+                "INSERT INTO fingerprints (
                 local_file_id, kind, value, algorithm_version, computed_at
              ) VALUES
                 (1, 'sha256', 'same', 'sha256-v1', 'now'),
                 (2, 'sha256', 'same', 'sha256-v1', 'now'),
                 (3, 'sha256', 'third', 'sha256-v1', 'now')",
-            [],
-        ).expect("insert fingerprints");
+                [],
+            )
+            .expect("insert fingerprints");
         drop(connection);
 
         let context = load_local_context(&path).expect("load overview");
@@ -1205,13 +1212,7 @@ mod tests {
         };
         let mut attention = Vec::new();
 
-        let score = apply_health(
-            &health,
-            &names,
-            0,
-            &mut counts,
-            &mut attention,
-        );
+        let score = apply_health(&health, &names, 0, &mut counts, &mut attention);
 
         assert_eq!(score, Some(50));
         assert_eq!(counts.updates, 1);
