@@ -82,3 +82,14 @@ def test_relationship_rules_retain_version_constraints_and_source_targets() -> N
             "source_record_id",
             "retrieved_at",
         }.issubset(columns)
+
+
+
+def test_mods_include_deterministic_discovery_taxonomy() -> None:
+    columns = {
+        column["name"]: column
+        for column in inspect(engine).get_columns("mods")
+    }
+
+    assert columns["categories"]["nullable"] is False
+    assert columns["features"]["nullable"] is False

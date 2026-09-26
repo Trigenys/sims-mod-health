@@ -168,6 +168,22 @@ Compatibility evidence is patch-scoped, source-provenanced and inspectable. Exac
 
 See `docs/health/PATCH_COMPATIBILITY_ENGINE.md`.
 
+## Discovery recommendation contract
+
+Endpoint:
+
+```text
+POST /v1/discovery/recommend
+```
+
+The request contains the current patch plus resolved installed release IDs.
+
+Discovery uses deterministic canonical categories/features, requires explicit compatible current-patch evidence, excludes already-installed mods, abandoned/broken/potential-conflict releases and known incompatibilities, then returns deterministic “Because you use…” explanations.
+
+There is no sponsored-placement field or ranking input in the MVP.
+
+See `docs/discovery/RECOMMENDATION_ENGINE.md`.
+
 ## Installation relationship contract
 
 Endpoint:

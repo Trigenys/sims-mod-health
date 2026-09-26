@@ -15,6 +15,7 @@ from app.domain import (
     ModRelease,
     Source,
 )
+from app.services.discovery_taxonomy import infer_taxonomy
 from app.sources.curseforge.mapper import MappedFile, MappedProject
 
 
@@ -98,6 +99,15 @@ class CurseForgeIngestionRepository:
         mod.name = project.mod_name
         mod.description = project.summary
         mod.aliases = []
+        categories, features = infer_taxonomy(
+            name=project.mod_name,
+            summary=project.summary,
+            slug=project.mod_slug,
+        )
+        if not mod.categories:
+            mod.categories = categories
+        if not mod.features:
+            mod.features = features
         creator.display_name = project.creator_name
         creator.aliases = list(project.creator_aliases)
 

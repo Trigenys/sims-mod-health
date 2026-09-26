@@ -6,6 +6,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.domain import Artifact, Creator, Fingerprint, Mod, ModRelease, Source
+from app.services.discovery_taxonomy import infer_taxonomy
 from app.sources.github_releases.mapper import MappedProject
 
 
@@ -87,6 +88,15 @@ class GitHubReleasesIngestionRepository:
         mod.name = project.mod_name
         mod.description = project.summary
         mod.aliases = []
+        categories, features = infer_taxonomy(
+            name=project.mod_name,
+            summary=project.summary,
+            slug=project.mod_slug,
+        )
+        if not mod.categories:
+            mod.categories = categories
+        if not mod.features:
+            mod.features = features
         creator.display_name = project.creator_name
         creator.aliases = []
 
