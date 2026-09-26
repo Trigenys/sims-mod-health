@@ -760,7 +760,8 @@ async fn verify_dependency_safety(
     drop(connection);
 
     let client = RegistryClient::new(registry_url)?;
-    let resolution = resolve_installed_releases(database_path, prepared.installation_id, &client).await?;
+    let resolution =
+        resolve_installed_releases(database_path, prepared.installation_id, &client).await?;
 
     if resolution.unresolved_files > 0 {
         return Err(MutationError::DependencyGraphIncomplete {
@@ -774,11 +775,7 @@ async fn verify_dependency_safety(
         ));
     }
 
-    let current = resolution
-        .release_ids
-        .iter()
-        .cloned()
-        .collect::<Vec<_>>();
+    let current = resolution.release_ids.iter().cloned().collect::<Vec<_>>();
     let baseline = client.evaluate_relationships(&current).await?;
 
     let mut hypothetical = resolution.release_ids;
@@ -886,7 +883,11 @@ fn install_staged(
         None,
     )?;
 
-    validate_installed_target(&prepared.mods_root, &prepared.target_relative_path, &staged_sha)?;
+    validate_installed_target(
+        &prepared.mods_root,
+        &prepared.target_relative_path,
+        &staged_sha,
+    )?;
     transition(
         database_path,
         prepared.id,
@@ -957,11 +958,10 @@ struct InstalledResolution {
     unresolved_files: usize,
 }
 
-async fn resolve_installed_releases(
+fn load_installed_resolution_input(
     database_path: &Path,
     installation_id: i64,
-    client: &RegistryClient,
-) -> Result<InstalledResolution, MutationError> {
+) -> Result<(usize, Vec<RegistryArtifactProbe>), MutationError> {
     let connection = storage::open(database_path)?;
     let eligible_count = connection.query_row(
         "SELECT COUNT(*)
@@ -1046,11 +1046,18 @@ async fn resolve_installed_releases(
     }
 
     probes.retain(|probe| !probe.fingerprints.is_empty());
+    Ok((eligible_count, probes))
+}
+
+async fn resolve_installed_releases(
+    database_path: &Path,
+    installation_id: i64,
+    client: &RegistryClient,
+) -> Result<InstalledResolution, MutationError> {
+    let (eligible_count, probes) =
+        load_installed_resolution_input(database_path, installation_id)?;
     let resolutions = client.resolve_artifacts(&probes).await?;
-    Ok(collect_deterministic_releases(
-        eligible_count,
-        &resolutions,
-    ))
+    Ok(collect_deterministic_releases(eligible_count, &resolutions))
 }
 
 fn collect_deterministic_releases(
@@ -1067,8 +1074,7 @@ fn collect_deterministic_releases(
 
         let selected = resolution.selected_artifact_id.as_deref();
         let matched = resolution.matches.iter().find(|candidate| {
-            candidate.deterministic
-                && Some(candidate.artifact_id.as_str()) == selected
+            candidate.deterministic && Some(candidate.artifact_id.as_str()) == selected
         });
 
         if let Some(matched) = matched {
@@ -1181,10 +1187,7 @@ fn checked_target_path(mods_root: &Path, relative: &Path) -> Result<PathBuf, Mut
     Ok(canonical_root.join(relative))
 }
 
-fn checked_backup_path(
-    backup_root: &Path,
-    relative: &Path,
-) -> Result<PathBuf, MutationError> {
+fn checked_backup_path(backup_root: &Path, relative: &Path) -> Result<PathBuf, MutationError> {
     let relative = validate_relative_target(&relative.to_string_lossy())?;
     Ok(backup_root.join("tree").join(relative))
 }
@@ -1224,10 +1227,7 @@ fn ensure_directory_within(root: &Path, child: &Path) -> Result<(), MutationErro
     ensure_existing_directory_within(root, child)
 }
 
-fn ensure_existing_directory_within(
-    root: &Path,
-    child: &Path,
-) -> Result<(), MutationError> {
+fn ensure_existing_directory_within(root: &Path, child: &Path) -> Result<(), MutationError> {
     let canonical_root = fs::canonicalize(root)?;
     let canonical_child = fs::canonicalize(child)?;
     if !canonical_child.starts_with(&canonical_root) {
@@ -1239,8 +1239,7 @@ fn ensure_existing_directory_within(
 }
 
 fn validate_source_url(source_kind: &str, value: &str) -> Result<Url, MutationError> {
-    let url = Url::parse(value)
-        .map_err(|error| MutationError::InvalidSource(error.to_string()))?;
+    let url = Url::parse(value).map_err(|error| MutationError::InvalidSource(error.to_string()))?;
 
     if !source_url_allowed(source_kind, &url) {
         return Err(MutationError::InvalidSource(format!(
@@ -1296,8 +1295,9 @@ fn normalize_expected_sha256(value: Option<&str>) -> Result<Option<String>, Muta
 }
 
 fn hash_file(path: &Path) -> Result<String, MutationError> {
-    fingerprint::sha256_file(path, || false)?
-        .ok_or_else(|| MutationError::InvalidTarget("hashing was unexpectedly cancelled".to_string()))
+    fingerprint::sha256_file(path, || false)?.ok_or_else(|| {
+        MutationError::InvalidTarget("hashing was unexpectedly cancelled".to_string())
+    })
 }
 
 fn operation_key() -> String {
@@ -1462,9 +1462,7 @@ fn mark_interrupted(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::registry::{
-        DependencyFinding, KnownIncompatibilityFinding, ReverseDependencyUsage,
-    };
+    use crate::registry::{DependencyFinding, KnownIncompatibilityFinding, ReverseDependencyUsage};
     use tempfile::TempDir;
 
     fn fixture() -> (TempDir, PathBuf, PathBuf, PathBuf) {
@@ -1472,8 +1470,7 @@ mod tests {
         let app_data = temp.path().join("app-data");
         let mods_root = temp.path().join("Mods");
         let target = mods_root.join("Gameplay/Example.package");
-        fs::create_dir_all(target.parent().expect("target parent"))
-            .expect("create target parent");
+        fs::create_dir_all(target.parent().expect("target parent")).expect("create target parent");
         fs::write(&target, b"old release").expect("write old release");
 
         let database_path = app_data.join("sims-mod-health.sqlite3");
@@ -1504,19 +1501,16 @@ mod tests {
             installation_id: 1,
             target_relative_path: "Gameplay/Example.package".to_string(),
             source_kind: "github_releases".to_string(),
-            source_url: "https://github.com/example/mod/releases/download/v2/mod.package?token=secret"
-                .to_string(),
+            source_url:
+                "https://github.com/example/mod/releases/download/v2/mod.package?token=secret"
+                    .to_string(),
             current_release_id: "00000000-0000-0000-0000-000000000001".to_string(),
             replacement_release_id: "00000000-0000-0000-0000-000000000002".to_string(),
             expected_sha256: None,
         }
     }
 
-    fn stage_for_test(
-        database_path: &Path,
-        prepared: &PreparedTransaction,
-        bytes: &[u8],
-    ) {
+    fn stage_for_test(database_path: &Path, prepared: &PreparedTransaction, bytes: &[u8]) {
         let staged = prepared.staging_root.join("replacement.staged");
         fs::write(&staged, bytes).expect("write staged fixture");
         let sha = hash_file(&staged).expect("hash staged fixture");
@@ -1552,16 +1546,13 @@ mod tests {
             "https://mediafilez.forgecdn.net/files/1/mod.package"
         )
         .is_ok());
-        assert!(validate_source_url(
-            "github_releases",
-            "http://github.com/example/mod.package"
-        )
-        .is_err());
-        assert!(validate_source_url(
-            "github_releases",
-            "https://evil.example/mod.package"
-        )
-        .is_err());
+        assert!(
+            validate_source_url("github_releases", "http://github.com/example/mod.package")
+                .is_err()
+        );
+        assert!(
+            validate_source_url("github_releases", "https://evil.example/mod.package").is_err()
+        );
         assert!(validate_source_url(
             "curseforge",
             "https://forgecdn.net.evil.example/mod.package"
@@ -1627,7 +1618,10 @@ mod tests {
             rollback_update(&database_path, &app_data, prepared.id).expect("rollback update");
 
         assert_eq!(rolled_back.status, "rolled_back");
-        assert_eq!(fs::read(&target).expect("read restored target"), b"old release");
+        assert_eq!(
+            fs::read(&target).expect("read restored target"),
+            b"old release"
+        );
         assert!(rolled_back
             .events
             .iter()
@@ -1658,8 +1652,12 @@ mod tests {
             load_transaction(&database_path, prepared.id).expect("load interrupted transaction");
         assert_eq!(interrupted.status, "interrupted");
 
-        rollback_update(&database_path, &app_data, prepared.id).expect("rollback interrupted update");
-        assert_eq!(fs::read(&target).expect("read restored target"), b"old release");
+        rollback_update(&database_path, &app_data, prepared.id)
+            .expect("rollback interrupted update");
+        assert_eq!(
+            fs::read(&target).expect("read restored target"),
+            b"old release"
+        );
     }
 
     #[test]

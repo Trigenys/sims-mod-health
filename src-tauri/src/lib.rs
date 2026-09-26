@@ -88,12 +88,8 @@ fn rollback_mod_update(
     state: State<'_, AppState>,
     transaction_id: i64,
 ) -> Result<UpdateTransactionView, String> {
-    mutation::rollback_update(
-        &state.database_path,
-        &state.app_data_dir,
-        transaction_id,
-    )
-    .map_err(|error| error.to_string())
+    mutation::rollback_update(&state.database_path, &state.app_data_dir, transaction_id)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
