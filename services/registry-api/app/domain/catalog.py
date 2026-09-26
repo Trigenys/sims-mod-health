@@ -25,8 +25,6 @@ class Creator(Base):
     slug: Mapped[str] = mapped_column(String(160), unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(240))
     aliases: Mapped[list[str]] = mapped_column(JSON, default=list)
-    categories: Mapped[list[str]] = mapped_column(JSON, default=list)
-    features: Mapped[list[str]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.now
     )
@@ -49,6 +47,8 @@ class Mod(Base):
     name: Mapped[str] = mapped_column(String(280))
     description: Mapped[str | None] = mapped_column(Text)
     aliases: Mapped[list[str]] = mapped_column(JSON, default=list)
+    categories: Mapped[list[str]] = mapped_column(JSON, default=list)
+    features: Mapped[list[str]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.now
     )
