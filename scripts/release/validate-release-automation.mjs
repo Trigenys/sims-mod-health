@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const APPFACTORY_RELEASE_SHA = "6a389276ffb89a94266029ec37d90e7b167cd95d";
+const APPFACTORY_RELEASE_SHA = "2856fc410ecd4b50b7ec5a58ac32d692dcd47170";
 
 const [releaseWorkflow, validationWorkflow, configText, manifestText] =
   await Promise.all([
