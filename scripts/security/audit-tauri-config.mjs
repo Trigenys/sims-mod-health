@@ -7,7 +7,7 @@ const capability = JSON.parse(await readFile(capabilityPath, "utf8"));
 const config = JSON.parse(await readFile(configPath, "utf8"));
 
 const permissions = capability.permissions ?? [];
-const expectedPermissions = ["core:default"];
+const expectedPermissions = ["core:default", "dialog:allow-open"];
 
 if (JSON.stringify(permissions) !== JSON.stringify(expectedPermissions)) {
   throw new Error(
@@ -21,8 +21,7 @@ const broadPermissionPrefixes = [
   "shell:",
   "http:",
   "process:",
-  "upload:",
-  "dialog:allow-open"
+  "upload:"
 ];
 
 for (const permission of permissions) {
