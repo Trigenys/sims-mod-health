@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile, copyFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { join, resolve } from "node:path";
-import { buildSitePages } from "./site-pages.mjs";
+import { buildSitePages, renderProductHeader } from "./site-pages.mjs";
 
 const root = resolve(process.cwd());
 const source = join(root, "apps", "landing", "stitch-live.html.gz.b64");
@@ -43,39 +43,20 @@ for (const [external, internal] of internalRoutes) {
   html = html.replaceAll(`href="${external}"`, `href="${internal}"`);
 }
 
-const languageSwitcher = `
-<div
-  data-lang-switch
-  class="inline-flex items-center rounded-full bg-surface-container-low p-1 border border-outline-variant/40"
-  aria-label="Choose language"
->
-  <button
-    type="button"
-    data-lang="en"
-    aria-pressed="true"
-    class="px-2.5 py-1.5 rounded-full font-label-md text-label-md font-bold transition-colors"
-  >EN</button>
-  <button
-    type="button"
-    data-lang="fr"
-    aria-pressed="false"
-    class="px-2.5 py-1.5 rounded-full font-label-md text-label-md font-bold transition-colors"
-  >FR</button>
-</div>
-`.replace(/\n\s*/g, "");
+const headerPattern = /<header\b[\s\S]*?<\/header>/gi;
+const headerMatches = html.match(headerPattern);
 
-const headerActions =
-  '<div class="flex items-center gap-3 shrink-0"><a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary';
-
-if (!html.includes(headerActions)) {
-  throw new Error("Could not locate Stitch header action group for language switch.");
+if (!headerMatches || headerMatches.length !== 1) {
+  throw new Error(
+    `Expected exactly one Stitch header, found ${headerMatches?.length ?? 0}.`
+  );
 }
 
+// Use a replacement callback so '$' sequences inside generated HTML are never
+// interpreted as String.replace substitution tokens.
 html = html.replace(
-  headerActions,
-  '<div class="flex items-center gap-3 shrink-0">' +
-    languageSwitcher +
-    '<a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary'
+  headerPattern,
+  () => renderProductHeader("/", { logoSrc: "./logo.svg" })
 );
 
 if (!html.includes("</body>")) {

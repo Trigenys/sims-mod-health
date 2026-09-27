@@ -48,6 +48,13 @@ const requiredHtml = [
   "max-w-[1600px]",
   "max-w-[1480px]",
   "data-lang-switch",
+  "data-product-header",
+  'aria-current="page"',
+  'data-copy-fr="Accueil"',
+  'data-copy-fr="Télécharger"',
+  'data-copy-fr="Documentation"',
+  'data-copy-fr="Sécurité"',
+  'data-copy-fr="Assistance"',
   'data-lang="en"',
   'data-lang="fr"',
   "./i18n.js",
@@ -121,6 +128,25 @@ for (const marker of [
 const downloadPage = downloadPageForFallback;
 if (!downloadPage.includes("data-binary-download-link")) {
   throw new Error("Download page must own the real MSI handoff.");
+}
+
+for (const [label, pageHtml, activeHref] of [
+  ["home", html, "/"],
+  ["download", downloadPage, "/download/"],
+  ["docs", await readFile(join(site, "docs", "index.html"), "utf8"), "/docs/"],
+  ["security", await readFile(join(site, "security", "index.html"), "utf8"), "/security/"],
+  ["support", await readFile(join(site, "support", "index.html"), "utf8"), "/support/"]
+]) {
+  if (!pageHtml.includes("data-product-header")) {
+    throw new Error(`${label} page must use the canonical product header.`);
+  }
+
+  const activeMarker = `href="${activeHref}" aria-current="page"`;
+  if (!pageHtml.includes(activeMarker)) {
+    throw new Error(
+      `${label} page must expose its canonical active navigation state: ${activeHref}`
+    );
+  }
 }
 
 const verifyPage = await readFile(join(site, "verify", "index.html"), "utf8");

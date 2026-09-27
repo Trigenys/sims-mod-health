@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const productNav = [
+export const productNav = [
   ["/", "Home", "Accueil"],
   ["/download/", "Download", "Télécharger"],
   ["/docs/", "Docs", "Documentation"],
@@ -206,7 +206,11 @@ export async function buildSitePages(outDir) {
   for (const [slug, section] of Object.entries(sections)) {
     const dir = join(outDir, slug);
     await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, "index.html"), page(section), "utf8");
+    await writeFile(
+      join(dir, "index.html"),
+      page(section, { activeHref: activeNavHrefForSlug(slug) }),
+      "utf8"
+    );
   }
 
   await writeFile(join(outDir, "404.html"), page({
@@ -217,10 +221,13 @@ export async function buildSitePages(outDir) {
     introEn: "That route does not exist. Return to the product home or open the documentation hub.",
     introFr: "Cette page n'existe pas. Revenez à l'accueil ou ouvrez la documentation.",
     content: '<div class="flex flex-wrap gap-3"><a class="pill-primary" href="/" data-copy-en="Back home" data-copy-fr="Retour à l’accueil">Back home</a><a class="pill-secondary" href="/docs/" data-copy-en="Documentation" data-copy-fr="Documentation">Documentation</a></div>'
-  }), "utf8");
+  }, { activeHref: null }), "utf8");
 }
 
-function page({ titleEn, titleFr, eyebrowEn, eyebrowFr, introEn, introFr, content }) {
+function page(
+  { titleEn, titleFr, eyebrowEn, eyebrowFr, introEn, introFr, content },
+  { activeHref = null } = {}
+) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -266,18 +273,7 @@ function page({ titleEn, titleFr, eyebrowEn, eyebrowFr, introEn, introFr, conten
   data-description-en="${escapeAttr(introEn)}"
   data-description-fr="${escapeAttr(introFr)}"
 >
-  <header class="sticky top-0 z-40 border-b border-outline-variant/40 bg-surface/95 backdrop-blur">
-    <div class="mx-auto max-w-[1600px] px-5 md:px-8 h-20 flex items-center gap-6">
-      <a href="/" class="flex items-center gap-3 shrink-0">
-        <img src="/logo.svg" alt="" class="w-9 h-9" />
-        <div><strong class="block text-sm">Sims Mod Health</strong><small class="block text-[10px] font-bold text-primary uppercase tracking-wide" data-copy-en="Offline desktop engine" data-copy-fr="Moteur desktop hors ligne">Offline desktop engine</small></div>
-      </a>
-      <nav class="hidden lg:flex items-center gap-1 ml-auto">
-        ${productNav.map(([href,en,fr])=>`<a href="${href}" class="px-3 py-2 rounded-full text-sm font-bold text-on-surface-variant hover:bg-surface-container" data-copy-en="${escapeAttr(en)}" data-copy-fr="${escapeAttr(fr)}">${escapeHtml(en)}</a>`).join("")}
-      </nav>
-      ${languageSwitch()}
-    </div>
-  </header>
+  ${renderProductHeader(activeHref)}
 
   <main class="mx-auto max-w-[1480px] px-5 md:px-8 py-16 md:py-24">
     <div class="max-w-4xl mb-12">
@@ -298,6 +294,47 @@ function page({ titleEn, titleFr, eyebrowEn, eyebrowFr, introEn, introFr, conten
   <script src="/i18n.js" defer></script>
 </body>
 </html>`;
+}
+
+function activeNavHrefForSlug(slug) {
+  if (["download", "release-notes", "verify"].includes(slug)) return "/download/";
+  if (["docs", "architecture", "source"].includes(slug)) return "/docs/";
+  if (slug === "security") return "/security/";
+  if (slug === "support") return "/support/";
+  return null;
+}
+
+export function renderProductHeader(
+  activeHref = null,
+  { logoSrc = "/logo.svg" } = {}
+) {
+  const links = productNav
+    .map(([href, en, fr]) => {
+      const active = href === activeHref;
+      const classes = active
+        ? "bg-surface-container text-on-surface"
+        : "text-on-surface-variant hover:bg-surface-container";
+      const current = active ? ' aria-current="page"' : "";
+
+      return `<a href="${href}"${current} class="px-3 py-2 rounded-full text-sm font-bold transition-colors ${classes}" data-copy-en="${escapeAttr(en)}" data-copy-fr="${escapeAttr(fr)}">${escapeHtml(en)}</a>`;
+    })
+    .join("");
+
+  return `<header data-product-header class="sticky top-0 z-40 border-b border-outline-variant/40 bg-surface/95 backdrop-blur">
+    <div class="mx-auto max-w-[1600px] px-5 md:px-8 h-20 flex items-center gap-6">
+      <a href="/" class="flex items-center gap-3 shrink-0" aria-label="Sims Mod Health">
+        <img src="${escapeAttr(logoSrc)}" alt="" class="w-9 h-9" />
+        <div>
+          <strong class="block text-sm">Sims Mod Health</strong>
+          <small class="block text-[10px] font-bold text-primary uppercase tracking-wide" data-copy-en="Offline desktop engine" data-copy-fr="Moteur desktop hors ligne">Offline desktop engine</small>
+        </div>
+      </a>
+      <nav class="hidden lg:flex items-center gap-1 ml-auto" aria-label="Primary">
+        ${links}
+      </nav>
+      ${languageSwitch()}
+    </div>
+  </header>`;
 }
 
 function languageSwitch() {
