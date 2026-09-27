@@ -53,6 +53,7 @@ function gateway(value: OverviewSnapshot): OverviewGateway {
   return {
     load: vi.fn().mockResolvedValue(value),
     scanCurrent: vi.fn().mockResolvedValue(undefined),
+    scanSelected: vi.fn().mockResolvedValue(false),
     subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
   };
 }
@@ -98,6 +99,7 @@ describe("OverviewPage", () => {
     const fakeGateway: OverviewGateway = {
       load,
       scanCurrent,
+      scanSelected: vi.fn().mockResolvedValue(false),
       subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
     };
 
@@ -109,4 +111,54 @@ describe("OverviewPage", () => {
     await waitFor(() => expect(scanCurrent).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
   });
+
+  it("opens folder selection for the first real scan instead of disabling scanning", async () => {
+    const empty: OverviewSnapshot = {
+      ...snapshot,
+      hasInstallation: false,
+      gameVersion: null,
+      indexedCount: 0,
+      healthScore: null,
+      healthCounts: { healthy: 0, updates: 0, conflicts: 0, unknown: 0 },
+      attentionCount: 0,
+      attention: [],
+      installation: {
+        scriptMods: 0,
+        packageFiles: 0,
+        unidentified: null,
+        exactDuplicates: 0
+      },
+      scan: {
+        scanSessionId: null,
+        status: "empty",
+        startedAt: null,
+        completedAt: null,
+        filesSeen: 0,
+        filesHashed: 0,
+        filesSkipped: 0,
+        observations: 0,
+        stale: false,
+        partial: false
+      }
+    };
+    const scanSelected = vi.fn().mockResolvedValue(true);
+    const load = vi.fn().mockResolvedValue(empty);
+    const fakeGateway: OverviewGateway = {
+      load,
+      scanCurrent: vi.fn().mockResolvedValue(undefined),
+      scanSelected,
+      subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
+    };
+
+    render(<OverviewPage gateway={fakeGateway} />);
+
+    const button = await screen.findByRole("button", {
+      name: "Choose Mods folder and scan"
+    });
+    fireEvent.click(button);
+
+    await waitFor(() => expect(scanSelected).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("button", { name: "Scan now" })).toBeEnabled();
+  });
+
 });
