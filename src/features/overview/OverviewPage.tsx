@@ -53,8 +53,13 @@ export function OverviewPage({ gateway = overviewGateway }: OverviewPageProps) {
     setProgress(null);
 
     try {
-      await gateway.scanCurrent();
-      await refresh();
+      const started = data?.hasInstallation
+        ? (await gateway.scanCurrent(), true)
+        : await gateway.scanSelected();
+
+      if (started) {
+        await refresh();
+      }
     } catch (error) {
       setScanError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -95,7 +100,7 @@ export function OverviewPage({ gateway = overviewGateway }: OverviewPageProps) {
         indexedCount={data.indexedCount}
         onScan={runScan}
         scanning={scanning}
-        scanDisabled={!data.hasInstallation}
+        scanDisabled={false}
       />
 
       <OverviewStateBanner data={data} scanning={scanning} scanError={scanError} />
@@ -107,8 +112,11 @@ export function OverviewPage({ gateway = overviewGateway }: OverviewPageProps) {
             <span className="section-kicker">No local scan yet</span>
             <h1 id="overview-empty-title">Scan a Sims 4 installation to build the health view.</h1>
             <p>
-              The Overview does not invent health numbers. It appears after the desktop scanner has indexed a real Mods folder.
+              The Overview does not invent health numbers. Choose your real Mods folder and the desktop scanner will index it locally.
             </p>
+            <Button onClick={runScan} disabled={scanning}>
+              {scanning ? "Scanning…" : "Choose Mods folder and scan"}
+            </Button>
           </div>
         </Panel>
       ) : (
