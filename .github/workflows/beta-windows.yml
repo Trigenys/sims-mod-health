@@ -1,0 +1,118 @@
+name: Windows Beta
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "package.json"
+      - "scripts/release/**"
+      - "docs/releases/**"
+      - ".github/workflows/beta-windows.yml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  BETA_TAG: v0.1.0-beta.1
+  BETA_ARTIFACT: sims-mod-health-windows-beta
+
+jobs:
+  build-validate:
+    name: build / install / uninstall
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Cache Rust dependencies and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-beta-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-beta-cargo-
+            ${{ runner.os }}-cargo-
+
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Windows MSI from this commit
+        run: npm run tauri build -- --bundles msi
+
+      - name: Locate MSI
+        id: installer
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Path "src-tauri/target/release/bundle/msi" -Filter "*.msi" |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+
+          if (-not $msi) {
+            throw "Tauri build completed without producing an MSI."
+          }
+
+          "path=$($msi.FullName)" >> $env:GITHUB_OUTPUT
+          Write-Host "Installer: $($msi.FullName)"
+
+      - name: Verify clean Windows install and uninstall
+        shell: pwsh
+        run: |
+          ./scripts/release/validate-windows-installer.ps1 -MsiPath "${{ steps.installer.outputs.path }}"
+
+      - name: Prepare checksum and provenance
+        shell: pwsh
+        run: |
+          ./scripts/release/prepare-beta-artifacts.ps1 `
+            -MsiPath "${{ steps.installer.outputs.path }}" `
+            -OutputDirectory "beta-dist" `
+            -CommitSha "${{ github.sha }}" `
+            -RunId "${{ github.run_id }}" `
+            -RunAttempt "${{ github.run_attempt }}"
+
+          Copy-Item "docs/releases/0.1.0-beta.1.md" "beta-dist/RELEASE_NOTES.md"
+
+      - name: Upload validated Windows beta
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.BETA_ARTIFACT }}
+          path: beta-dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-first-beta:
+    name: publish v0.1.0-beta.1
+    needs: build-validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download validated beta
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ env.BETA_ARTIFACT }}
+          path: beta-dist
+
+      - name: Publish first beta release once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$BETA_TAG" >/dev/null 2>&1; then
+            echo "$BETA_TAG already exists; leaving the immutable first-beta tag and release unchanged."
+            exit 0
+          fi
+
+          gh release create "$BETA_TAG"             "beta-dist/Sims-Mod-Health-0.1.0-beta.1-x64.msi#Windows x64 MSI"             "beta-dist/SHA256SUMS.txt#SHA-256 checksums"             "beta-dist/BUILD_PROVENANCE.txt#Build provenance"             --target "$GITHUB_SHA"             --title "Sims Mod Health 0.1.0 Beta 1"             --notes-file "docs/releases/0.1.0-beta.1.md"             --prerelease
