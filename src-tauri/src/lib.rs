@@ -1,6 +1,7 @@
 mod conflicts;
 mod dbpf;
 mod diagnostics;
+mod discovery;
 mod fingerprint;
 mod game;
 mod mutation;
@@ -15,6 +16,7 @@ use std::{path::PathBuf, sync::Arc};
 
 use conflicts::LocalConflictAnalysis;
 use diagnostics::DiagnosticsSnapshot;
+use discovery::DiscoverySnapshot;
 use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
@@ -89,6 +91,13 @@ fn set_diagnostic_telemetry_consent(
 ) -> Result<PrivacyPreferences, String> {
     privacy::set_diagnostic_telemetry(&state.database_path, enabled)
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+async fn get_discovery_recommendations(
+    state: State<'_, AppState>,
+) -> Result<DiscoverySnapshot, String> {
+    Ok(discovery::load(&state.database_path).await)
 }
 
 #[tauri::command]
@@ -277,6 +286,7 @@ pub fn run() {
             cancel_mod_scan,
             get_privacy_preferences,
             set_diagnostic_telemetry_consent,
+            get_discovery_recommendations,
             analyze_latest_diagnostics,
             apply_mod_update,
             rollback_mod_update,
