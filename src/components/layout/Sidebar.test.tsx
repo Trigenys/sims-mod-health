@@ -3,21 +3,36 @@ import { describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 
 describe("Sidebar", () => {
-  it("exposes the active destination and accessible navigation names", () => {
-    render(<Sidebar activeItem="Overview" />);
+  it("exposes only the approved primary destinations", () => {
+    render(<Sidebar activeItem="Overview" healthCount={6} />);
 
-    expect(screen.getByRole("navigation", { name: "Primary navigation" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("button", { name: "Library" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByLabelText("21 available updates")).toHaveTextContent("21");
+    expect(
+      screen.getByRole("navigation", { name: "Primary navigation" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(screen.getByRole("button", { name: "Library" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Health" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Discover" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByLabelText("6 health findings")).toHaveTextContent("6");
+
+    expect(screen.queryByRole("button", { name: "Updates" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Conflicts" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Diagnostics" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Backups" })).not.toBeInTheDocument();
   });
 
-  it("emits the selected destination", () => {
+  it("emits the selected primary and utility destinations", () => {
     const onNavigate = vi.fn();
     render(<Sidebar activeItem="Overview" onNavigate={onNavigate} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Library" }));
+    fireEvent.click(screen.getByRole("button", { name: "Health" }));
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
 
-    expect(onNavigate).toHaveBeenCalledWith("Library");
+    expect(onNavigate).toHaveBeenNthCalledWith(1, "Health");
+    expect(onNavigate).toHaveBeenNthCalledWith(2, "Settings");
   });
 });

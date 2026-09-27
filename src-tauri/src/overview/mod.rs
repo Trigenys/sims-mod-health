@@ -112,6 +112,13 @@ pub(crate) struct LocalOverviewContext {
     registry_base_url: String,
 }
 
+#[derive(Debug, Clone)]
+pub(crate) struct DiscoverySeed {
+    pub(crate) patch_version: String,
+    pub(crate) registry_base_url: String,
+    pub(crate) installed_release_ids: Vec<String>,
+}
+
 #[derive(Debug)]
 pub(crate) enum OverviewError {
     Storage(StorageError),
@@ -212,6 +219,50 @@ pub(crate) fn latest_installation_root(
 ) -> Result<Option<PathBuf>, OverviewError> {
     let connection = storage::open(database_path)?;
     Ok(latest_installation(&connection)?.map(|installation| installation.game_root))
+}
+
+pub(crate) async fn discovery_seed(database_path: &Path) -> Result<Option<DiscoverySeed>, String> {
+    let local = load_local_context(database_path).map_err(|error| error.to_string())?;
+    let Some(installation) = local.installation.clone() else {
+        return Ok(None);
+    };
+    let Some(patch_version) = installation.game_version.clone() else {
+        return Ok(None);
+    };
+
+    if local.probes.is_empty() {
+        return Ok(Some(DiscoverySeed {
+            patch_version,
+            registry_base_url: local.registry_base_url,
+            installed_release_ids: Vec::new(),
+        }));
+    }
+
+    let client =
+        RegistryClient::new(local.registry_base_url.clone()).map_err(|error| error.to_string())?;
+    let probes = local
+        .probes
+        .iter()
+        .map(|binding| binding.probe.clone())
+        .collect::<Vec<_>>();
+    let resolutions = client
+        .resolve_artifacts(&probes)
+        .await
+        .map_err(|error| error.to_string())?;
+    let resolution = resolve_registry_identities(&local, &resolutions);
+    let installed_release_ids = resolution
+        .release_names
+        .keys()
+        .cloned()
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+
+    Ok(Some(DiscoverySeed {
+        patch_version,
+        registry_base_url: local.registry_base_url,
+        installed_release_ids,
+    }))
 }
 
 pub(crate) async fn build_snapshot(local: LocalOverviewContext) -> OverviewSnapshot {

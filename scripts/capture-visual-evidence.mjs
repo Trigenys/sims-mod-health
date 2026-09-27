@@ -19,18 +19,46 @@ const cases = [
     active: "Library"
   },
   {
-    name: "diagnostics-1024x700",
+    name: "health-1024x700",
     width: 1024,
     height: 700,
-    path: "/?surface=diagnostics&visual=diagnostics",
-    active: "Diagnostics"
+    path: "/?surface=health&visual=health",
+    active: "Health"
   },
   {
-    name: "diagnostics-1440x900",
+    name: "health-1440x900",
     width: 1440,
     height: 900,
-    path: "/?surface=diagnostics&visual=diagnostics",
-    active: "Diagnostics"
+    path: "/?surface=health&visual=health",
+    active: "Health"
+  },
+  {
+    name: "discover-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=discover&visual=discover",
+    active: "Discover"
+  },
+  {
+    name: "discover-1440x900",
+    width: 1440,
+    height: 900,
+    path: "/?surface=discover&visual=discover",
+    active: "Discover"
+  },
+  {
+    name: "settings-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=settings",
+    active: "Settings"
+  },
+  {
+    name: "settings-1440x900",
+    width: 1440,
+    height: 900,
+    path: "/?surface=settings",
+    active: "Settings"
   }
 ];
 
@@ -46,6 +74,15 @@ try {
 
     if (testCase.path.includes("visual=overview")) {
       await page.locator("#overview-title").waitFor();
+    }
+    if (testCase.path.includes("surface=health")) {
+      await page.locator("#health-title").waitFor();
+    }
+    if (testCase.path.includes("surface=discover")) {
+      await page.locator("#discover-title").waitFor();
+    }
+    if (testCase.path.includes("surface=settings")) {
+      await page.locator("#settings-title").waitFor();
     }
 
     const layout = await page.evaluate(() => ({
@@ -81,16 +118,39 @@ try {
       }
     }
 
-    if (testCase.path.includes("surface=diagnostics")) {
-      await page.locator("#diagnostics-title").waitFor();
-      const analyze = page.getByRole("button", { name: "Analyze reports" });
-      await analyze.focus();
-      const focus = await analyze.evaluate((element) => ({
+    if (testCase.path.includes("surface=health")) {
+      const updates = page.getByRole("button", { name: /Updates/ }).first();
+      await updates.focus();
+      const focus = await updates.evaluate((element) => ({
         active: document.activeElement === element,
         ring: getComputedStyle(element).boxShadow
       }));
       if (!focus.active || focus.ring === "none") {
-        throw new Error(testCase.name + " does not expose a visible Diagnostics focus state");
+        throw new Error(testCase.name + " does not expose a visible Health focus state");
+      }
+    }
+
+    if (testCase.path.includes("surface=discover")) {
+      const search = page.getByLabel("Search recommendations");
+      await search.focus();
+      const focus = await search.evaluate((element) => ({
+        active: document.activeElement === element,
+        ring: getComputedStyle(element).boxShadow
+      }));
+      if (!focus.active || focus.ring === "none") {
+        throw new Error(testCase.name + " does not expose a visible Discover focus state");
+      }
+    }
+
+    if (testCase.path.includes("surface=settings")) {
+      const paths = page.getByRole("button", { name: "Paths & Registry" });
+      await paths.focus();
+      const focus = await paths.evaluate((element) => ({
+        active: document.activeElement === element,
+        ring: getComputedStyle(element).boxShadow
+      }));
+      if (!focus.active || focus.ring === "none") {
+        throw new Error(testCase.name + " does not expose a visible Settings focus state");
       }
     }
 

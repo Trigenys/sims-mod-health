@@ -113,6 +113,32 @@ pub(crate) struct RelationshipResponse {
     pub(crate) reverse_usage: Vec<ReverseDependencyUsage>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct DiscoveryReason {
+    pub(crate) because_mod_id: String,
+    pub(crate) because_mod_name: String,
+    pub(crate) shared_categories: Vec<String>,
+    pub(crate) shared_features: Vec<String>,
+    pub(crate) explanation: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct DiscoveryRecommendation {
+    pub(crate) mod_id: String,
+    pub(crate) release_id: String,
+    pub(crate) name: String,
+    pub(crate) creator_name: String,
+    pub(crate) categories: Vec<String>,
+    pub(crate) features: Vec<String>,
+    pub(crate) score: i64,
+    pub(crate) reason: DiscoveryReason,
+}
+
+#[derive(Debug, Deserialize)]
+struct DiscoveryResponse {
+    recommendations: Vec<DiscoveryRecommendation>,
+}
+
 #[derive(Debug)]
 pub(crate) enum RegistryError {
     Transport(reqwest::Error),
@@ -225,6 +251,35 @@ impl RegistryClient {
         }
 
         Ok(items)
+    }
+
+    pub(crate) async fn recommend_discovery(
+        &self,
+        patch_version: &str,
+        release_ids: &[String],
+        limit: usize,
+    ) -> Result<Vec<DiscoveryRecommendation>, RegistryError> {
+        #[derive(Serialize)]
+        struct DiscoveryRequest<'a> {
+            patch_version: &'a str,
+            platform: &'static str,
+            installed_release_ids: &'a [String],
+            limit: usize,
+        }
+
+        let response: DiscoveryResponse = self
+            .post_json(
+                "/v1/discovery/recommend",
+                &DiscoveryRequest {
+                    patch_version,
+                    platform: "windows",
+                    installed_release_ids: release_ids,
+                    limit,
+                },
+            )
+            .await?;
+
+        Ok(response.recommendations)
     }
 
     pub(crate) async fn evaluate_relationships(

@@ -1,285 +1,251 @@
-# Design Target
+# Sims Mod Health — Product UI Target
 
-## 1. Product character
+## 1. Approved product direction
 
-The interface should feel like a **calm forensic desktop utility**.
+The supplied Stitch package is the visual and information-architecture reference for the desktop application.
 
-It is not a launcher, not a mod storefront, and not a neon gaming dashboard. The user should be able to answer three questions within seconds:
+The product should feel like an **optimistic, evidence-first Windows utility** rather than a gaming launcher or a dense engineering console.
 
-1. Is my installation healthy?
-2. What needs my attention?
-3. What exactly is this mod and what should I do about it?
+The user should be able to answer these questions quickly:
 
-The default visual target is already represented by the static Overview shell in `src/App.tsx`.
+1. How healthy is my current Sims 4 Mods installation?
+2. What do I have installed?
+3. What needs review or action?
+4. What can I safely add?
+5. How is the local engine configured?
 
-## 2. Visual direction
+## 2. Final primary navigation
+
+The desktop application has **five primary destinations**:
+
+~~~text
+Overview
+Library
+Health
+Discover
+
+Settings
+~~~
+
+Settings is visually separated at the bottom of the persistent sidebar.
+
+The following are **not** primary navigation destinations:
+
+- Mod Detail — contextual view opened from Library, Health or Discover.
+- Updates — Health subview.
+- Conflicts — Health subview.
+- Diagnostics — Health subview.
+- Recovery / restore points — Health subview.
+
+This prevents the same installed mod and the same evidence from being presented as separate products.
+
+## 3. Surface responsibilities
+
+### Overview
+
+Question answered:
+
+> How is my installation doing right now?
+
+Contains:
+
+- installed patch/platform context;
+- scan action and scan state;
+- verified health score when evidence allows it;
+- installed item count;
+- healthy/update/conflict/unknown summary;
+- top priority findings only;
+- Registry/offline/partial state;
+- links into the appropriate Health filter.
+
+Overview is a triage surface. It must not reproduce the full Health inbox.
+
+### Library
+
+Question answered:
+
+> What do I have installed?
+
+Library is the authoritative local inventory.
+
+It owns:
+
+- search by canonical name, creator and filename aliases;
+- status/category/creator/source/type/identity/enabled filters;
+- installed version;
+- source;
+- compatibility state;
+- identity confidence;
+- enabled state;
+- contextual Mod Detail.
+
+Library may display a health badge, but remediation belongs to Health.
+
+### Health
+
+Question answered:
+
+> What needs attention and what can I safely do?
+
+Health is the consolidated action center.
+
+Subviews:
+
+~~~text
+All findings | Updates | Conflicts | Diagnostics | Recovery
+~~~
+
+Health combines existing evidence without flattening evidence strength.
+
+It must keep these states distinct:
+
+- deterministic duplicate;
+- known incompatibility;
+- potential conflict;
+- missing/outdated dependency;
+- update available;
+- broken/abandoned sourced state;
+- unknown compatibility;
+- diagnostic correlation.
+
+Diagnostics must never turn correlation into causality.
+
+Recovery is not a general Sims backup feature. It represents app-controlled restore points, update journals and rollback safety for supported mutations.
+
+### Discover
+
+Question answered:
+
+> What could I safely add?
+
+Filtering happens **before** ranking:
+
+- explicit current-patch compatibility;
+- not already installed;
+- not broken/abandoned;
+- no known incompatibility with the current library.
+
+Ranking is deterministic and every result exposes a concrete `Because you use…` reason.
+
+Discover remains separate from health evidence and contains no sponsored placement unless sponsorship is explicitly introduced and labelled later.
+
+### Settings
+
+Question answered:
+
+> How does Sims Mod Health behave on this machine?
+
+Owns:
+
+- detected Sims 4 / Mods paths;
+- Registry behavior and offline expectations;
+- privacy / diagnostic telemetry consent;
+- scan behavior;
+- recovery/storage policy;
+- appearance;
+- product/about information.
+
+Settings is configuration, not a sixth product workflow.
+
+## 4. Approved visual system
+
+The approved Stitch reference replaces the previous dark forensic theme.
 
 ### Palette
 
-- App background: `#0B1110`
-- Primary surface: `#111917`
-- Raised surface: `#16201D`
-- Divider: `#26342F`
-- Primary text: `#E9F0EF`
-- Secondary text: `#91A39D`
-- Accent: `#7EE2B8`
-- Accent strong: `#43C995`
-- Healthy: `#55D6A0`
-- Update available: `#68B7FF`
-- Warning / potential conflict: `#F3BD62`
-- Broken / destructive: `#FF7D7D`
+- canvas: porcelain / blue-tinted `#F7F9FF`;
+- surfaces: white and soft blue containers;
+- primary: Plumbob emerald (`#059669`);
+- safe/healthy: emerald/mint;
+- update/metadata: indigo;
+- warning/potential conflict: amber;
+- deterministic failure/destructive state: rose;
+- text: deep navy rather than pure black.
 
-Color is never the only status signal: every status also uses text and/or an icon.
-
-### Typography
-
-Use a modern system-first sans stack during development. Prefer compact, high-legibility typography over display fonts. Headings may be tighter; operational text must remain easy to scan.
+Color is never the sole status signal.
 
 ### Shape
 
-- 10–16 px radii
-- fine 1 px borders
-- restrained shadows
-- no glassmorphism dependency
-- no excessive gradients
-- motion 120–180 ms for state transitions
+- application panels: 18–24 px radii;
+- interactive chips/buttons: pill geometry;
+- soft hairline borders;
+- diffuse elevation instead of dark heavy shadows.
 
-## 3. Desktop frame
+### Typography
 
-Target design resolution: **1440 × 900**.
+Use a high-legibility Windows/system sans stack in the packaged beta.
 
-Minimum supported window: **1024 × 700**.
+The Stitch reference uses Plus Jakarta Sans for visual direction, but the desktop beta must not require a remote font request in order to render correctly.
 
-Primary navigation is a persistent left rail:
+### Layout
 
-- Overview
-- Library
-- Updates
-- Conflicts
-- Diagnostics
-- Discover
-- Backups
-- Settings
+Target: `1440 × 900`.
 
-At narrower desktop widths, the rail collapses to icons.
+Minimum supported window: `1024 × 700`.
 
-## 4. Overview
+- persistent left rail;
+- rail collapses toward icon mode at compact desktop widths;
+- workspace remains fluid on wide monitors;
+- master/detail layouts are preferred for Library and evidence review.
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ THE SIMS 4 · Patch 1.128.90       [ Search 324 mods & CC ]   [ Scan now ] │
-├──────────────┬───────────────────────────────────────────────────────────────┤
-│ Overview     │ Your mods are mostly healthy.                 87% Health      │
-│ Library      │ 28 items need attention.                                      │
-│ Updates  21  │                                                               │
-│ Conflicts    │ [267 Healthy] [21 Updates] [7 Conflicts] [25 Unknown]         │
-│ Diagnostics  │                                                               │
-│ Discover     │ Needs attention                       Current installation     │
-│ Backups      │ ┌──────────────────────────────┐      ┌───────────────────┐    │
-│              │ │ MCCC             Update      │      │ 324 indexed       │    │
-│              │ │ RPO              Unknown     │      │ 43 mods           │    │
-│              │ │ Duplicate CAS    Duplicate   │      │ 177 CC            │    │
-│              │ └──────────────────────────────┘      └───────────────────┘    │
-│              │                                                               │
-│              │ Discover: relationships · family · realism                    │
-└──────────────┴───────────────────────────────────────────────────────────────┘
-```
+## 5. Evidence and action language
 
-The Overview is a triage screen, not an analytics dashboard. It should prioritize action over charts.
+The UI must preserve product semantics:
 
-## 5. Library
+- Unknown ≠ Broken.
+- Potential conflict ≠ confirmed incompatibility.
+- Diagnostic correlation ≠ causality.
+- Update available ≠ currently incompatible.
+- Community report ≠ verified fact.
 
-The Library is the authoritative local inventory.
+Actions that mutate the Mods folder must not be presented as safer than the underlying mutation pipeline proves.
 
-Each row should provide:
+## 6. Current production boundaries
 
-- mod/CC name
-- creator
-- category
-- installed version when known
-- current compatibility status
-- source
-- dependency indicator
-- update indicator
-- identification confidence when not exact
+Existing real-data boundaries remain authoritative:
 
-Filters:
+- `src/features/overview/overview.gateway.ts` — local scanner + Registry-backed overview;
+- `src/features/diagnostics/diagnostics.gateway.ts` — local diagnostic parser/resolution;
+- `src-tauri/src/mutation` — staged single-artifact update and rollback;
+- `src-tauri/src/registry.rs` — Registry resolution, health, relationships and discovery;
+- `src/features/library` — current inventory presentation boundary pending full scanner/Registry adapter;
+- `src/features/discover` — explainable Registry recommendation presentation.
 
-- status
-- category
-- creator
-- source
-- script mod vs package-only
-- identified vs unknown
-- enabled vs disabled
+Visual fixtures are permitted only behind explicit visual-harness query parameters and must never silently become production evidence.
 
-Search must include filename aliases because many players remember a file, not a product name.
-
-## 6. Mod detail
-
-```text
-MC COMMAND CENTER
-Deaderpool · Gameplay / Story Progression             Compatible
-
-Installed  2026.4.0
-Latest     2026.5.0
-Patch      1.128.90
-
-[ Update ] [ Disable ] [ Creator page ]
-
-What it does
-Controls population, relationships, pregnancies, careers and story progression.
-
-Dependencies
-None
-
-Files
-mc_cmd_center.package
-mc_cmd_center.ts4script
-
-Known health
-• Exact fingerprint match
-• Current release supports installed patch
-• No known incompatibility with installed library
-
-Related mods
-...
-```
-
-The page must explicitly separate **facts**, **inferred identification**, and **community reports**.
-
-## 7. Updates
-
-Updates are grouped by confidence:
-
-1. verified exact update;
-2. likely update requiring review;
-3. source changed / unable to verify.
-
-Bulk update must not exist until restore points and rollback are proven.
-
-## 8. Conflicts
-
-Use the wording **Potential conflict** unless a known incompatibility rule or deterministic duplicate proves the problem.
-
-Conflict detail should explain the evidence:
-
-- exact duplicate hash;
-- overlapping DBPF resource keys;
-- known incompatible release pair;
-- missing dependency;
-- duplicate script module.
-
-## 9. Diagnostics
-
-Diagnostics translates technical errors into mod-level evidence.
-
-The screen should show:
-
-- report timestamp
-- source file
-- implicated module/resource
-- resolved mod candidate
-- confidence
-- suggested next action
-
-Never imply a mod caused an exception when the evidence only shows correlation.
-
-## 10. Discover
-
-Recommendations must be explainable:
-
-> Because you use several Family & Relationships mods.
-
-Filtering happens before ranking:
-
-- compatible with installed patch;
-- not already installed;
-- not abandoned;
-- no known incompatibility with current library.
-
-No recommendation should be framed as sponsored unless it actually is and is clearly labeled.
-
-## 11. Empty, loading and error states
+## 7. Accessibility
 
 Every primary surface requires:
 
-- initial empty state
-- scan-in-progress state
-- offline registry state
-- partial-results state
-- source unavailable state
-- retry state
+- keyboard-accessible workflows;
+- visible focus state;
+- no color-only status;
+- normal-text contrast of at least 4.5:1;
+- reduced-motion behavior;
+- readability at Windows text scaling;
+- textual names for ambiguous icons.
 
-The app should remain useful locally when the registry is unavailable.
+## 8. Visual acceptance
 
-## 12. Accessibility
+UI changes are not done until:
 
-- keyboard-accessible primary workflows
-- visible focus states
-- no color-only statuses
-- minimum 4.5:1 contrast for normal text
-- reduced-motion support
-- readable at Windows text scaling
-- controls retain labels when icon meaning is ambiguous
+- 1024 × 700 has no horizontal overflow;
+- 1440 × 900 has no horizontal overflow;
+- the active primary destination is exposed through `aria-current`;
+- Overview, Library, contextual Mod Detail, Health, Discover and Settings have screenshot evidence;
+- keyboard focus remains visible on core workflows;
+- degraded/offline states remain useful locally;
+- wording follows the evidence model above.
 
-## 13. Design acceptance
+## 9. Approved reference assets
 
-A UI issue is not done until:
+The source Stitch package supplied by the product owner contains:
 
-- it matches this information hierarchy;
-- 1024 × 700 and 1440 × 900 layouts are checked;
-- light/dark decision is explicitly documented if a light theme is introduced;
-- keyboard navigation is verified;
-- screenshots or visual-regression evidence are attached to the PR;
-- status wording follows the product state model.
+- Overview reference;
+- Library reference;
+- Health & Action Center reference;
+- Discover reference;
+- Settings reference;
+- Sims Mod Health design-system specification.
 
-
-## 14. Implemented primitive map
-
-The target shell is implemented through reusable production boundaries rather than one monolithic page:
-
-- `src/components/layout/AppShell.tsx` — persistent application frame;
-- `src/components/layout/Sidebar.tsx` — primary navigation and registry state;
-- `src/components/layout/Topbar.tsx` — game context, search and scan action;
-- `src/components/ui/Button.tsx` — primary, secondary and text actions;
-- `src/components/ui/Panel.tsx` — semantic surface primitive;
-- `src/components/ui/SearchField.tsx` — labelled search control;
-- `src/components/ui/StatusBadge.tsx` — text + symbol + color status treatment;
-- `src/design/tokens.css` — canonical visual tokens;
-- `src/features/overview/OverviewPage.tsx` — real-data triage composition with scan/registry states;
-- `src/features/overview/overview.gateway.ts` — Tauri snapshot, scan command and progress-event boundary;
-- `src/features/overview/overview.types.ts` — frontend contract for real Overview data;
-- `src/features/overview/overview.visual.ts` — visual-test-only fixture, never the default runtime data source;
-- `src/features/library/LibraryPage.tsx` — searchable/filterable local inventory;
-- `src/features/library/ModDetailPage.tsx` — evidence-first detail surface;
-- `src/features/diagnostics/DiagnosticsPage.tsx` — correlation-first diagnostic evidence surface;
-- `src/features/library/LibraryStateNotice.tsx` — offline, partial and failure resilience states;
-- `src/features/library/library.fixture.ts` — product-surface fixture isolated from future scanner/registry adapters.
-
-The Overview now uses the local scanner plus registry resolution, compatibility and dependency/conflict engines. Its fixture exists only for deterministic visual evidence. Library adapters can be wired to resolved scanner/registry data without changing the presentation contract.
-
-## 15. Visual evidence automation
-
-Pull requests that change the UI trigger `.github/workflows/visual-evidence.yml`.
-
-The workflow:
-
-1. builds the production frontend;
-2. starts the Vite preview server;
-3. launches Playwright Chromium;
-4. verifies no horizontal overflow at 1024×700 and 1440×900;
-5. verifies the active navigation destination remains exposed;
-6. captures full-page screenshots;
-7. verifies visible keyboard focus on Library and Mod Detail;
-8. captures Overview, Library, Mod Detail and degraded-registry evidence;
-9. uploads them as the `product-surfaces-visual-evidence` artifact.
-
-This provides repeatable evidence for UI acceptance without requiring a manual local screenshot workflow.
-
-
-## Diagnostics evidence language
-
-Diagnostic traceback/module/resource matches are presented as implicated or correlated candidates. The UI does not transform correlation evidence into a causal statement.
-
-The Diagnostics surface exposes malformed/unsupported states without crashing, keeps local candidates visible while the Registry is offline, and shows privacy-redaction evidence for optional telemetry summaries.
+The screenshots define visual direction. Production React components and real data gateways remain the implementation source of truth.

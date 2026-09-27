@@ -11,10 +11,12 @@ import type {
 
 type DiagnosticsPageProps = {
   gateway?: DiagnosticsGateway;
+  embedded?: boolean;
 };
 
 export function DiagnosticsPage({
-  gateway = diagnosticsGateway
+  gateway = diagnosticsGateway,
+  embedded = false
 }: DiagnosticsPageProps) {
   const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,18 +79,32 @@ export function DiagnosticsPage({
 
   return (
     <>
-      <section className="diagnostics-heading" aria-labelledby="diagnostics-title">
-        <div>
-          <p className="eyebrow">DIAGNOSTIC EVIDENCE</p>
-          <h1 id="diagnostics-title">Diagnostics</h1>
-          <p className="lede">
-            Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.
-          </p>
+      {!embedded && (
+        <section className="diagnostics-heading" aria-labelledby="diagnostics-title">
+          <div>
+            <p className="eyebrow">DIAGNOSTIC EVIDENCE</p>
+            <h1 id="diagnostics-title">Diagnostics</h1>
+            <p className="lede">
+              Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.
+            </p>
+          </div>
+          <Button variant="primary" onClick={analyze} disabled={loading}>
+            {loading ? "Analyzing…" : "Analyze reports"}
+          </Button>
+        </section>
+      )}
+
+      {embedded && (
+        <div className="health-embedded-actions">
+          <div>
+            <span className="section-kicker">DIAGNOSTIC EVIDENCE</span>
+            <strong>Exception reports stay evidence-led.</strong>
+          </div>
+          <Button variant="secondary" onClick={analyze} disabled={loading}>
+            {loading ? "Analyzing…" : "Analyze reports"}
+          </Button>
         </div>
-        <Button variant="primary" onClick={analyze} disabled={loading}>
-          {loading ? "Analyzing…" : "Analyze reports"}
-        </Button>
-      </section>
+      )}
 
       <section className="diagnostics-summary" aria-label="Diagnostics summary">
         <SummaryFact label="Reports" value={snapshot.reports.length} />

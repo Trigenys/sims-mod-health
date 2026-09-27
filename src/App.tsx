@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
-import { DiagnosticsPage } from "./features/diagnostics/DiagnosticsPage";
+import { DiscoverPage } from "./features/discover/DiscoverPage";
+import { HealthPage, type HealthTab } from "./features/health/HealthPage";
 import { LibraryPage } from "./features/library/LibraryPage";
 import { ModDetailPage } from "./features/library/ModDetailPage";
 import {
@@ -9,15 +10,40 @@ import {
 } from "./features/library/library.fixture";
 import type { LibraryRegistryState } from "./features/library/LibraryStateNotice";
 import { OverviewPage } from "./features/overview/OverviewPage";
+import { SettingsPage } from "./features/settings/SettingsPage";
 
-type Surface = "Overview" | "Library" | "Detail" | "Diagnostics";
+type Surface =
+  | "Overview"
+  | "Library"
+  | "Detail"
+  | "Health"
+  | "Discover"
+  | "Settings";
 
 function initialSurface(): Surface {
   const value = new URLSearchParams(window.location.search).get("surface");
   if (value === "library") return "Library";
   if (value === "detail") return "Detail";
-  if (value === "diagnostics") return "Diagnostics";
+  if (value === "health" || value === "diagnostics") return "Health";
+  if (value === "discover") return "Discover";
+  if (value === "settings") return "Settings";
   return "Overview";
+}
+
+function initialHealthTab(): HealthTab {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("surface") === "diagnostics") return "diagnostics";
+
+  const value = params.get("tab");
+  if (
+    value === "updates" ||
+    value === "conflicts" ||
+    value === "diagnostics" ||
+    value === "recovery"
+  ) {
+    return value;
+  }
+  return "all";
 }
 
 function initialRegistryState(): LibraryRegistryState {
@@ -37,7 +63,13 @@ function App() {
   const registryState = initialRegistryState();
 
   const navigate = (label: string) => {
-    if (label === "Overview" || label === "Library" || label === "Diagnostics") {
+    if (
+      label === "Overview" ||
+      label === "Library" ||
+      label === "Health" ||
+      label === "Discover" ||
+      label === "Settings"
+    ) {
       setSurface(label);
     }
   };
@@ -47,17 +79,14 @@ function App() {
     setSurface("Detail");
   };
 
-  const activeItem =
-    surface === "Detail"
-      ? "Library"
-      : surface === "Diagnostics"
-        ? "Diagnostics"
-        : surface;
+  const activeItem = surface === "Detail" ? "Library" : surface;
 
   return (
     <AppShell activeItem={activeItem} onNavigate={navigate}>
       {surface === "Overview" && <OverviewPage />}
-      {surface === "Diagnostics" && <DiagnosticsPage />}
+      {surface === "Health" && <HealthPage initialTab={initialHealthTab()} />}
+      {surface === "Discover" && <DiscoverPage />}
+      {surface === "Settings" && <SettingsPage />}
       {surface === "Library" && (
         <LibraryPage
           onOpenItem={openItem}
