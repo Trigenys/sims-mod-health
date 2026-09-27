@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   release:
-    uses: EagleFox31/appfactory-project-automation/.github/workflows/release-tauri-desktop.yml@6a389276ffb89a94266029ec37d90e7b167cd95d
+    uses: EagleFox31/appfactory-project-automation/.github/workflows/release-tauri-desktop.yml@2856fc410ecd4b50b7ec5a58ac32d692dcd47170
     with:
       product-name: Sims-Mod-Health
       working-directory: .
