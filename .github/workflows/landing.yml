@@ -8,12 +8,14 @@ on:
       - "apps/landing/**"
       - "scripts/landing/**"
       - ".github/workflows/landing.yml"
+      - ".github/workflows/landing-pages.yml"
   push:
     branches: [main]
     paths:
       - "apps/landing/**"
       - "scripts/landing/**"
       - ".github/workflows/landing.yml"
+      - ".github/workflows/landing-pages.yml"
 
 permissions:
   contents: read
@@ -29,7 +31,13 @@ jobs:
           node-version: 24
 
       - name: Check landing JavaScript syntax
-        run: node --check apps/landing/app.js
+        run: |
+          node --check apps/landing/release.js
+          node --check scripts/landing/build-stitch.mjs
+          node --check scripts/landing/validate.mjs
+
+      - name: Build approved Stitch landing
+        run: node scripts/landing/build-stitch.mjs
 
       - name: Validate landing contract
         run: node scripts/landing/validate.mjs
@@ -37,10 +45,10 @@ jobs:
       - name: Serve and request landing
         shell: bash
         run: |
-          python3 -m http.server 4173 --directory apps/landing >/tmp/smh-landing.log 2>&1 &
+          python3 -m http.server 4173 --directory _site >/tmp/smh-landing.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
           sleep 1
-          curl --fail --silent --show-error http://127.0.0.1:4173/ | grep -q "Download for Windows"
-          curl --fail --silent --show-error http://127.0.0.1:4173/styles.css >/dev/null
-          curl --fail --silent --show-error http://127.0.0.1:4173/app.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/ | grep -q "Keep your Sims 4 Mods healthy"
+          curl --fail --silent --show-error http://127.0.0.1:4173/release.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/logo.svg >/dev/null
