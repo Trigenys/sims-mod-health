@@ -135,7 +135,10 @@ mod tests {
                 "INSERT INTO installations
                     (game_root, mods_root, platform, game_version, discovered_at, last_seen_at)
                  VALUES (?1, ?2, 'windows', '1.128.90.1030', 'now', 'now')",
-                params![r"C:\Users\Player\Documents\Electronic Arts\The Sims 4", r"C:\Users\Player\Documents\Electronic Arts\The Sims 4\Mods"],
+                params![
+                    r"C:\Users\Player\Documents\Electronic Arts\The Sims 4",
+                    r"C:\Users\Player\Documents\Electronic Arts\The Sims 4\Mods"
+                ],
             )
             .expect("insert installation");
         connection
