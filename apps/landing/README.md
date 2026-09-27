@@ -44,3 +44,18 @@ Recommended project settings:
 - Output Directory: `.`
 
 `vercel.json` adds the baseline static response headers.
+
+
+## GitHub Pages fallback deployment
+
+`.github/workflows/landing-pages.yml` can publish this folder directly to GitHub Pages.
+
+Repository administrators need to select **Settings → Pages → Build and deployment → Source: GitHub Actions** once before the first deployment. After that, pushes to `main` that touch the landing automatically publish the site.
+
+For this repository the default Pages URL will be:
+
+```text
+https://trigenys.github.io/sims-mod-health/
+```
+
+A custom domain can be added later without changing the landing code.
