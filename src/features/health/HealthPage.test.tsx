@@ -66,6 +66,7 @@ const snapshot: OverviewSnapshot = {
 const gateway: OverviewGateway = {
   load: vi.fn().mockResolvedValue(snapshot),
   scanCurrent: vi.fn().mockResolvedValue(undefined),
+  scanSelected: vi.fn().mockResolvedValue(false),
   subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
 };
 
