@@ -148,6 +148,7 @@ describe("DiagnosticsPage", () => {
       name: "Allow redacted diagnostic telemetry"
     });
     expect(checkbox).not.toBeChecked();
+    await waitFor(() => expect(checkbox).not.toBeDisabled());
 
     fireEvent.click(checkbox);
 
