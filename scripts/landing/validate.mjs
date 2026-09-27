@@ -28,7 +28,9 @@ const requiredHtml = [
   "./logo.svg",
   "./release.js",
   "cdn.tailwindcss.com",
-  "Plus+Jakarta+Sans"
+  "Plus+Jakarta+Sans",
+  "max-w-[1600px]",
+  "max-w-[1480px]"
 ];
 
 for (const token of requiredHtml) {
@@ -45,6 +47,8 @@ if (!html.includes(fallback) || !js.includes(fallback)) {
 }
 
 for (const forbidden of [
+  "max-w-7xl",
+  "max-w-6xl",
   "v0.9.4",
   ".EXE",
   ".msix",
