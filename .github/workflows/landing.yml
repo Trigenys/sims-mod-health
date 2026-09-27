@@ -33,6 +33,7 @@ jobs:
       - name: Check landing JavaScript syntax
         run: |
           node --check apps/landing/release.js
+          node --check apps/landing/i18n.js
           node --check scripts/landing/build-stitch.mjs
           node --check scripts/landing/validate.mjs
 
@@ -51,4 +52,5 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:4173/ | grep -q "Keep your Sims 4 Mods healthy"
           curl --fail --silent --show-error http://127.0.0.1:4173/release.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/i18n.js | grep -q "smh-language"
           curl --fail --silent --show-error http://127.0.0.1:4173/logo.svg >/dev/null
