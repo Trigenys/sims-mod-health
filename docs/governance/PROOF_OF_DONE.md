@@ -118,6 +118,18 @@ Additional evidence:
 - no new broad Tauri capability without justification;
 - dependency risk reviewed.
 
+## Security hardening work
+
+For the beta security gate, also require:
+
+- `docs/security/HARDENING_REVIEW.md` has no unreviewed applicable threat;
+- Tauri capability/CSP audit is green;
+- deterministic adversarial parser/mutation workflow is green;
+- JavaScript, Python and Rust dependency audits are green;
+- diagnostic telemetry defaults off and explicit consent/revocation tests are green;
+- source-absence behavior has a regression test proving it remains `Unknown`, not `Broken`;
+- open critical/high defect review is repeated on the release candidate.
+
 ## Release work
 
 A beta/release is Done only when:

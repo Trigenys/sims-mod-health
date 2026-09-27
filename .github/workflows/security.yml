@@ -1,0 +1,99 @@
+name: Security CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "src-tauri/**"
+      - "services/registry-api/**"
+      - "src/**"
+      - "package.json"
+      - "scripts/security/**"
+      - "docs/security/**"
+      - ".github/workflows/security.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  configuration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Audit Tauri capabilities and CSP
+        run: npm run security:config
+
+  adversarial-native:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Cache Rust dependencies and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-security-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-security-cargo-
+            ${{ runner.os }}-cargo-
+      - name: Parser mutation harnesses
+        run: cargo test --manifest-path src-tauri/Cargo.toml adversarial
+      - name: Archive bomb controls
+        run: cargo test --manifest-path src-tauri/Cargo.toml archive_bomb
+      - name: Traversal and source allowlist abuse cases
+        shell: pwsh
+        run: |
+          cargo test --manifest-path src-tauri/Cargo.toml path_traversal
+          cargo test --manifest-path src-tauri/Cargo.toml source_allowlist
+      - name: Rollback abuse cases
+        run: cargo test --manifest-path src-tauri/Cargo.toml rollback_refuses
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Audit JavaScript dependency graph
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm audit --audit-level=high
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build registry audit requirements
+        working-directory: services/registry-api
+        run: |
+          python - <<'PY'
+          import pathlib
+          import tomllib
+
+          data = tomllib.loads(pathlib.Path("pyproject.toml").read_text())
+          requirements = list(data["project"]["dependencies"])
+          requirements.extend(data["project"]["optional-dependencies"]["dev"])
+          pathlib.Path("/tmp/registry-audit-requirements.txt").write_text(
+              "\n".join(requirements) + "\n"
+          )
+          PY
+      - name: Audit Python dependency graph
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip-audit -r /tmp/registry-audit-requirements.txt --progress-spinner off
+
+      - name: Generate Rust lockfile
+        run: cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Audit Rust dependency graph
+        run: cargo audit --file src-tauri/Cargo.lock

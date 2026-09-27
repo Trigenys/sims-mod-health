@@ -1660,6 +1660,26 @@ mod tests {
     }
 
     #[test]
+    fn rollback_refuses_to_overwrite_an_independent_target_change() {
+        let (_temp, app_data, database_path, target) = fixture();
+        let prepared =
+            prepare_transaction(&database_path, &app_data, &request()).expect("prepare update");
+        stage_for_test(&database_path, &prepared, b"new release");
+        install_staged(&database_path, &prepared).expect("install staged release");
+
+        fs::write(&target, b"user changed this after update").expect("write independent change");
+
+        let error = rollback_update(&database_path, &app_data, prepared.id)
+            .expect_err("rollback must not overwrite an independent target change");
+
+        assert!(matches!(error, MutationError::TargetChanged));
+        assert_eq!(
+            fs::read(&target).expect("read independent target"),
+            b"user changed this after update"
+        );
+    }
+
+    #[test]
     fn dependency_regression_blocks_new_findings() {
         let baseline = RelationshipResponse {
             dependency_findings: Vec::new(),

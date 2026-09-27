@@ -51,3 +51,8 @@ export type DiagnosticsSnapshot = {
   registryDetail: string;
   reports: DiagnosticReport[];
 };
+
+
+export type PrivacyPreferences = {
+  diagnosticTelemetryEnabled: boolean;
+};

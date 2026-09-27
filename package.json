@@ -9,7 +9,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "visual:verify": "node scripts/capture-visual-evidence.mjs",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "security:config": "node scripts/security/audit-tauri-config.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

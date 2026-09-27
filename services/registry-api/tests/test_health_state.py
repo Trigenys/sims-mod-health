@@ -379,3 +379,21 @@ def test_latest_report_from_same_source_supersedes_older_report(
     assert item["disputed"] is False
     assert len(item["evidence"]) == 1
     assert item["evidence"][0]["status"] == "compatible"
+
+
+
+def test_absent_current_source_evidence_never_manufactures_broken(
+    db_session: Session,
+) -> None:
+    source = seed_source(db_session, "temporarily-unavailable-source")
+    installed, newer = seed_mod_with_releases(db_session, source)
+    newer.released_at = installed.released_at
+    newer.version = installed.version
+    db_session.commit()
+
+    item = evaluate(installed, "1.128.90.1030")
+
+    assert item["state"] == "unknown"
+    assert item["compatibility_state"] == "unknown"
+    assert item["reason"] == "no_current_patch_evidence"
+    assert item["evidence"] == []

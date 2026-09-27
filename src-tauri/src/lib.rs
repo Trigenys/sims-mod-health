@@ -5,6 +5,7 @@ mod fingerprint;
 mod game;
 mod mutation;
 mod overview;
+mod privacy;
 mod registry;
 mod scanner;
 mod storage;
@@ -18,6 +19,7 @@ use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
 use overview::OverviewSnapshot;
+use privacy::PrivacyPreferences;
 use rusqlite::OptionalExtension;
 use scanner::{ScanMode, ScanSummary, ScannerControl};
 use tauri::{Emitter, Manager, State};
@@ -73,6 +75,20 @@ async fn scan_sims_mods(
 #[tauri::command]
 fn cancel_mod_scan(state: State<'_, AppState>) -> bool {
     state.scanner.cancel()
+}
+
+#[tauri::command]
+fn get_privacy_preferences(state: State<'_, AppState>) -> Result<PrivacyPreferences, String> {
+    privacy::load_preferences(&state.database_path).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn set_diagnostic_telemetry_consent(
+    state: State<'_, AppState>,
+    enabled: bool,
+) -> Result<PrivacyPreferences, String> {
+    privacy::set_diagnostic_telemetry(&state.database_path, enabled)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -259,6 +275,8 @@ pub fn run() {
             scan_sims_mods,
             scan_current_sims_mods,
             cancel_mod_scan,
+            get_privacy_preferences,
+            set_diagnostic_telemetry_consent,
             analyze_latest_diagnostics,
             apply_mod_update,
             rollback_mod_update,
