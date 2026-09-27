@@ -206,6 +206,13 @@ function captureOriginalText() {
 function applyLanguage(language) {
   const translations = language === "fr" ? copy.fr : {};
 
+  for (const element of document.querySelectorAll("[data-copy-en][data-copy-fr]")) {
+    element.textContent =
+      language === "fr"
+        ? element.getAttribute("data-copy-fr")
+        : element.getAttribute("data-copy-en");
+  }
+
   for (const [node, source] of textEntries()) {
     const normalized = normalize(source);
     const translated = translations[normalized];
@@ -218,10 +225,25 @@ function applyLanguage(language) {
   }
 
   document.documentElement.lang = language;
-  document.title = metadata[language].title;
+
+  const pageTitle =
+    language === "fr"
+      ? document.body?.getAttribute("data-title-fr")
+      : document.body?.getAttribute("data-title-en");
+  const pageDescription =
+    language === "fr"
+      ? document.body?.getAttribute("data-description-fr")
+      : document.body?.getAttribute("data-description-en");
+
+  document.title = pageTitle || metadata[language].title;
 
   const description = document.querySelector('meta[name="description"]');
-  if (description) description.setAttribute("content", metadata[language].description);
+  if (description) {
+    description.setAttribute(
+      "content",
+      pageDescription || metadata[language].description
+    );
+  }
 
   document.querySelectorAll("[data-lang]").forEach((button) => {
     const active = button.getAttribute("data-lang") === language;
