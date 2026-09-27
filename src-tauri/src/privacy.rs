@@ -158,8 +158,8 @@ mod tests {
         connection
             .execute(
                 "INSERT INTO preferences (key, value_json, updated_at)
-                 VALUES (?1, '"unexpected"', 'now')",
-                [DIAGNOSTIC_TELEMETRY_KEY],
+                 VALUES (?1, ?2, 'now')",
+                params![DIAGNOSTIC_TELEMETRY_KEY, "\"unexpected\""],
             )
             .expect("insert malformed preference");
 
