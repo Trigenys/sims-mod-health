@@ -43,7 +43,8 @@ pub(crate) async fn load(database_path: &Path) -> DiscoverySnapshot {
         return DiscoverySnapshot {
             patch_version: Some(seed.patch_version),
             state: "empty".to_string(),
-            detail: "No enabled installed artifact has a canonical Registry identity yet.".to_string(),
+            detail: "No enabled installed artifact has a canonical Registry identity yet."
+                .to_string(),
             recommendations: Vec::new(),
         };
     }
