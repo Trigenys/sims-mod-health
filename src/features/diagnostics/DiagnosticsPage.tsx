@@ -18,6 +18,9 @@ export function DiagnosticsPage({
 }: DiagnosticsPageProps) {
   const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [telemetryEnabled, setTelemetryEnabled] = useState(false);
+  const [privacyBusy, setPrivacyBusy] = useState(true);
+  const [privacyError, setPrivacyError] = useState<string | null>(null);
 
   const analyze = async () => {
     setLoading(true);
@@ -27,7 +30,33 @@ export function DiagnosticsPage({
 
   useEffect(() => {
     void analyze();
+    gateway
+      .getPrivacyPreferences()
+      .then((preferences) => {
+        setTelemetryEnabled(preferences.diagnosticTelemetryEnabled);
+        setPrivacyError(null);
+      })
+      .catch(() => {
+        setTelemetryEnabled(false);
+        setPrivacyError("Privacy settings could not be loaded. Diagnostic telemetry remains off.");
+      })
+      .finally(() => setPrivacyBusy(false));
   }, [gateway]);
+
+  const updateTelemetryConsent = async (enabled: boolean) => {
+    setPrivacyBusy(true);
+    setPrivacyError(null);
+
+    try {
+      const preferences = await gateway.setDiagnosticTelemetryConsent(enabled);
+      setTelemetryEnabled(preferences.diagnosticTelemetryEnabled);
+    } catch {
+      setTelemetryEnabled(false);
+      setPrivacyError("Consent could not be saved. Diagnostic telemetry remains off.");
+    } finally {
+      setPrivacyBusy(false);
+    }
+  };
 
   const candidateCount = useMemo(
     () =>
@@ -68,6 +97,26 @@ export function DiagnosticsPage({
           label="Registry"
           value={snapshot.registryState === "ready" ? "Resolved" : snapshot.registryState}
         />
+      </section>
+
+      <section className="diagnostics-privacy" aria-label="Diagnostic privacy">
+        <div>
+          <span className="section-kicker">PRIVACY</span>
+          <strong>Diagnostic telemetry is {telemetryEnabled ? "on" : "off"}</strong>
+          <p>
+            Off by default. Only redacted diagnostic summaries may be eligible for telemetry after explicit consent; raw reports are never uploaded automatically.
+          </p>
+          {privacyError && <small role="status">{privacyError}</small>}
+        </div>
+        <label className="privacy-toggle">
+          <input
+            type="checkbox"
+            checked={telemetryEnabled}
+            disabled={privacyBusy}
+            onChange={(event) => void updateTelemetryConsent(event.target.checked)}
+          />
+          <span>Allow redacted diagnostic telemetry</span>
+        </label>
       </section>
 
       {snapshot.registryState !== "ready" && (

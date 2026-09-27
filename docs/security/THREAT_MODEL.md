@@ -155,7 +155,50 @@ Threat: compromised WebView gains broad filesystem access.
 Controls:
 - default capability remains minimal;
 - privileged work happens in narrow Rust commands;
-- every new capability requires threat-model review and Proof of Done evidence.
+- every new capability requires threat-model review and Proof of Done evidence;
+- CI audits capability drift and rejects broad filesystem/shell/process/HTTP permissions.
+
+Current capability:
+- `core:default` only.
+
+### WebView content injection
+
+Threat: injected markup or compromised local content executes script, frames the app or opens a direct WebView network path.
+
+Controls:
+- production Content Security Policy is explicit;
+- scripts are self-only;
+- `unsafe-eval` is forbidden;
+- object embedding and framing are disabled;
+- WebView network access is limited to Tauri IPC;
+- registry/source networking remains in native Rust.
+
+Accepted residual risk:
+- `style-src 'unsafe-inline'` remains enabled because runtime UI progress/score rendering uses inline style attributes. This does not grant inline-script execution.
+
+### Diagnostic telemetry without consent
+
+Threat: user-specific diagnostic metadata is transmitted without an affirmative privacy choice.
+
+Controls:
+- diagnostic telemetry preference defaults to false;
+- malformed preference values fail closed;
+- opt-in and revocation are persisted locally;
+- the current product has no automatic raw diagnostic upload;
+- telemetry preview is redacted before it can be eligible for sharing.
+
+### Dependency supply chain
+
+Threat: a known vulnerable JavaScript, Python or Rust dependency is shipped into beta.
+
+Controls:
+- Security CI audits npm, pip and Cargo dependency graphs;
+- known high/critical findings block the beta security gate;
+- dependency audit results are part of security-sensitive Proof of Done.
+
+## Review status
+
+The release-gate threat/evidence matrix, accepted residual risks and verification commands are maintained in `docs/security/HARDENING_REVIEW.md`.
 
 ## Non-goals
 

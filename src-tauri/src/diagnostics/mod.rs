@@ -1403,6 +1403,35 @@ mod tests {
     }
 
     #[test]
+    fn oversized_report_is_rejected_before_content_parsing() {
+        let temp = TempDir::new().expect("oversized diagnostic temp");
+        let root = temp.path();
+        let report_path = root.join("lastException.txt");
+        let file = std::fs::File::create(&report_path).expect("create oversized report");
+        file.set_len(MAX_REPORT_BYTES + 1)
+            .expect("size oversized report");
+
+        let report = ReportFile {
+            path: report_path,
+            report_name: "lastException.txt".to_string(),
+            source_kind: "last_exception".to_string(),
+            modified_ms: 1,
+        };
+        let installation = InstallationContext {
+            id: 1,
+            root: root.to_path_buf(),
+            mods_root: root.join("Mods"),
+            registry_url: DEFAULT_REGISTRY_URL.to_string(),
+        };
+
+        let parsed = analyze_report_file(&report, &installation, &[]);
+
+        assert_eq!(parsed.parse_status, "unsupported");
+        assert!(parsed.observations.is_empty());
+        assert!(parsed.candidates.is_empty());
+    }
+
+    #[test]
     fn telemetry_preview_does_not_contain_paths_email_or_report_content() {
         let text = r#"
             C:\Users\Jennifer\Documents\Electronic Arts\The Sims 4

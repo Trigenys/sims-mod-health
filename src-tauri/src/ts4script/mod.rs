@@ -824,7 +824,7 @@ mod tests {
     }
 
     #[test]
-    fn deterministic_mutation_harness_never_panics() {
+    fn deterministic_adversarial_mutation_harness_never_panics() {
         let seed = archive(&[
             ("example/core.pyc", b"compiled"),
             ("manifest.json", br#"{ "version": "1.2.3" }"#),
