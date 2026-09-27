@@ -13,9 +13,9 @@ const fallback = {
 
 const versionNodes = [...document.querySelectorAll("[data-release-version]")];
 const sizeNodes = [...document.querySelectorAll("[data-download-size]")];
-const downloadLinks = [...document.querySelectorAll("[data-download-link]")];
-const releaseLinks = [...document.querySelectorAll("[data-release-link]")];
-const checksumLinks = [...document.querySelectorAll("[data-checksum-link]")];
+const binaryDownloadLinks = [...document.querySelectorAll("[data-binary-download-link]")];
+const externalReleaseLinks = [...document.querySelectorAll("[data-external-release-link]")];
+const externalChecksumLinks = [...document.querySelectorAll("[data-external-checksum-link]")];
 const yearNodes = [...document.querySelectorAll("[data-year]")];
 
 applyRelease(fallback);
@@ -67,9 +67,9 @@ fetch(`https://api.github.com/repos/${repository}/releases?per_page=10`, {
 function applyRelease(release) {
   for (const node of versionNodes) node.textContent = release.tag;
   for (const node of sizeNodes) node.textContent = formatBytes(release.size);
-  for (const link of downloadLinks) link.href = release.downloadUrl;
-  for (const link of releaseLinks) link.href = release.releaseUrl;
-  for (const link of checksumLinks) link.href = release.checksumUrl;
+  for (const link of binaryDownloadLinks) link.href = release.downloadUrl;
+  for (const link of externalReleaseLinks) link.href = release.releaseUrl;
+  for (const link of externalChecksumLinks) link.href = release.checksumUrl;
 }
 
 function formatBytes(bytes) {
