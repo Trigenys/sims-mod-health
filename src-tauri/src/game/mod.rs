@@ -133,6 +133,17 @@ fn normalize_selected_root(path: &Path) -> PathBuf {
         return path.to_path_buf();
     }
 
+    if path
+        .file_name()
+        .is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case(MODS_DIRECTORY))
+    {
+        if let Some(parent) = path.parent() {
+            if is_sims_user_root(parent) {
+                return parent.to_path_buf();
+            }
+        }
+    }
+
     let nested = sims_root_from_documents(path);
     if nested.is_dir() {
         return nested;
@@ -332,6 +343,26 @@ mod tests {
                     installation.root,
                     temp.path().join("Electronic Arts").join("The Sims 4")
                 );
+            }
+            ManualInspection::Unavailable { reason } => {
+                panic!("expected available installation, got {reason}");
+            }
+        }
+    }
+
+    #[test]
+    fn manual_override_accepts_direct_mods_folder() {
+        let temp = create_sims_root();
+        let sims_root = temp.path().join("Electronic Arts").join("The Sims 4");
+        let mods_root = sims_root.join("Mods");
+
+        let result = inspect_manual_path(&mods_root);
+
+        match result {
+            ManualInspection::Available { installation } => {
+                assert_eq!(installation.root, sims_root);
+                assert_eq!(installation.mods_root, mods_root);
+                assert!(installation.mods_available);
             }
             ManualInspection::Unavailable { reason } => {
                 panic!("expected available installation, got {reason}");
