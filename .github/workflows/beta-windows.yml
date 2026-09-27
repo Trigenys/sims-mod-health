@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Validate release automation contract
+        run: node scripts/release/validate-release-automation.mjs
+
       - name: Cache Rust dependencies and build output
         uses: actions/cache@v4
         with:
