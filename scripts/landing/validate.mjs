@@ -2,15 +2,16 @@ import { access, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 const site = resolve(process.cwd(), "_site");
-const requiredFiles = ["index.html", "release.js", "logo.svg", ".nojekyll"];
+const requiredFiles = ["index.html", "release.js", "i18n.js", "logo.svg", ".nojekyll"];
 
 for (const file of requiredFiles) {
   await access(join(site, file));
 }
 
-const [html, js] = await Promise.all([
+const [html, js, i18n] = await Promise.all([
   readFile(join(site, "index.html"), "utf8"),
-  readFile(join(site, "release.js"), "utf8")
+  readFile(join(site, "release.js"), "utf8"),
+  readFile(join(site, "i18n.js"), "utf8")
 ]);
 
 const requiredHtml = [
@@ -30,7 +31,11 @@ const requiredHtml = [
   "cdn.tailwindcss.com",
   "Plus+Jakarta+Sans",
   "max-w-[1600px]",
-  "max-w-[1480px]"
+  "max-w-[1480px]",
+  "data-lang-switch",
+  'data-lang="en"',
+  'data-lang="fr"',
+  "./i18n.js"
 ];
 
 for (const token of requiredHtml) {
@@ -68,6 +73,20 @@ if (!js.includes("/releases?per_page=10")) {
 
 if (!js.includes('asset.name.toLowerCase().endsWith(".msi")')) {
   throw new Error("Release wiring must choose an MSI asset explicitly.");
+}
+
+for (const token of [
+  'const STORAGE_KEY = "smh-language"',
+  '"Fonctionnalités"',
+  '"Confidentialité & architecture"',
+  '"Télécharger la bêta"',
+  '"Gardez vos mods Sims 4 sains, organisés et"',
+  "navigator.language",
+  "localStorage.setItem"
+]) {
+  if (!i18n.includes(token)) {
+    throw new Error(`Bilingual runtime is missing required marker: ${token}`);
+  }
 }
 
 for (const forbiddenAnalytics of [
