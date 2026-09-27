@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-beta.3](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.2...v0.1.0-beta.3) (2026-09-27)
+
+
+### Bug Fixes
+
+* promote reliable AppFactory MSI validation ([#65](https://github.com/Trigenys/sims-mod-health/issues/65)) ([10d8ba1](https://github.com/Trigenys/sims-mod-health/commit/10d8ba1bf532a223bc50b0e55f25abac360ccc81))
+
 ## [0.1.0-beta.2](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.1...v0.1.0-beta.2) (2026-09-27)
 
 
