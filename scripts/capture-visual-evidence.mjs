@@ -7,15 +7,15 @@ const outputDir = process.env.VISUAL_OUTPUT_DIR ?? "visual-evidence";
 const cases = [
   { name: "overview-1024x700", width: 1024, height: 700, path: "/?visual=overview", active: "Overview" },
   { name: "overview-1440x900", width: 1440, height: 900, path: "/?visual=overview", active: "Overview" },
-  { name: "library-1024x700", width: 1024, height: 700, path: "/?surface=library", active: "Library" },
+  { name: "library-1024x700", width: 1024, height: 700, path: "/?surface=library&visual=library", active: "Library" },
   { name: "library-1440x900", width: 1440, height: 900, path: "/?surface=library", active: "Library" },
-  { name: "detail-1024x700", width: 1024, height: 700, path: "/?surface=detail&mod=rpo", active: "Library" },
+  { name: "detail-1024x700", width: 1024, height: 700, path: "/?surface=detail&mod=rpo&visual=detail", active: "Library" },
   { name: "detail-1440x900", width: 1440, height: 900, path: "/?surface=detail&mod=rpo", active: "Library" },
   {
     name: "library-offline-1024x700",
     width: 1024,
     height: 700,
-    path: "/?surface=library&state=offline",
+    path: "/?surface=library&state=offline&visual=library",
     active: "Library"
   },
   {
@@ -107,7 +107,7 @@ try {
     }
 
     if (testCase.path.includes("surface=library")) {
-      const search = page.getByLabel("Search canonical name or filename");
+      const search = page.getByLabel("Search local filename");
       await search.focus();
       const focus = await search.evaluate((element) => ({
         active: document.activeElement === element,
