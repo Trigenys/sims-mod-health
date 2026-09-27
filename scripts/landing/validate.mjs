@@ -2,7 +2,22 @@ import { access, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 const site = resolve(process.cwd(), "_site");
-const requiredFiles = ["index.html", "release.js", "i18n.js", "logo.svg", ".nojekyll"];
+const requiredFiles = [
+  "index.html",
+  "release.js",
+  "i18n.js",
+  "logo.svg",
+  ".nojekyll",
+  "download/index.html",
+  "release-notes/index.html",
+  "verify/index.html",
+  "architecture/index.html",
+  "security/index.html",
+  "docs/index.html",
+  "support/index.html",
+  "source/index.html",
+  "404.html"
+];
 
 for (const file of requiredFiles) {
   await access(join(site, file));
@@ -35,7 +50,14 @@ const requiredHtml = [
   "data-lang-switch",
   'data-lang="en"',
   'data-lang="fr"',
-  "./i18n.js"
+  "./i18n.js",
+  'href="/download/"',
+  'href="/release-notes/"',
+  'href="/verify/"',
+  'href="/architecture/"',
+  'href="/security/"',
+  'href="/docs/"',
+  'href="/source/"'
 ];
 
 for (const token of requiredHtml) {
@@ -67,12 +89,41 @@ for (const forbidden of [
   }
 }
 
+if (/href="https:\/\/github\.com\/Trigenys\/sims-mod-health/i.test(html)) {
+  throw new Error("Primary landing links must stay on the branded site before GitHub.");
+}
+
 if (!js.includes("/releases?per_page=10")) {
   throw new Error("Runtime GitHub release lookup is missing.");
 }
 
 if (!js.includes('asset.name.toLowerCase().endsWith(".msi")')) {
   throw new Error("Release wiring must choose an MSI asset explicitly.");
+}
+
+for (const marker of [
+  "[data-binary-download-link]",
+  "[data-external-release-link]",
+  "[data-external-checksum-link]"
+]) {
+  if (!js.includes(marker)) {
+    throw new Error(`Release runtime is missing professional-route marker: ${marker}`);
+  }
+}
+
+const downloadPage = await readFile(join(site, "download", "index.html"), "utf8");
+if (!downloadPage.includes("data-binary-download-link")) {
+  throw new Error("Download page must own the real MSI handoff.");
+}
+
+const verifyPage = await readFile(join(site, "verify", "index.html"), "utf8");
+if (!verifyPage.includes("data-external-checksum-link")) {
+  throw new Error("Verify page must own the checksum handoff.");
+}
+
+const supportPage = await readFile(join(site, "support", "index.html"), "utf8");
+if (!supportPage.includes("issues/new")) {
+  throw new Error("Support page must provide the beta issue escalation path.");
 }
 
 for (const token of [
