@@ -221,9 +221,7 @@ pub(crate) fn latest_installation_root(
     Ok(latest_installation(&connection)?.map(|installation| installation.game_root))
 }
 
-pub(crate) async fn discovery_seed(
-    database_path: &Path,
-) -> Result<Option<DiscoverySeed>, String> {
+pub(crate) async fn discovery_seed(database_path: &Path) -> Result<Option<DiscoverySeed>, String> {
     let local = load_local_context(database_path).map_err(|error| error.to_string())?;
     let Some(installation) = local.installation.clone() else {
         return Ok(None);
@@ -240,8 +238,8 @@ pub(crate) async fn discovery_seed(
         }));
     }
 
-    let client = RegistryClient::new(local.registry_base_url.clone())
-        .map_err(|error| error.to_string())?;
+    let client =
+        RegistryClient::new(local.registry_base_url.clone()).map_err(|error| error.to_string())?;
     let probes = local
         .probes
         .iter()
