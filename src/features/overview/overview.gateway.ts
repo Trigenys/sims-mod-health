@@ -1,11 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 import { overviewVisualFixture } from "./overview.visual";
 import type { OverviewSnapshot, ScanProgress } from "./overview.types";
 
 export type OverviewGateway = {
   load: () => Promise<OverviewSnapshot>;
   scanCurrent: () => Promise<void>;
+  scanSelected: () => Promise<boolean>;
   subscribeProgress: (
     onProgress: (progress: ScanProgress) => void
   ) => Promise<UnlistenFn>;
@@ -76,6 +78,26 @@ export const overviewGateway: OverviewGateway = {
     }
 
     await invoke("scan_current_sims_mods", { mode: "incremental" });
+  },
+
+  async scanSelected() {
+    if (isVisualHarness()) {
+      return false;
+    }
+
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: "Select your The Sims 4 Mods folder"
+    });
+    const path = Array.isArray(selected) ? selected[0] : selected;
+
+    if (!path) {
+      return false;
+    }
+
+    await invoke("scan_sims_mods", { path, mode: "full" });
+    return true;
   },
 
   async subscribeProgress(onProgress) {
