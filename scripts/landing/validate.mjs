@@ -69,8 +69,15 @@ for (const token of requiredHtml) {
 const fallback =
   "https://github.com/Trigenys/sims-mod-health/releases/download/v0.1.0-beta.1/Sims-Mod-Health-0.1.0-beta.1-x64.msi";
 
-if (!html.includes(fallback) || !js.includes(fallback)) {
-  throw new Error("Beta 1 MSI fallback is missing from the built page or release wiring.");
+const downloadPageForFallback = await readFile(
+  join(site, "download", "index.html"),
+  "utf8"
+);
+
+if (!downloadPageForFallback.includes(fallback) || !js.includes(fallback)) {
+  throw new Error(
+    "Beta 1 MSI fallback must exist on the branded download page and in release wiring."
+  );
 }
 
 for (const forbidden of [
@@ -111,7 +118,7 @@ for (const marker of [
   }
 }
 
-const downloadPage = await readFile(join(site, "download", "index.html"), "utf8");
+const downloadPage = downloadPageForFallback;
 if (!downloadPage.includes("data-binary-download-link")) {
   throw new Error("Download page must own the real MSI handoff.");
 }
