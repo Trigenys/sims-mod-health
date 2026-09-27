@@ -139,16 +139,20 @@ mod tests {
         let enabled =
             set_diagnostic_telemetry(&database_path, true).expect("enable diagnostic telemetry");
         assert!(enabled.diagnostic_telemetry_enabled);
-        assert!(load_preferences(&database_path)
-            .expect("reload enabled privacy preferences")
-            .diagnostic_telemetry_enabled);
+        assert!(
+            load_preferences(&database_path)
+                .expect("reload enabled privacy preferences")
+                .diagnostic_telemetry_enabled
+        );
 
         let disabled =
             set_diagnostic_telemetry(&database_path, false).expect("disable diagnostic telemetry");
         assert!(!disabled.diagnostic_telemetry_enabled);
-        assert!(!load_preferences(&database_path)
-            .expect("reload disabled privacy preferences")
-            .diagnostic_telemetry_enabled);
+        assert!(
+            !load_preferences(&database_path)
+                .expect("reload disabled privacy preferences")
+                .diagnostic_telemetry_enabled
+        );
     }
 
     #[test]

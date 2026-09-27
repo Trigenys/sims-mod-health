@@ -78,9 +78,7 @@ fn cancel_mod_scan(state: State<'_, AppState>) -> bool {
 }
 
 #[tauri::command]
-fn get_privacy_preferences(
-    state: State<'_, AppState>,
-) -> Result<PrivacyPreferences, String> {
+fn get_privacy_preferences(state: State<'_, AppState>) -> Result<PrivacyPreferences, String> {
     privacy::load_preferences(&state.database_path).map_err(|error| error.to_string())
 }
 
