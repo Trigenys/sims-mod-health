@@ -8,7 +8,7 @@ The product is designed around one boundary: **local files stay local**. Raw `.p
 
 ## Product status
 
-**Stage:** Foundation  
+**Stage:** Windows Beta 1 candidate  
 **AppFactory preset:** `desktop / windows / tauri-react`  
 **Repository:** private by default  
 **Project automation:** zero-PAT GitHub Actions OIDC broker
@@ -110,6 +110,8 @@ cargo check --manifest-path src-tauri/Cargo.toml
 - [Proof of Done](docs/governance/PROOF_OF_DONE.md)
 - [Threat Model](docs/security/THREAT_MODEL.md)
 - [Source Policy](docs/governance/SOURCE_POLICY.md)
+- [Windows Beta validation](docs/releases/WINDOWS_BETA_VALIDATION.md)
+- [Beta 1 release notes](docs/releases/0.1.0-beta.1.md)
 
 ## Disclaimer
 
