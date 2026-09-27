@@ -35,6 +35,7 @@ jobs:
           node --check apps/landing/release.js
           node --check apps/landing/i18n.js
           node --check scripts/landing/build-stitch.mjs
+          node --check scripts/landing/site-pages.mjs
           node --check scripts/landing/validate.mjs
 
       - name: Build approved Stitch landing
@@ -54,3 +55,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:4173/release.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/i18n.js | grep -q "smh-language"
           curl --fail --silent --show-error http://127.0.0.1:4173/logo.svg >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/download/ | grep -q "Download Sims Mod Health"
+          curl --fail --silent --show-error http://127.0.0.1:4173/release-notes/ | grep -q "Beta 1 release notes"
+          curl --fail --silent --show-error http://127.0.0.1:4173/verify/ | grep -q "Verify your download"
+          curl --fail --silent --show-error http://127.0.0.1:4173/docs/ | grep -q "Documentation"
