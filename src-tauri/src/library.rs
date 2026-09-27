@@ -90,20 +90,20 @@ fn load_items(
          ORDER BY lower(lf.relative_path), lf.id",
     )?;
 
-    statement
-        .query_map([installation_id], |row| {
-            Ok(LocalLibraryItem {
-                id: row.get(0)?,
-                relative_path: row.get(1)?,
-                file_kind: row.get(2)?,
-                enabled: row.get::<_, i64>(3)? != 0,
-                parse_status: row.get(4)?,
-                size_bytes: row.get(5)?,
-                embedded_version: row.get(6)?,
-                creator_hint: row.get(7)?,
-            })
-        })?
-        .collect()
+    let rows = statement.query_map([installation_id], |row| {
+        Ok(LocalLibraryItem {
+            id: row.get(0)?,
+            relative_path: row.get(1)?,
+            file_kind: row.get(2)?,
+            enabled: row.get::<_, i64>(3)? != 0,
+            parse_status: row.get(4)?,
+            size_bytes: row.get(5)?,
+            embedded_version: row.get(6)?,
+            creator_hint: row.get(7)?,
+        })
+    })?;
+
+    rows.collect()
 }
 
 #[cfg(test)]
@@ -153,6 +153,9 @@ mod tests {
 
         assert!(snapshot.has_installation);
         assert_eq!(snapshot.indexed_count, 1);
-        assert_eq!(snapshot.items[0].relative_path, "Gameplay/ActuallyInstalled.package");
+        assert_eq!(
+            snapshot.items[0].relative_path,
+            "Gameplay/ActuallyInstalled.package"
+        );
     }
 }
