@@ -15,10 +15,20 @@ const config = JSON.parse(configText);
 const manifest = JSON.parse(manifestText);
 const root = config.packages?.["."];
 
-assert.equal(
-  manifest["."],
-  "0.1.0-beta.1",
-  "Release manifest must start from the already-published Beta 1."
+const manifestVersion = String(manifest["."] ?? "");
+const betaMatch = manifestVersion.match(
+  /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)-beta\.(?<counter>\d+)$/
+);
+
+assert.ok(
+  betaMatch?.groups,
+  "Release manifest must remain on the numeric beta prerelease channel."
+);
+
+const betaCounter = Number(betaMatch.groups.counter);
+assert.ok(
+  Number.isSafeInteger(betaCounter) && betaCounter >= 1 && betaCounter <= 65534,
+  "Release manifest beta counter must stay between 1 and 65534 for MSI packaging."
 );
 
 assert.equal(root?.["release-type"], "simple");
