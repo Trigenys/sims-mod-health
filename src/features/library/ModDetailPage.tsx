@@ -26,9 +26,9 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
   return (
     <>
       <Topbar
-        gameVersion="Patch 1.128.90"
+        gameVersion={item.gameVersion ? "Patch " + item.gameVersion : "Patch unknown"}
         platform="Windows"
-        indexedCount={324}
+        indexedCount={item.libraryCount ?? 0}
       />
 
       <button className="detail-back" onClick={onBack}>
@@ -56,7 +56,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
       <section className="detail-facts" aria-label="Version and identity facts">
         <Fact label="Installed" value={item.installedVersion ?? "Unknown"} />
         <Fact label="Latest" value={item.latestVersion ?? "Unknown"} />
-        <Fact label="Patch" value="1.128.90" />
+        <Fact label="Patch" value={item.gameVersion ?? "Unknown"} />
         <Fact label="Identity" value={identityLabel} />
       </section>
 
@@ -64,7 +64,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
         {item.latestVersion && item.latestVersion !== item.installedVersion && (
           <Button variant="primary">Review update</Button>
         )}
-        <Button>{item.enabled ? "Disable" : "Enable"}</Button>
+        {item.source !== "Local only" && <Button>{item.enabled ? "Disable" : "Enable"}</Button>}
         {item.source !== "Local only" && <Button>Creator page</Button>}
       </div>
 

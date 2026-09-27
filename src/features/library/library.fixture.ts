@@ -39,6 +39,9 @@ export type LibraryItem = {
   localFiles: string[];
   evidence: EvidenceItem[];
   relatedMods: string[];
+  gameVersion?: string | null;
+  libraryCount?: number;
+  modsRoot?: string | null;
 };
 
 export const libraryFixture: LibraryItem[] = [
@@ -250,5 +253,11 @@ export const libraryFacets = {
 } as const;
 
 export function findLibraryItem(id: string) {
-  return libraryFixture.find((item) => item.id === id) ?? libraryFixture[0];
+  const item = libraryFixture.find((entry) => entry.id === id) ?? libraryFixture[0];
+  return {
+    ...item,
+    gameVersion: "1.128.90",
+    libraryCount: 324,
+    modsRoot: "C:/Users/Player/Documents/Electronic Arts/The Sims 4/Mods"
+  };
 }

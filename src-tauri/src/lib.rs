@@ -4,6 +4,7 @@ mod diagnostics;
 mod discovery;
 mod fingerprint;
 mod game;
+mod library;
 mod mutation;
 mod overview;
 mod privacy;
@@ -19,6 +20,7 @@ use diagnostics::DiagnosticsSnapshot;
 use discovery::DiscoverySnapshot;
 use fingerprint::ExactDuplicateGroup;
 use game::{InstallationCandidate, ManualInspection};
+use library::LibrarySnapshot;
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
 use overview::OverviewSnapshot;
 use privacy::PrivacyPreferences;
@@ -200,6 +202,15 @@ async fn get_overview_snapshot(state: State<'_, AppState>) -> Result<OverviewSna
     Ok(overview::build_snapshot(local).await)
 }
 
+#[tauri::command]
+async fn get_library_snapshot(state: State<'_, AppState>) -> Result<LibrarySnapshot, String> {
+    let database_path = state.database_path.clone();
+
+    tauri::async_runtime::spawn_blocking(move || library::load(&database_path))
+        .await
+        .map_err(|error| format!("library worker failed: {error}"))?
+}
+
 fn installed_id(
     connection: &rusqlite::Connection,
     installation: &InstallationCandidate,
@@ -264,6 +275,7 @@ fn analyze_local_conflicts(
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
             let database_path = app_data_dir.join("sims-mod-health.sqlite3");
@@ -292,6 +304,7 @@ pub fn run() {
             rollback_mod_update,
             get_mod_update_transaction,
             get_overview_snapshot,
+            get_library_snapshot,
             list_exact_duplicates,
             analyze_local_conflicts
         ])

@@ -1,17 +1,21 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Topbar } from "../../components/layout/Topbar";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { LibraryStateNotice, type LibraryRegistryState } from "./LibraryStateNotice";
 import {
-  libraryFacets,
-  libraryFixture,
-  type IdentificationConfidence,
-  type LibraryItem
+  libraryGateway,
+  type LibraryGateway,
+  type LibrarySnapshot
+} from "./library.gateway";
+import type {
+  IdentificationConfidence,
+  LibraryItem
 } from "./library.fixture";
 
 type LibraryPageProps = {
   onOpenItem: (item: LibraryItem) => void;
   registryState?: LibraryRegistryState;
+  gateway?: LibraryGateway;
 };
 
 type Filters = {
@@ -43,15 +47,59 @@ const confidenceLabel: Record<IdentificationConfidence, string> = {
 
 export function LibraryPage({
   onOpenItem,
-  registryState = "ready"
+  registryState = "ready",
+  gateway = libraryGateway
 }: LibraryPageProps) {
+  const [snapshot, setSnapshot] = useState<LibrarySnapshot | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Filters>(initialFilters);
+
+  useEffect(() => {
+    let active = true;
+
+    gateway
+      .load()
+      .then((next) => {
+        if (active) {
+          setSnapshot(next);
+          setLoadError(null);
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setSnapshot({
+            hasInstallation: false,
+            gameVersion: null,
+            modsRoot: null,
+            indexedCount: 0,
+            items: []
+          });
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [gateway]);
+
+  const items = snapshot?.items ?? [];
+
+  const facets = useMemo(
+    () => ({
+      statuses: [...new Set(items.map((item) => item.status))].sort(),
+      categories: [...new Set(items.map((item) => item.category))].sort(),
+      creators: [...new Set(items.map((item) => item.creator))].sort(),
+      sources: [...new Set(items.map((item) => item.source))].sort()
+    }),
+    [items]
+  );
 
   const visibleItems = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
 
-    return libraryFixture.filter((item) => {
+    return items.filter((item) => {
       const searchable = [
         item.canonicalName,
         item.creator,
@@ -72,10 +120,10 @@ export function LibraryPage({
       if (filters.enabled === "Disabled" && item.enabled) return false;
       return true;
     });
-  }, [filters, query]);
+  }, [filters, items, query]);
 
   const updateFilter = (key: keyof Filters, value: string) => {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setFilters((currentFilters) => ({ ...currentFilters, [key]: value }));
   };
 
   const resetFilters = () => {
@@ -83,12 +131,16 @@ export function LibraryPage({
     setFilters(initialFilters);
   };
 
+  const patchLabel = snapshot?.gameVersion
+    ? "Patch " + snapshot.gameVersion
+    : "Patch unknown";
+
   return (
     <>
       <Topbar
-        gameVersion="Patch 1.128.90"
+        gameVersion={patchLabel}
         platform="Windows"
-        indexedCount={324}
+        indexedCount={snapshot?.indexedCount ?? 0}
       />
 
       <section className="library-heading" aria-labelledby="library-title">
@@ -96,8 +148,13 @@ export function LibraryPage({
           <p className="eyebrow">LOCAL INVENTORY</p>
           <h1 id="library-title">Library</h1>
           <p className="lede">
-            Canonical identities, local filenames and health evidence in one searchable inventory.
+            Files indexed from your selected Mods folder. Canonical identity stays unresolved until there is evidence for it.
           </p>
+          {snapshot?.modsRoot && (
+            <p className="detail-muted">
+              <code>{snapshot.modsRoot}</code>
+            </p>
+          )}
         </div>
         <div className="library-summary" aria-label={visibleItems.length + " visible items"}>
           <strong>{visibleItems.length}</strong>
@@ -107,112 +164,146 @@ export function LibraryPage({
 
       <LibraryStateNotice state={registryState} />
 
-      <section className="library-toolbar" aria-label="Library search and filters">
-        <label className="library-search">
-          <span aria-hidden="true">⌕</span>
-          <span className="sr-only">Search canonical name or filename</span>
-          <input
-            aria-label="Search canonical name or filename"
-            placeholder="Search name, creator or filename…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
+      {loadError && (
+        <section className="library-empty" role="alert">
+          <div className="library-empty__icon" aria-hidden="true">!</div>
+          <h2>Library could not be loaded</h2>
+          <p>{loadError}</p>
+        </section>
+      )}
 
-        <div className="filter-strip">
-          <Filter label="Status" value={filters.status} onChange={(value) => updateFilter("status", value)}>
-            {libraryFacets.statuses.map((value) => <option key={value}>{value}</option>)}
-          </Filter>
-          <Filter label="Category" value={filters.category} onChange={(value) => updateFilter("category", value)}>
-            {libraryFacets.categories.map((value) => <option key={value}>{value}</option>)}
-          </Filter>
-          <Filter label="Creator" value={filters.creator} onChange={(value) => updateFilter("creator", value)}>
-            {libraryFacets.creators.map((value) => <option key={value}>{value}</option>)}
-          </Filter>
-          <Filter label="Source" value={filters.source} onChange={(value) => updateFilter("source", value)}>
-            {libraryFacets.sources.map((value) => <option key={value}>{value}</option>)}
-          </Filter>
-          <Filter label="Type" value={filters.kind} onChange={(value) => updateFilter("kind", value)}>
-            <option>Script mod</option>
-            <option>Package only</option>
-          </Filter>
-          <Filter
-            label="Identification"
-            value={filters.identification}
-            onChange={(value) => updateFilter("identification", value)}
-          >
-            <option>Identified</option>
-            <option>Unknown</option>
-          </Filter>
-          <Filter label="State" value={filters.enabled} onChange={(value) => updateFilter("enabled", value)}>
-            <option>Enabled</option>
-            <option>Disabled</option>
-          </Filter>
-        </div>
-      </section>
-
-      {visibleItems.length === 0 ? (
-        <section className="library-empty" aria-live="polite">
-          <div className="library-empty__icon" aria-hidden="true">⌕</div>
-          <h2>No matching items</h2>
+      {!snapshot ? (
+        <section className="library-empty" role="status">
+          <div className="library-empty__icon" aria-hidden="true">…</div>
+          <h2>Loading local inventory</h2>
+          <p>Reading the latest scan from local storage.</p>
+        </section>
+      ) : !snapshot.hasInstallation ? (
+        <section className="library-empty">
+          <div className="library-empty__icon" aria-hidden="true">⌂</div>
+          <h2>No Mods folder scanned yet</h2>
           <p>
-            Unknown files stay searchable too. Try a filename alias or clear the active filters.
+            Go to Overview, choose your real Sims 4 Mods folder, and run the first scan. This page will not invent sample mods.
           </p>
-          <button className="button button--secondary" onClick={resetFilters}>
-            Clear filters
-          </button>
+        </section>
+      ) : snapshot.items.length === 0 ? (
+        <section className="library-empty">
+          <div className="library-empty__icon" aria-hidden="true">0</div>
+          <h2>No supported mod files found</h2>
+          <p>
+            The selected folder was scanned, but no .package or .ts4script files were indexed.
+          </p>
         </section>
       ) : (
-        <section className="library-table" aria-label="Installed library">
-          <div className="library-table__header" aria-hidden="true">
-            <span>Mod / CC</span>
-            <span>Installed</span>
-            <span>Status</span>
-            <span>Source</span>
-            <span>Identity</span>
-            <span />
-          </div>
+        <>
+          <section className="library-toolbar" aria-label="Library search and filters">
+            <label className="library-search">
+              <span aria-hidden="true">⌕</span>
+              <span className="sr-only">Search local filename</span>
+              <input
+                aria-label="Search local filename"
+                placeholder="Search filename or folder…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
 
-          <div className="library-table__body">
-            {visibleItems.map((item) => (
-              <button
-                className="library-row"
-                key={item.id}
-                onClick={() => onOpenItem(item)}
-                aria-label={"Open " + item.canonicalName}
+            <div className="filter-strip">
+              <Filter label="Status" value={filters.status} onChange={(value) => updateFilter("status", value)}>
+                {facets.statuses.map((value) => <option key={value}>{value}</option>)}
+              </Filter>
+              <Filter label="Category" value={filters.category} onChange={(value) => updateFilter("category", value)}>
+                {facets.categories.map((value) => <option key={value}>{value}</option>)}
+              </Filter>
+              <Filter label="Creator" value={filters.creator} onChange={(value) => updateFilter("creator", value)}>
+                {facets.creators.map((value) => <option key={value}>{value}</option>)}
+              </Filter>
+              <Filter label="Source" value={filters.source} onChange={(value) => updateFilter("source", value)}>
+                {facets.sources.map((value) => <option key={value}>{value}</option>)}
+              </Filter>
+              <Filter label="Type" value={filters.kind} onChange={(value) => updateFilter("kind", value)}>
+                <option>Script mod</option>
+                <option>Package only</option>
+              </Filter>
+              <Filter
+                label="Identification"
+                value={filters.identification}
+                onChange={(value) => updateFilter("identification", value)}
               >
-                <span className="library-row__identity">
-                  <span className="library-avatar" aria-hidden="true">
-                    {item.canonicalName.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span>
-                    <strong>{item.canonicalName}</strong>
-                    <small>
-                      {item.creator} · {item.category}
-                      {!item.enabled && " · Disabled"}
-                    </small>
-                    {!item.identified && (
-                      <em>Local file · {item.filenameAliases[0]}</em>
-                    )}
-                  </span>
-                </span>
-                <span className="library-version">{item.installedVersion ?? "—"}</span>
-                <span><StatusBadge tone={item.tone}>{item.status}</StatusBadge></span>
-                <span className="library-source">{item.source}</span>
-                <span>
-                  {item.confidence === "exact" ? (
-                    <span className="identity-exact">Exact</span>
-                  ) : (
-                    <span className={"identity-confidence identity-confidence--" + item.confidence}>
-                      {confidenceLabel[item.confidence]}
-                    </span>
-                  )}
-                </span>
-                <span className="row-arrow" aria-hidden="true">›</span>
+                <option>Identified</option>
+                <option>Unknown</option>
+              </Filter>
+              <Filter label="State" value={filters.enabled} onChange={(value) => updateFilter("enabled", value)}>
+                <option>Enabled</option>
+                <option>Disabled</option>
+              </Filter>
+            </div>
+          </section>
+
+          {visibleItems.length === 0 ? (
+            <section className="library-empty" aria-live="polite">
+              <div className="library-empty__icon" aria-hidden="true">⌕</div>
+              <h2>No matching items</h2>
+              <p>
+                Try a filename or folder name, or clear the active filters.
+              </p>
+              <button className="button button--secondary" onClick={resetFilters}>
+                Clear filters
               </button>
-            ))}
-          </div>
-        </section>
+            </section>
+          ) : (
+            <section className="library-table" aria-label="Installed library">
+              <div className="library-table__header" aria-hidden="true">
+                <span>Mod / CC</span>
+                <span>Installed</span>
+                <span>Status</span>
+                <span>Source</span>
+                <span>Identity</span>
+                <span />
+              </div>
+
+              <div className="library-table__body">
+                {visibleItems.map((item) => (
+                  <button
+                    className="library-row"
+                    key={item.id}
+                    onClick={() => onOpenItem(item)}
+                    aria-label={"Open " + item.canonicalName}
+                  >
+                    <span className="library-row__identity">
+                      <span className="library-avatar" aria-hidden="true">
+                        {item.canonicalName.slice(0, 2).toUpperCase()}
+                      </span>
+                      <span>
+                        <strong>{item.canonicalName}</strong>
+                        <small>
+                          {item.creator} · {item.category}
+                          {!item.enabled && " · Disabled"}
+                        </small>
+                        {!item.identified && (
+                          <em>Local file · {item.filenameAliases[0]}</em>
+                        )}
+                      </span>
+                    </span>
+                    <span className="library-version">{item.installedVersion ?? "—"}</span>
+                    <span><StatusBadge tone={item.tone}>{item.status}</StatusBadge></span>
+                    <span className="library-source">{item.source}</span>
+                    <span>
+                      {item.confidence === "exact" ? (
+                        <span className="identity-exact">Exact</span>
+                      ) : (
+                        <span className={"identity-confidence identity-confidence--" + item.confidence}>
+                          {confidenceLabel[item.confidence]}
+                        </span>
+                      )}
+                    </span>
+                    <span className="row-arrow" aria-hidden="true">›</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </>
   );
