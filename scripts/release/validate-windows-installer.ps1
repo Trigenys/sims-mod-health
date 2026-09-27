@@ -19,7 +19,10 @@ function Get-SimsModHealthUninstallEntries {
     @(
         foreach ($path in $paths) {
             Get-ItemProperty -Path $path -ErrorAction SilentlyContinue |
-                Where-Object { $_.DisplayName -eq $productName }
+                Where-Object {
+                    $_.PSObject.Properties.Name -contains "DisplayName" -and
+                    $_.DisplayName -eq $productName
+                }
         }
     )
 }
@@ -67,8 +70,13 @@ if ($installed.Count -eq 0) {
 $entry = $installed | Select-Object -First 1
 Write-Host "Installed product registration found: $($entry.DisplayName) $($entry.DisplayVersion)"
 
-if ($entry.InstallLocation -and -not (Test-Path -LiteralPath $entry.InstallLocation)) {
-    throw "Registered InstallLocation does not exist: $($entry.InstallLocation)"
+$installLocationProperty = $entry.PSObject.Properties["InstallLocation"]
+if (
+    $null -ne $installLocationProperty -and
+    -not [string]::IsNullOrWhiteSpace([string]$installLocationProperty.Value) -and
+    -not (Test-Path -LiteralPath ([string]$installLocationProperty.Value))
+) {
+    throw "Registered InstallLocation does not exist: $($installLocationProperty.Value)"
 }
 
 Write-Host "Uninstalling the same MSI..."
