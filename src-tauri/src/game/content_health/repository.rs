@@ -1,7 +1,4 @@
-use std::{
-    path::Path,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{params, Connection, OptionalExtension};
 
@@ -143,10 +140,6 @@ pub(crate) fn load_cached_manifest(
             })
         })
         .transpose()
-}
-
-pub(crate) fn database_exists(path: &Path) -> bool {
-    path.is_file()
 }
 
 fn observation_timestamp() -> String {
