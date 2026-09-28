@@ -7,11 +7,11 @@ use std::{
 
 use sha2::{Digest, Sha256};
 
+use super::super::GameVersion;
 use super::{
     EvidenceConfidence, GameBuildEvidence, GameVersionProbe, SentinelFingerprint,
     VersionEvidenceKind,
 };
-use super::super::GameVersion;
 
 const SENTINELS: &[&str] = &[
     "Game/Bin/Default.ini",
@@ -127,7 +127,9 @@ fn fingerprint_sentinels(install_root: &Path) -> Vec<SentinelFingerprint> {
         .filter_map(|relative| {
             let path = relative
                 .split('/')
-                .fold(install_root.to_path_buf(), |current, part| current.join(part));
+                .fold(install_root.to_path_buf(), |current, part| {
+                    current.join(part)
+                });
             fingerprint_file(&path)
                 .ok()
                 .map(|(sha256, size_bytes)| SentinelFingerprint {
