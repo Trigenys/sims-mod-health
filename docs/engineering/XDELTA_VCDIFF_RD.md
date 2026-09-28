@@ -17,43 +17,45 @@ The answer from this R&D slice is:
 
 The default production path remains official-provider handoff.
 
-## Upstream evaluated
+## Reuse decision
 
-Repository: `jmacd/xdelta`
+### Selected for the prototype
 
-Reviewed on: 2026-09-28
+Repository: `liushuyu/xdelta3-rs`
 
-Reviewed line: **Xdelta 3.2.x / v3.2.0**
-
-Relevant upstream facts:
-
-- Xdelta 3 implements VCDIFF / RFC 3284.
-- The current upstream README identifies 3.2.x as the active release series.
-- Upstream provides a reusable `xdelta3lib` C library and prebuilt Windows binaries.
-- The repository README states that `main` and the `release3_2_apl` 3.2.x series continue under Apache License 2.0.
-- `xdelta3/LICENSE` contains the Apache License 2.0 text.
-- GitHub repository metadata currently reports no detected root license because the license file is under `xdelta3/`; therefore license approval must rely on the upstream README + `xdelta3/LICENSE`, not only the GitHub metadata badge.
-- The original GPL line is maintained separately under `jmacd/xdelta-gpl` and is not the dependency line evaluated here.
-
-### Pinned Windows R&D artifact
-
-The R&D workflow downloads:
+Pinned commit:
 
 ```text
-xdelta3-3.2.0-windows-x86_64.zip
+7bca8bc72548bd88a92a308dcd01225c3e842bc7
 ```
 
-from the official `jmacd/xdelta` GitHub Release and requires SHA-256:
+Why this repository:
 
-```text
-af8ef036cb077a48df080c9a8ac1be4a6e7511c32d11f8bec89b6803a9e52576
-```
+- Rust-facing API for Xdelta/VCDIFF;
+- Apache-2.0 repository license;
+- its Xdelta submodule is pinned to upstream commit `0525275fe4b553a10f38e455d30c60dc6ed9b45d`;
+- that upstream commit is the original-author Xdelta **3.0.12 APL** relicensing commit;
+- it keeps native-size detection in its build script instead of hard-coding C type sizes;
+- `default-features = false` avoids bringing the optional streaming stack into this R&D adapter.
 
-The archive is verified before extraction or execution.
+The dependency is pinned by immutable Git SHA. We do not track a moving branch.
+
+### Candidate rejected after code review
+
+`sigp/xdelta3-rs` was initially attractive because it has newer dependency maintenance and a richer error API. We did **not** keep it as the prototype dependency because its build script deliberately replaces native C-size detection with 64-bit constants for `size_t`, `unsigned int`, `unsigned long` and `unsigned long long`.
+
+That simplification is not a portability assumption we want to inherit for a Windows desktop product. The original binding's runtime compiler probe is slower but preserves the target's actual ABI sizes.
+
+### Other candidates
+
+- `ThinkingJoules/vcdiff-utils`: promising pure-Rust VCDIFF implementation, but no explicit repository license was found during this review, so code reuse is blocked.
+- `Speedy37/vcdiff-rs`: MIT and pure Rust, but old (`nom 3`), inactive for years and missing support for compressed delta sections.
+- `Speedy37/speedupdate-rs`: useful prior art for update graphs, integrity and recovery, but much broader than the narrow delta primitive required here.
+- `jmacd/xdelta` 3.2.x: authoritative modern upstream and still the preferred reference for a future production-grade native integration. Its current `xdelta3lib` may replace the 3.0.12 binding later if we need streaming, larger files or tighter ABI control.
 
 ## Adapter boundary
 
-The Rust core now defines a narrow `DeltaApplier` port with an `Xdelta3CliApplier` R&D adapter.
+The Rust core defines a narrow `DeltaApplier` port with an `Xdelta3RustApplier` prototype.
 
 The adapter deliberately does **not**:
 
@@ -64,13 +66,17 @@ The adapter deliberately does **not**:
 - expose a Tauri command;
 - register any production updater path.
 
-Its only responsibility is to transform:
+Its only responsibility is:
 
 ```text
-verified source + verified delta -> staged output
+verified source + verified delta
+        ↓
+VCDIFF decode through reused Rust binding
+        ↓
+verified staged output
 ```
 
-under caller-supplied staging.
+No standalone xdelta executable or sidecar is downloaded by CI or shipped by this prototype.
 
 ## Integrity contract
 
@@ -89,32 +95,51 @@ verify source SHA-256
         ↓
 verify delta SHA-256
         ↓
-run pinned xdelta3 decoder
+decode in memory through xdelta3-rs
+        ↓
+write only to caller-provided staging
         ↓
 verify staged target SHA-256
         ↓
 return staged result
 ```
 
-On an execution failure or target-hash mismatch, any partial staged output is removed.
+An existing output is never overwritten. A reconstructed target with the wrong expected hash is removed.
 
-The adapter refuses to overwrite an existing output. This keeps the R&D primitive compatible with the existing mutation rule: construct and verify outside the real target directory first.
+## Deliberate R&D limits
+
+The selected binding exposes a memory-oriented API that uses 32-bit lengths internally. Sims Mod Health therefore places an additional **512 MiB per-input R&D limit** and rejects unsafe aggregate lengths before entering the binding.
+
+This is a prototype constraint, not a production Game/DLC limit.
+
+If direct patching is ever promoted, the production implementation must be reevaluated against modern `jmacd/xdelta` 3.2.x / `xdelta3lib` or another implementation that supports the required streaming and large-file behavior.
 
 ## Test evidence
 
-Normal unit tests prove that:
+The normal native Rust test suite now covers the VCDIFF adapter directly; there is no bespoke xdelta workflow.
 
-- a wrong source hash fails before xdelta3 can execute;
-- a wrong delta hash fails before xdelta3 can execute;
-- an existing staged output is never overwritten.
+Fixtures prove:
 
-The dedicated Windows R&D workflow additionally uses the pinned xdelta3 3.2.0 binary to prove:
+- wrong source hash fails before decode;
+- wrong delta hash fails before decode;
+- existing staging output is not overwritten;
+- a deterministic source/target fixture round-trips through the reused binding;
+- a corrupted delta fails closed;
+- wrong target hash removes the staged result;
+- an 8 MiB synthetic fixture is encoded/decoded while printing source, target and delta sizes plus encode/apply duration.
 
-- deterministic source/target fixture round-trip;
-- target-hash mismatch removes the reconstructed output;
-- an 8 MiB synthetic fixture can be encoded and decoded while printing source, target and delta sizes plus encode/apply duration.
+No copyrighted Sims payload is committed or used by these tests.
 
-No copyrighted Sims payload is used. Fixtures are generated synthetic bytes owned by this repository.
+The existing Impact-Aware native surface is sufficient:
+
+```text
+src-tauri/**
+    → Rust CI
+    → Security
+    → Windows installer validation
+```
+
+A separate `xdelta-rd` CI gate was removed because reusing the Rust dependency makes it redundant.
 
 ## Failure-model status
 
@@ -122,65 +147,47 @@ No copyrighted Sims payload is used. Fixtures are generated synthetic bytes owne
 
 **Covered for source, delta and target integrity.**
 
-A changed source or delta fails before decode. A reconstructed target with the wrong expected hash is deleted before it can be consumed.
+A changed source or delta fails before decode. A corrupted VCDIFF stream either fails decode or produces a target that is rejected by the expected target SHA-256.
 
 ### Interruption
 
-**Partially covered by architecture, not yet a production claim.**
+**Reduced, but not yet a production claim.**
 
-The adapter writes only to a staging path and does not mutate the game directory. The existing Sims Mod Health mutation journal/restore-point model remains the intended transaction owner if this primitive is ever promoted.
+Removing the external `xdelta3.exe` process eliminates one process-lifecycle failure mode. The adapter still writes only to staging and never mutates the game directory.
 
-A future production integration must explicitly journal a delta-apply state and prove startup recovery around an interrupted external process before direct patching can be enabled.
+A future production integration must explicitly journal the delta-apply state and prove startup recovery around an interrupted staging write before direct patching can be enabled.
 
 ### Low disk
 
-**Not yet proven on a real constrained filesystem.**
+**Not yet proven on a constrained filesystem.**
 
-The current adapter fails closed on I/O/process failure and leaves the original source untouched, but issue #77 is not complete until a reproducible low-disk test demonstrates cleanup behavior.
+A staging write error leaves the source untouched and the adapter removes failed output where possible, but #77 remains open until a reproducible low-disk test demonstrates cleanup behavior.
 
-## Packaging options
+## Packaging impact
 
-Two production packaging routes remain possible:
+The prototype no longer needs a Tauri xdelta sidecar.
 
-### Option A — Tauri sidecar
+The trade-off moves into the Rust build:
 
-Bundle the reviewed official xdelta3 executable as a signed/hashed sidecar.
+- C compiler + bindgen/libclang are required to build the dependency;
+- Xdelta 3.0.12 APL is compiled into the application through the Rust binding;
+- Apache-2.0 notices must be retained in product dependency notices;
+- the Windows installer validation remains responsible for proving the binding can compile in the actual desktop packaging environment.
 
-Pros:
-- smallest integration change;
-- isolates C code from Rust unsafe FFI;
-- CLI behavior matches upstream release testing.
-
-Costs:
-- one more executable to package, sign, inventory and update;
-- Apache 2.0 notice/license distribution obligations must be preserved;
-- sidecar architecture/asset mapping is required per Windows target.
-
-### Option B — static xdelta3lib integration
-
-Build the Apache-2.0 `xdelta3lib` through CMake and expose a narrow Rust FFI wrapper.
-
-Pros:
-- single process;
-- direct streaming/control opportunities.
-
-Costs:
-- C toolchain/build integration becomes part of the Rust/Tauri supply chain;
-- unsafe FFI surface requires dedicated tests and ABI/version discipline;
-- more maintenance than the sidecar route.
-
-For the R&D phase, **Option A is intentionally used**. No production packaging decision is made yet.
+This is simpler than shipping and signing a second executable, but it still introduces native C code and therefore remains an R&D dependency until the production gate is passed.
 
 ## Go / no-go decision
 
 ### GO
 
-Continue using the narrow staged adapter for technical experiments because:
+Continue the isolated prototype because:
 
-- the evaluated 3.2.x upstream line has explicit Apache-2.0 licensing evidence;
-- the primitive can be isolated behind `DeltaApplier`;
-- source, delta and target integrity can all be required independently;
-- the adapter does not need to weaken the existing restore-point/staging model.
+- an explicitly licensed reusable implementation exists;
+- the dependency is immutable-pinned;
+- the adapter stays behind `DeltaApplier`;
+- source, delta and target integrity remain independently enforced;
+- no downloader or entitlement behavior is introduced;
+- normal Rust/Windows CI can validate the dependency without bespoke workflow plumbing.
 
 ### NO-GO
 
@@ -193,7 +200,8 @@ Promotion remains blocked until all of the following exist:
 - expected source/delta/target hashes from trusted metadata;
 - reproducible interruption recovery evidence;
 - reproducible low-disk failure evidence;
-- Windows packaging/signing/notice plan;
-- explicit integration into the existing transaction journal and restore-point lifecycle.
+- dependency notice/package review;
+- explicit integration into the existing transaction journal and restore-point lifecycle;
+- a large-file/streaming decision suitable for real Game/DLC payload sizes.
 
 Until then, #75 official-provider handoff remains the production update strategy.
