@@ -118,6 +118,13 @@ fn get_game_content_provider_update_session(
 }
 
 #[tauri::command]
+fn get_pending_game_content_provider_update_session(
+    state: State<'_, AppState>,
+) -> Result<Option<ProviderUpdateSessionView>, String> {
+    game::get_pending_provider_update_session(&state.database_path)
+}
+
+#[tauri::command]
 async fn verify_game_content_provider_update(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
@@ -482,6 +489,7 @@ pub fn run() {
             get_provider_update_capability,
             start_game_content_provider_update,
             get_game_content_provider_update_session,
+            get_pending_game_content_provider_update_session,
             verify_game_content_provider_update,
             scan_sims_mods,
             scan_current_sims_mods,
