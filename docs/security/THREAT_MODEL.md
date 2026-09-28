@@ -127,6 +127,18 @@ Controls:
 - production Game/DLC update behavior defaults to official-provider handoff;
 - direct patch payloads require an explicit source/licensing/integrity gate before implementation.
 
+### Provider handoff process launching
+
+Threat: a compromised WebView or crafted provider value turns the update action into arbitrary command execution.
+
+Controls:
+- no generic shell/process capability is granted to the WebView;
+- provider executable paths are resolved only in Rust;
+- only canonical executables named `EADesktop.exe` or `steam.exe` are accepted for automatic handoff;
+- no user-supplied executable path or command-line argument reaches `Command::new`;
+- unknown/missing providers fall back to manual instructions;
+- launching a provider records `provider_opened` / `awaiting_rescan`, never update success.
+
 ### Untrusted Game/DLC patch payloads
 
 Threat: a third-party delta or full payload modifies the game installation with corrupted, unauthorized or malicious content.
@@ -181,7 +193,10 @@ Controls:
 - CI audits capability drift and rejects broad filesystem/shell/process/HTTP permissions.
 
 Current capability:
-- `core:default` only.
+- `core:default`;
+- `dialog:allow-open` for the existing explicit file/folder picker.
+
+Provider handoff adds no `shell:`, `process:` or `http:` WebView permission.
 
 ### WebView content injection
 
