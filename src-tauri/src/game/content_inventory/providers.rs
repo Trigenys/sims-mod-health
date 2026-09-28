@@ -126,16 +126,16 @@ fn parse_steam_library_paths(content: &str) -> Vec<PathBuf> {
     content
         .lines()
         .map(str::trim)
-        .filter(|line| line.starts_with(""path""))
+        .filter(|line| line.starts_with("\"path\""))
         .filter_map(quoted_value_after_key)
-        .map(|value| PathBuf::from(value.replace("\\", "\")))
+        .map(|value| PathBuf::from(value.replace("\\\\", "\\")))
         .collect()
 }
 
 fn parse_steam_install_dir(content: &str) -> Option<String> {
     content.lines().find_map(|line| {
         let line = line.trim();
-        if !line.starts_with(""installdir"") {
+        if !line.starts_with("\"installdir\"") {
             return None;
         }
         quoted_value_after_key(line)
