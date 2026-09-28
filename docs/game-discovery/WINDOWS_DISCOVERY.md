@@ -111,3 +111,91 @@ Native tests cover:
 - manual direct-root override;
 - manual Documents-parent override;
 - nonexistent manual path.
+
+
+## Program installation and content-pack inventory
+
+Issue #73 adds a second discovery boundary for the **program installation**. This remains separate from the user-data root above.
+
+### Provider strategies
+
+The native core uses provider probes rather than path guessing in the WebView:
+
+1. **Steam manifest** — inspect Steam libraries for app manifest `1222670` and resolve its `installdir`.
+2. **EA/Maxis registry** — on Windows, read `Install Dir` from the Maxis Sims 4 registry keys in HKLM/HKCU and both registry views.
+3. **EA default paths** — probe existing `EA Games/The Sims 4` and legacy `Origin Games/The Sims 4` directories.
+4. **Manual path** — accept an explicit program-installation directory when automatic discovery is unavailable.
+
+A directory is only accepted as a game installation when program markers exist under `Game/Bin` and `Data/Client`.
+
+Steam wins provider classification when the same install root is also visible through EA/Maxis registry state. The provider describes the update/install source; it does not represent account ownership.
+
+### Program-build evidence
+
+The first version source is:
+
+```text
+<Game install>/Game/Bin/Default.ini
+```
+
+The `gameversion` value must contain exactly four numeric components.
+
+The native layer also computes SHA-256 for available sentinel files:
+
+```text
+Game/Bin/Default.ini
+Game/Bin/TS4_x64.exe
+Delta/EP01/Version.ini
+```
+
+When the version text cannot be resolved, sentinel hashes are retained for later manifest matching but **no version is guessed**. Until #74 provides a provenance-bearing fingerprint manifest, that state remains `Unknown`.
+
+### Content-pack observations
+
+Direct program-installation directories matching the conservative code families below are inventoried:
+
+- `EPnn` — Expansion
+- `GPnn` — Game
+- `SPnn` — Stuff or Kit
+- `FPnn` — Free
+- `KITnn` / `KITnnn` — reserved explicit Kit form when present
+
+For each locally present pack the inventory stores:
+
+- canonical upper-case code;
+- local state: `installed`, `partial` or `unknown`;
+- bounded recursive byte size;
+- regular-file marker count;
+- observation timestamp.
+
+An empty pack directory is `partial`. An unreadable or over-limit directory is `unknown`. Filesystem presence never becomes an entitlement/ownership state.
+
+### Persistence
+
+Local observations are stored only in SQLite tables:
+
+- `game_content_installations`
+- `installed_packs`
+
+Raw program paths remain in the local desktop trust domain. No game path or pack payload is sent to the Registry by this workflow.
+
+### Native commands
+
+```text
+refresh_game_content_inventory()
+inspect_game_content_installation(path)
+```
+
+The refresh command runs blocking filesystem work off the WebView thread and persists the normalized snapshot. Both commands are read-only with respect to the game installation.
+
+### Verification
+
+Fixtures cover:
+
+- valid and malformed `Default.ini` versions;
+- sentinel fallback without version invention;
+- Steam app-manifest discovery;
+- escaped Steam library paths;
+- pack-code classification;
+- installed versus empty/partial packs;
+- neutral manual paths remaining provider-unknown.

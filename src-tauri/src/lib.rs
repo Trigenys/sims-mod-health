@@ -19,7 +19,10 @@ use conflicts::LocalConflictAnalysis;
 use diagnostics::DiagnosticsSnapshot;
 use discovery::DiscoverySnapshot;
 use fingerprint::ExactDuplicateGroup;
-use game::{InstallationCandidate, ManualInspection};
+use game::{
+    GameContentInstallation, GameContentRepository, GameContentSnapshot, InstallationCandidate,
+    ManualInspection, SqliteGameContentRepository,
+};
 use library::LibrarySnapshot;
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
 use overview::OverviewSnapshot;
@@ -47,6 +50,29 @@ fn discover_sims_installations() -> Vec<InstallationCandidate> {
 #[tauri::command]
 fn inspect_sims_installation(path: String) -> ManualInspection {
     game::inspect_manual_path(&PathBuf::from(path))
+}
+
+#[tauri::command]
+async fn refresh_game_content_inventory(
+    state: State<'_, AppState>,
+) -> Result<GameContentSnapshot, String> {
+    let database_path = state.database_path.clone();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let snapshot = game::discover_game_content();
+        let connection = storage::open(&database_path).map_err(|error| error.to_string())?;
+        SqliteGameContentRepository::new(&connection)
+            .persist_snapshot(&snapshot)
+            .map_err(|error| error.to_string())?;
+        Ok::<GameContentSnapshot, String>(snapshot)
+    })
+    .await
+    .map_err(|error| format!("game content inventory worker failed: {error}"))?
+}
+
+#[tauri::command]
+fn inspect_game_content_installation(path: String) -> Result<GameContentInstallation, String> {
+    game::inspect_game_content_path(&PathBuf::from(path))
 }
 
 #[tauri::command]
@@ -293,6 +319,8 @@ pub fn run() {
             health,
             discover_sims_installations,
             inspect_sims_installation,
+            refresh_game_content_inventory,
+            inspect_game_content_installation,
             scan_sims_mods,
             scan_current_sims_mods,
             cancel_mod_scan,

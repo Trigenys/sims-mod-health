@@ -1,3 +1,10 @@
+mod content_inventory;
+
+pub(crate) use content_inventory::{
+    discover_game_content, inspect_game_content_path, GameContentInstallation,
+    GameContentRepository, GameContentSnapshot, SqliteGameContentRepository,
+};
+
 use std::{
     collections::HashSet,
     env, fs,
