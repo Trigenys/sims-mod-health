@@ -13,8 +13,11 @@ use crate::{
 
 use manifest::adapt_registry_manifest;
 use repository::{load_cached_manifest, load_latest_local_state, save_cached_manifest};
-pub(crate) use resolver::GameContentHealthSnapshot;
-use resolver::{evaluate, missing_manifest, ManifestState};
+use resolver::{evaluate, missing_manifest};
+pub(crate) use resolver::{
+    GameContentFindingKind, GameContentHealthFinding, GameContentHealthSnapshot,
+    GameContentHealthState, ManifestState,
+};
 
 pub(crate) trait ContentManifestSource {
     fn fetch<'a>(
