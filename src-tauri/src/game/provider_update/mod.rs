@@ -5,28 +5,21 @@ mod state;
 use std::path::Path;
 
 use crate::{
-    game::content_health::{
-        GameContentHealthSnapshot, GameContentHealthState,
-    },
+    game::content_health::{GameContentHealthSnapshot, GameContentHealthState},
     storage,
 };
 
 pub(crate) use adapters::ProviderUpdateCapability;
 pub(crate) use repository::ProviderUpdateSessionView;
-pub(crate) use state::{
-    ProviderUpdateState, ProviderUpdateTargetKind,
-};
+pub(crate) use state::{ProviderUpdateState, ProviderUpdateTargetKind};
 
 use adapters::{capability, open_provider};
 use repository::{
-    begin_verification as begin_verification_transition, create_session,
-    latest_pending_session, latest_provider_installation, load_session, transition_session,
-    validate_target,
+    begin_verification as begin_verification_transition, create_session, latest_pending_session,
+    latest_provider_installation, load_session, transition_session, validate_target,
 };
 
-pub(crate) fn get_capability(
-    database_path: &Path,
-) -> Result<ProviderUpdateCapability, String> {
+pub(crate) fn get_capability(database_path: &Path) -> Result<ProviderUpdateCapability, String> {
     let connection = storage::open(database_path).map_err(|error| error.to_string())?;
     let provider = latest_provider_installation(&connection)?
         .map(|installation| installation.provider)
@@ -43,19 +36,9 @@ pub(crate) fn start_provider_update(
     let connection = storage::open(database_path).map_err(|error| error.to_string())?;
     let installation = latest_provider_installation(&connection)?
         .ok_or_else(|| "no local game program installation is available".to_string())?;
-    let target_id = validate_target(
-        &connection,
-        installation.id,
-        target_kind,
-        target_id,
-    )?;
+    let target_id = validate_target(&connection, installation.id, target_kind, target_id)?;
 
-    let session = create_session(
-        &connection,
-        &installation,
-        target_kind,
-        &target_id,
-    )?;
+    let session = create_session(&connection, &installation, target_kind, &target_id)?;
     let capability = capability(&installation.provider);
     let action = transition_session(
         &connection,
@@ -74,8 +57,7 @@ pub(crate) fn start_provider_update(
 
     match open_provider(&installation.provider) {
         Ok(launch) => {
-            let connection =
-                storage::open(database_path).map_err(|error| error.to_string())?;
+            let connection = storage::open(database_path).map_err(|error| error.to_string())?;
             let opened = transition_session(
                 &connection,
                 session.id,
@@ -176,14 +158,7 @@ pub(crate) fn complete_verification(
         ),
     };
 
-    transition_session(
-        &connection,
-        session_id,
-        state,
-        detail,
-        None,
-        None,
-    )
+    transition_session(&connection, session_id, state, detail, None, None)
 }
 
 pub(crate) fn fail_verification(
@@ -191,7 +166,8 @@ pub(crate) fn fail_verification(
     session_id: i64,
     error: &str,
 ) -> Result<ProviderUpdateSessionView, String> {
-    let connection = storage::open(database_path).map_err(|storage_error| storage_error.to_string())?;
+    let connection =
+        storage::open(database_path).map_err(|storage_error| storage_error.to_string())?;
     let session = load_session(&connection, session_id)?
         .ok_or_else(|| "provider update session was not found".to_string())?;
 
@@ -210,8 +186,7 @@ pub(crate) fn fail_verification(
 }
 
 pub(crate) use repository::{
-    current_program_version_for_session, latest_mod_user_root,
-    sync_latest_mod_game_version,
+    current_program_version_for_session, latest_mod_user_root, sync_latest_mod_game_version,
 };
 
 #[cfg(test)]
@@ -228,10 +203,14 @@ mod tests {
         let path = temp.path().join("test.sqlite3");
         let mut connection = Connection::open(&path).expect("db");
         connection
-            .execute_batch(include_str!("../../../migrations/0007_game_content_inventory.sql"))
+            .execute_batch(include_str!(
+                "../../../migrations/0007_game_content_inventory.sql"
+            ))
             .expect("inventory schema");
         connection
-            .execute_batch(include_str!("../../../migrations/0009_provider_update_sessions.sql"))
+            .execute_batch(include_str!(
+                "../../../migrations/0009_provider_update_sessions.sql"
+            ))
             .expect("provider schema");
         connection
             .execute(
@@ -254,12 +233,8 @@ mod tests {
     #[test]
     fn unknown_provider_stays_action_required_for_manual_update() {
         let (_temp, path) = database();
-        let session = start_provider_update(
-            &path,
-            ProviderUpdateTargetKind::Game,
-            "game",
-        )
-        .expect("session");
+        let session =
+            start_provider_update(&path, ProviderUpdateTargetKind::Game, "game").expect("session");
 
         assert_eq!(session.state, ProviderUpdateState::ActionRequired);
 
@@ -270,12 +245,8 @@ mod tests {
     #[test]
     fn manual_update_can_enter_awaiting_rescan_after_restart() {
         let (_temp, path) = database();
-        let session = start_provider_update(
-            &path,
-            ProviderUpdateTargetKind::Game,
-            "game",
-        )
-        .expect("session");
+        let session =
+            start_provider_update(&path, ProviderUpdateTargetKind::Game, "game").expect("session");
 
         let waiting = begin_verification(&path, session.id).expect("verify");
         assert_eq!(waiting.state, ProviderUpdateState::AwaitingRescan);
@@ -284,12 +255,8 @@ mod tests {
     #[test]
     fn current_health_completes_session_as_verified() {
         let (_temp, path) = database();
-        let session = start_provider_update(
-            &path,
-            ProviderUpdateTargetKind::Game,
-            "game",
-        )
-        .expect("session");
+        let session =
+            start_provider_update(&path, ProviderUpdateTargetKind::Game, "game").expect("session");
         begin_verification(&path, session.id).expect("begin verification");
 
         let health = GameContentHealthSnapshot {
@@ -312,8 +279,7 @@ mod tests {
             packs: Vec::new(),
         };
 
-        let verified =
-            complete_verification(&path, session.id, &health).expect("complete");
+        let verified = complete_verification(&path, session.id, &health).expect("complete");
         assert_eq!(verified.state, ProviderUpdateState::Verified);
     }
 }
