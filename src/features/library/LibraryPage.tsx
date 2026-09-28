@@ -279,7 +279,7 @@ export function LibraryPage({
                       <span>
                         <strong>{item.canonicalName}</strong>
                         <small>
-                          {item.creator} · {tx(item.category)}
+                          {tx(item.creator)} · {tx(item.category)}
                           {!item.enabled && " · " + t("Disabled")}
                         </small>
                         {!item.identified && (
