@@ -61,4 +61,4 @@ jobs:
   xdelta-rd:
     needs: impact
     if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'xdelta-rd') }}
-    uses: ./.github/workflows/xdelta-rd.yml
+    uses: Trigenys/sims-mod-health/.github/workflows/xdelta-rd.yml@535b8d3c9db55e6148ed556c4c07b8c13dfdf961
