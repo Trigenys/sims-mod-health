@@ -22,14 +22,28 @@ const cases = [
     name: "health-1024x700",
     width: 1024,
     height: 700,
-    path: "/?surface=health&visual=health",
+    path: "/?surface=health&tab=updates&visual=health",
     active: "Health"
   },
   {
     name: "health-1440x900",
     width: 1440,
     height: 900,
-    path: "/?surface=health&visual=health",
+    path: "/?surface=health&tab=updates&visual=health",
+    active: "Health"
+  },
+  {
+    name: "health-pack-detail-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=health&tab=updates&visual=health-pack",
+    active: "Health"
+  },
+  {
+    name: "health-pack-detail-1440x900",
+    width: 1440,
+    height: 900,
+    path: "/?surface=health&tab=updates&visual=health-pack",
     active: "Health"
   },
   {
@@ -116,6 +130,10 @@ try {
       if (!focus.active || focus.ring === "none") {
         throw new Error(testCase.name + " does not expose a visible keyboard focus state");
       }
+    }
+
+    if (testCase.path.includes("visual=health-pack")) {
+      await page.getByRole("dialog", { name: "EP17" }).waitFor();
     }
 
     if (testCase.path.includes("surface=health")) {
