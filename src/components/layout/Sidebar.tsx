@@ -1,3 +1,6 @@
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useI18n } from "../../i18n/i18n";
+
 type NavItem = {
   label: "Overview" | "Library" | "Health" | "Discover";
   icon: string;
@@ -21,17 +24,19 @@ export function Sidebar({
   healthCount,
   onNavigate
 }: SidebarProps) {
+  const { t } = useI18n();
+
   return (
     <aside className="sidebar">
       <div className="brand">
         <div className="brand-mark" aria-hidden="true">SMH</div>
         <div className="brand-copy">
           <strong>Sims Mod Health</strong>
-          <span>Offline desktop engine</span>
+          <span>{t("Offline desktop engine")}</span>
         </div>
       </div>
 
-      <nav className="nav-list" aria-label="Primary navigation">
+      <nav className="nav-list" aria-label={t("Primary navigation")}>
         {navItems.map((item) => {
           const active = item.label === activeItem;
           const count =
@@ -48,11 +53,11 @@ export function Sidebar({
               onClick={() => onNavigate?.(item.label)}
             >
               <span className="nav-icon" aria-hidden="true">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
+              <span className="nav-label">{t(item.label)}</span>
               {count !== undefined && (
                 <span
                   className="nav-count"
-                  aria-label={count + " health findings"}
+                  aria-label={t("{{count}} health findings", { count })}
                 >
                   {count}
                 </span>
@@ -63,9 +68,10 @@ export function Sidebar({
       </nav>
 
       <div className="sidebar-footer">
+        <LanguageSwitcher />
         <div className="sync-state" role="status">
           <span className="status-dot" aria-hidden="true" />
-          <span>Registry available</span>
+          <span>{t("Registry available")}</span>
         </div>
         <button
           aria-current={activeItem === "Settings" ? "page" : undefined}
@@ -74,11 +80,11 @@ export function Sidebar({
               ? "settings-link settings-link--active"
               : "settings-link"
           }
-          aria-label="Settings"
+          aria-label={t("Settings")}
           onClick={() => onNavigate?.("Settings")}
         >
           <span aria-hidden="true">⚙</span>
-          <span>Settings</span>
+          <span>{t("Settings")}</span>
         </button>
       </div>
     </aside>
