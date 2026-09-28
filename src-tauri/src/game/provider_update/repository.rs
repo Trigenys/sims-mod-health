@@ -3,9 +3,7 @@ use std::path::PathBuf;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;
 
-use super::state::{
-    valid_transition, ProviderUpdateState, ProviderUpdateTargetKind,
-};
+use super::state::{valid_transition, ProviderUpdateState, ProviderUpdateTargetKind};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ProviderInstallationContext {
@@ -326,9 +324,7 @@ pub(crate) fn begin_verification(
     }
 }
 
-pub(crate) fn latest_mod_user_root(
-    connection: &Connection,
-) -> Result<Option<PathBuf>, String> {
+pub(crate) fn latest_mod_user_root(connection: &Connection) -> Result<Option<PathBuf>, String> {
     connection
         .query_row(
             "SELECT game_root
