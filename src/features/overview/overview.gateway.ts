@@ -15,7 +15,7 @@ export type OverviewGateway = {
 
 function isVisualHarness() {
   const visual = new URLSearchParams(window.location.search).get("visual");
-  return visual === "overview" || visual === "health";
+  return visual === "overview" || visual?.startsWith("health") === true;
 }
 
 function browserEmptySnapshot(): OverviewSnapshot {

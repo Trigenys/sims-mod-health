@@ -3302,3 +3302,315 @@ body {
     transition: none;
   }
 }
+
+
+/* Unified Game / DLC / Mod health */
+
+.game-installation-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.game-installation-summary__fact {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.game-installation-summary__fact span,
+.game-installation-summary__fact strong {
+  display: block;
+}
+
+.game-installation-summary__fact span {
+  color: var(--color-faint);
+  font-size: 0.59rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.game-installation-summary__fact strong {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-installation-summary__fact--attention {
+  background: #fff7ed;
+}
+
+.game-installation-summary__fact--attention strong {
+  color: #c2410c;
+}
+
+.health-update-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.health-update-scopes {
+  display: inline-flex;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+}
+
+.health-update-scope {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.63rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.health-update-scope--active {
+  color: #ffffff;
+  background: var(--color-accent);
+}
+
+.healthy-pack-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-pill);
+  background: #f0fdf4;
+  color: #047857;
+  font-size: 0.62rem;
+}
+
+.healthy-pack-summary > span:first-child {
+  font-weight: 900;
+}
+
+.healthy-pack-summary > span:last-child {
+  color: var(--color-muted);
+}
+
+.finding-kind {
+  display: inline-flex !important;
+  width: fit-content;
+  min-height: 20px;
+  align-items: center;
+  margin: 0 0 5px !important;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  color: #475569 !important;
+  background: #f1f5f9;
+  font-size: 0.55rem !important;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.finding-kind--game {
+  color: #4338ca !important;
+  background: #eef2ff;
+}
+
+.finding-kind--pack {
+  color: #047857 !important;
+  background: #ecfdf5;
+}
+
+.health-layout--drawer {
+  grid-template-columns: minmax(0, 1.45fr) minmax(310px, 0.65fr);
+}
+
+.game-content-drawer {
+  position: sticky;
+  top: 16px;
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid var(--color-line);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.game-content-drawer__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.game-content-drawer__header h2 {
+  margin: 5px 0 0;
+  font-size: 1.2rem;
+}
+
+.game-content-drawer__close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  background: var(--color-surface-control);
+  color: var(--color-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.game-content-drawer__reason {
+  margin: 13px 0;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.game-content-drawer__facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.game-content-drawer__facts > div {
+  display: grid;
+  grid-template-columns: minmax(105px, 0.8fr) minmax(0, 1.2fr);
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.game-content-drawer__facts dt {
+  color: var(--color-faint);
+  font-size: 0.59rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.game-content-drawer__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.game-content-evidence,
+.game-content-provider-action {
+  margin-top: 15px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-line);
+}
+
+.game-content-evidence ul {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-content-evidence li {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border-radius: 13px;
+  background: var(--color-surface-control);
+}
+
+.game-content-evidence strong,
+.game-content-provider-action > strong {
+  font-size: 0.66rem;
+}
+
+.game-content-evidence li span,
+.game-content-evidence > p,
+.game-content-provider-action p,
+.game-content-provider-action small {
+  color: var(--color-muted);
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+
+.game-content-provider-action {
+  display: grid;
+  gap: 8px;
+}
+
+.game-content-provider-action p {
+  margin: 0;
+}
+
+.game-content-provider-action .button {
+  width: 100%;
+}
+
+.game-content-provider-action__error {
+  color: var(--color-danger) !important;
+}
+
+@media (max-width: 1180px) {
+  .game-installation-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .health-layout--drawer {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+}
+
+@media (max-width: 1040px) {
+  .health-update-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .health-update-scopes {
+    width: fit-content;
+  }
+
+  .healthy-pack-summary {
+    width: fit-content;
+  }
+
+  .health-layout--drawer {
+    grid-template-columns: 1fr;
+  }
+
+  .game-content-drawer {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .game-installation-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .health-update-scopes {
+    width: 100%;
+  }
+
+  .health-update-scope {
+    flex: 1;
+  }
+
+  .game-content-drawer__facts > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

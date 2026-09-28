@@ -1,6 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { OverviewPage } from "./OverviewPage";
+import type { GameContentGateway } from "../game-content/gameContent.gateway";
+import {
+  gameContentVisualHealth,
+  gameContentVisualInventory,
+  providerVisualCapability,
+  providerVisualSession
+} from "../game-content/gameContent.visual";
 import type { OverviewGateway } from "./overview.gateway";
 import type { OverviewSnapshot } from "./overview.types";
 
@@ -49,6 +56,16 @@ const snapshot: OverviewSnapshot = {
   }
 };
 
+const contentGateway: GameContentGateway = {
+  loadHealth: vi.fn().mockResolvedValue(gameContentVisualHealth),
+  refreshInventory: vi.fn().mockResolvedValue(gameContentVisualInventory),
+  loadCapability: vi.fn().mockResolvedValue(providerVisualCapability),
+  startProviderUpdate: vi.fn().mockImplementation((kind, id) =>
+    Promise.resolve(providerVisualSession(kind, id))
+  ),
+  verifyProviderUpdate: vi.fn()
+};
+
 function gateway(value: OverviewSnapshot): OverviewGateway {
   return {
     load: vi.fn().mockResolvedValue(value),
@@ -60,11 +77,16 @@ function gateway(value: OverviewSnapshot): OverviewGateway {
 
 describe("OverviewPage", () => {
   it("renders current scan and health-engine counts instead of design-target constants", async () => {
-    render(<OverviewPage gateway={gateway(snapshot)} />);
+    render(<OverviewPage gateway={gateway(snapshot)} contentGateway={contentGateway} />);
 
     expect(await screen.findByRole("heading", { name: "Some installed items need review." })).toBeVisible();
     expect(screen.getByLabelText("Overall health 80 percent")).toBeVisible();
     expect(screen.getByText("12 items indexed")).toBeVisible();
+    const gameSummary = screen.getByLabelText("Sims 4 installation summary");
+    expect(within(gameSummary).getByText("Installed packs")).toBeVisible();
+    expect(within(gameSummary).getByText("17")).toBeVisible();
+    expect(within(gameSummary).getByText("Game / pack attention")).toBeVisible();
+    expect(within(gameSummary).getByText("2")).toBeVisible();
     expect(screen.getByText("3")).toBeVisible();
     expect(screen.getByText("9")).toBeVisible();
     expect(screen.getByText("Verified compatible releases divided by resolved releases plus unresolved files.")).not.toBeVisible();
@@ -85,7 +107,7 @@ describe("OverviewPage", () => {
       }
     };
 
-    render(<OverviewPage gateway={gateway(offline)} />);
+    render(<OverviewPage gateway={gateway(offline)} contentGateway={contentGateway} />);
 
     expect(await screen.findByText("Registry offline")).toBeVisible();
     expect(screen.getByText("12 items indexed")).toBeVisible();
@@ -103,7 +125,7 @@ describe("OverviewPage", () => {
       subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
     };
 
-    render(<OverviewPage gateway={fakeGateway} />);
+    render(<OverviewPage gateway={fakeGateway} contentGateway={contentGateway} />);
 
     const button = await screen.findByRole("button", { name: "Scan now" });
     fireEvent.click(button);
@@ -150,7 +172,7 @@ describe("OverviewPage", () => {
       subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
     };
 
-    render(<OverviewPage gateway={fakeGateway} />);
+    render(<OverviewPage gateway={fakeGateway} contentGateway={contentGateway} />);
 
     const button = await screen.findByRole("button", {
       name: "Choose Mods folder and scan"
