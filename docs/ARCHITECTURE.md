@@ -193,6 +193,8 @@ Detected -> ActionRequired -> ProviderOpened -> AwaitingRescan
 
 The default Game/DLC update action is an official-provider handoff. Sims Mod Health does not infer entitlement from local pack folders and does not include entitlement unlockers.
 
+Provider handoff is implemented as a Strategy behind the Rust privilege boundary. The WebView does not receive generic shell/process capability. Provider sessions are journaled in SQLite and remain `awaiting_rescan` across restart until a local inventory refresh verifies the result. Verification also triggers an incremental Mods scan and reruns Registry-backed Mod health against the newly observed program build.
+
 After a provider update, local game/pack state is rescanned and the mod compatibility engine is reevaluated against the newly observed patch.
 
 Direct binary patching is not part of this baseline. Any future delta engine is gated on independently verified payload rights, provenance and integrity.
