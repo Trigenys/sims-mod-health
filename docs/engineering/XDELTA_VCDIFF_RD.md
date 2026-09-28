@@ -21,12 +21,12 @@ The default production path remains official-provider handoff.
 
 ### Selected for the prototype
 
-Repository: `liushuyu/xdelta3-rs`
+Repository: `radu-cendars/xdelta3-rs`
 
 Pinned commit:
 
 ```text
-7bca8bc72548bd88a92a308dcd01225c3e842bc7
+bd20199837ba28cd91e6754e239c0dbe221bc8be
 ```
 
 Why this repository:
@@ -35,16 +35,19 @@ Why this repository:
 - Apache-2.0 repository license;
 - its Xdelta submodule is pinned to upstream commit `0525275fe4b553a10f38e455d30c60dc6ed9b45d`;
 - that upstream commit is the original-author Xdelta **3.0.12 APL** relicensing commit;
-- it keeps native-size detection in its build script instead of hard-coding C type sizes;
+- it keeps native-size detection for native builds instead of hard-coding Windows C type sizes;
+- its build dependencies have been modernized (`bindgen 0.72`, `cc 1.2`, `rand 0.9`), avoiding the vulnerable legacy `shlex 0.1.1` chain surfaced by `cargo audit` with the original fork;
 - `default-features = false` avoids bringing the optional streaming stack into this R&D adapter.
 
 The dependency is pinned by immutable Git SHA. We do not track a moving branch.
 
-### Candidate rejected after code review
+### Candidates rejected after code review
 
-`sigp/xdelta3-rs` was initially attractive because it has newer dependency maintenance and a richer error API. We did **not** keep it as the prototype dependency because its build script deliberately replaces native C-size detection with 64-bit constants for `size_t`, `unsigned int`, `unsigned long` and `unsigned long long`.
+`sigp/xdelta3-rs` was initially attractive because it has newer dependency maintenance and a richer error API. We did **not** keep it because its build script deliberately replaces native C-size detection with 64-bit constants for `size_t`, `unsigned int`, `unsigned long` and `unsigned long long`.
 
-That simplification is not a portability assumption we want to inherit for a Windows desktop product. The original binding's runtime compiler probe is slower but preserves the target's actual ABI sizes.
+`liushuyu/xdelta3-rs` preserves native ABI detection, but its older `bindgen 0.52` build dependency pulled `shlex 0.1.1`, which is blocked by RustSec advisory `RUSTSEC-2024-0006` in the repository's dependency-audit gate.
+
+`radu-cendars/xdelta3-rs` gives us both properties we need for this R&D slice: native ABI detection on desktop targets and modern build dependencies.
 
 ### Other candidates
 
