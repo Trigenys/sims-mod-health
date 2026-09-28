@@ -86,3 +86,66 @@ impl GameContentRepository for SqliteGameContentRepository<'_> {
         Ok(())
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game::content_inventory::{
+        EvidenceConfidence, GameBuildEvidence, GameContentInstallation, GameProvider,
+        InstalledPackObservation, PackKind, PackLocalState, ProviderEvidence,
+        VersionEvidenceKind,
+    };
+    use rusqlite::Connection;
+    use std::path::PathBuf;
+
+    #[test]
+    fn persists_normalized_installation_and_pack_observations() {
+        let connection = Connection::open_in_memory().expect("database");
+        connection
+            .execute_batch(include_str!("../../../migrations/0007_game_content_inventory.sql"))
+            .expect("inventory schema");
+
+        let snapshot = GameContentSnapshot {
+            installations: vec![GameContentInstallation {
+                install_root: PathBuf::from(r"C:\Games\The Sims 4"),
+                provider: GameProvider::EaApp,
+                provider_evidence: ProviderEvidence::Registry,
+                build: GameBuildEvidence {
+                    version: None,
+                    evidence_kind: VersionEvidenceKind::SentinelFingerprint,
+                    confidence: EvidenceConfidence::Unknown,
+                    sentinels: Vec::new(),
+                    detail: "fixture".to_string(),
+                },
+                packs: vec![InstalledPackObservation {
+                    pack_code: "EP01".to_string(),
+                    pack_kind: PackKind::Expansion,
+                    local_state: PackLocalState::Installed,
+                    size_bytes: Some(42),
+                    marker_count: 1,
+                    observed_at: "test".to_string(),
+                }],
+                observed_at: "test".to_string(),
+            }],
+        };
+
+        SqliteGameContentRepository::new(&connection)
+            .persist_snapshot(&snapshot)
+            .expect("persist");
+
+        let provider: String = connection
+            .query_row(
+                "SELECT provider FROM game_content_installations",
+                [],
+                |row| row.get(0),
+            )
+            .expect("provider");
+        let pack: String = connection
+            .query_row("SELECT pack_code FROM installed_packs", [], |row| row.get(0))
+            .expect("pack");
+
+        assert_eq!(provider, "ea_app");
+        assert_eq!(pack, "EP01");
+    }
+}
