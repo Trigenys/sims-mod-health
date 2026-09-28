@@ -51,17 +51,13 @@ export function SettingsPage() {
     setDetecting(true);
     try {
       const [values, content, capability] = await Promise.all([
-        invoke<InstallationCandidate[]>("discover_sims_installations"),
+        invoke<InstallationCandidate[]>("discover_sims_installations").catch(() => []),
         gameContentGateway.refreshInventory(),
         gameContentGateway.loadCapability()
       ]);
       setInstallations(values);
       setGameInventory(content);
       setProviderCapability(capability);
-    } catch {
-      setInstallations([]);
-      setGameInventory({ installations: [] });
-      setProviderCapability(null);
     } finally {
       setDetecting(false);
     }
