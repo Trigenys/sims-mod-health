@@ -2,7 +2,7 @@ use std::{
     error::Error,
     fmt::{Display, Formatter},
     fs::{self, File},
-    io::Read,
+    io::{Read, Write},
     path::{Path, PathBuf},
 };
 
@@ -52,6 +52,8 @@ pub(crate) enum DeltaApplyError {
         observed: String,
     },
     Decode(String),
+    StagingInterrupted,
+    InsufficientDiskSpace,
 }
 
 impl Display for DeltaApplyError {
@@ -78,6 +80,12 @@ impl Display for DeltaApplyError {
                 "{artifact} SHA-256 mismatch: expected {expected}, observed {observed}"
             ),
             Self::Decode(detail) => write!(formatter, "xdelta3 decode failed: {detail}"),
+            Self::StagingInterrupted => {
+                write!(formatter, "delta staging write was interrupted and cleaned up")
+            }
+            Self::InsufficientDiskSpace => {
+                write!(formatter, "delta staging failed because the destination ran out of space")
+            }
         }
     }
 }
@@ -97,42 +105,76 @@ impl From<std::io::Error> for DeltaApplyError {
     }
 }
 
+trait StagingWriter {
+    fn write_staged(&self, path: &Path, bytes: &[u8]) -> std::io::Result<()>;
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+struct FsStagingWriter;
+
+impl StagingWriter for FsStagingWriter {
+    fn write_staged(&self, path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+        let mut file = File::create(path)?;
+        file.write_all(bytes)?;
+        file.sync_all()
+    }
+}
+
 impl DeltaApplier for Xdelta3RustApplier {
     fn apply(&self, request: &DeltaApplyRequest) -> Result<DeltaApplyResult, DeltaApplyError> {
-        validate_request(request)?;
-
-        let expected_source = normalize_hash("source", &request.expected_source_sha256)?;
-        let expected_delta = normalize_hash("delta", &request.expected_delta_sha256)?;
-        let expected_target = normalize_hash("target", &request.expected_target_sha256)?;
-
-        let source_sha = hash_file(&request.source_path)?;
-        verify_hash("source", &expected_source, &source_sha)?;
-
-        let delta_sha = hash_file(&request.delta_path)?;
-        verify_hash("delta", &expected_delta, &delta_sha)?;
-
-        let source_bytes = read_bounded(&request.source_path, "source")?;
-        let delta_bytes = read_bounded(&request.delta_path, "delta")?;
-        let target_bytes = decode_bounded(&delta_bytes, &source_bytes)?;
-
-        if let Err(error) = fs::write(&request.output_path, &target_bytes) {
-            cleanup_output(&request.output_path);
-            return Err(DeltaApplyError::Io(error));
-        }
-
-        let target_sha = hash_file(&request.output_path)?;
-        if let Err(error) = verify_hash("target", &expected_target, &target_sha) {
-            cleanup_output(&request.output_path);
-            return Err(error);
-        }
-
-        Ok(DeltaApplyResult {
-            source_sha256: source_sha,
-            delta_sha256: delta_sha,
-            target_sha256: target_sha,
-            output_bytes: target_bytes.len() as u64,
-        })
+        apply_with_writer(request, &FsStagingWriter)
     }
+}
+
+fn apply_with_writer(
+    request: &DeltaApplyRequest,
+    writer: &dyn StagingWriter,
+) -> Result<DeltaApplyResult, DeltaApplyError> {
+    validate_request(request)?;
+
+    let expected_source = normalize_hash("source", &request.expected_source_sha256)?;
+    let expected_delta = normalize_hash("delta", &request.expected_delta_sha256)?;
+    let expected_target = normalize_hash("target", &request.expected_target_sha256)?;
+
+    let source_sha = hash_file(&request.source_path)?;
+    verify_hash("source", &expected_source, &source_sha)?;
+
+    let delta_sha = hash_file(&request.delta_path)?;
+    verify_hash("delta", &expected_delta, &delta_sha)?;
+
+    let source_bytes = read_bounded(&request.source_path, "source")?;
+    let delta_bytes = read_bounded(&request.delta_path, "delta")?;
+    let target_bytes = decode_bounded(&delta_bytes, &source_bytes)?;
+
+    if let Err(error) = writer.write_staged(&request.output_path, &target_bytes) {
+        cleanup_output(&request.output_path);
+        return Err(classify_staging_write_error(error));
+    }
+
+    let target_sha = hash_file(&request.output_path)?;
+    if let Err(error) = verify_hash("target", &expected_target, &target_sha) {
+        cleanup_output(&request.output_path);
+        return Err(error);
+    }
+
+    Ok(DeltaApplyResult {
+        source_sha256: source_sha,
+        delta_sha256: delta_sha,
+        target_sha256: target_sha,
+        output_bytes: target_bytes.len() as u64,
+    })
+}
+
+fn classify_staging_write_error(error: std::io::Error) -> DeltaApplyError {
+    if error.kind() == std::io::ErrorKind::Interrupted {
+        return DeltaApplyError::StagingInterrupted;
+    }
+
+    if matches!(error.raw_os_error(), Some(28 | 112)) {
+        return DeltaApplyError::InsufficientDiskSpace;
+    }
+
+    DeltaApplyError::Io(error)
 }
 
 fn validate_request(request: &DeltaApplyRequest) -> Result<(), DeltaApplyError> {
@@ -439,6 +481,102 @@ mod tests {
         assert!(!output.exists());
     }
 
+    struct PartialFailureWriter {
+        bytes_before_failure: usize,
+        raw_os_error: Option<i32>,
+        interrupted: bool,
+    }
+
+    impl StagingWriter for PartialFailureWriter {
+        fn write_staged(&self, path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+            let mut file = File::create(path)?;
+            let prefix = self.bytes_before_failure.min(bytes.len());
+            file.write_all(&bytes[..prefix])?;
+            file.sync_all()?;
+
+            if self.interrupted {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Interrupted,
+                    "simulated interrupted staging write",
+                ));
+            }
+
+            Err(std::io::Error::from_raw_os_error(
+                self.raw_os_error.unwrap_or(112),
+            ))
+        }
+    }
+
+    #[test]
+    fn interrupted_staging_write_removes_partial_output_and_preserves_source() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let source = temp.path().join("source.bin");
+        let target = temp.path().join("target.bin");
+        let delta = temp.path().join("patch.vcdiff");
+        let output = temp.path().join("output.bin");
+
+        write_fixture(&source, b"before-before-before-before");
+        write_fixture(&target, b"after-after-after-after");
+        write_fixture(
+            &delta,
+            &valid_patch(b"before-before-before-before", b"after-after-after-after"),
+        );
+
+        let source_before = hash_file(&source).expect("source hash");
+        let request = request_for(&source, &delta, &target, &output);
+        let writer = PartialFailureWriter {
+            bytes_before_failure: 7,
+            raw_os_error: None,
+            interrupted: true,
+        };
+
+        let error = apply_with_writer(&request, &writer)
+            .expect_err("interrupted staging write must fail closed");
+
+        assert!(matches!(error, DeltaApplyError::StagingInterrupted));
+        assert!(!output.exists(), "partial staged output must be removed");
+        assert_eq!(
+            hash_file(&source).expect("source hash after interruption"),
+            source_before,
+            "source must remain untouched"
+        );
+    }
+
+    #[test]
+    fn low_disk_staging_failure_removes_partial_output_and_preserves_source() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let source = temp.path().join("source.bin");
+        let target = temp.path().join("target.bin");
+        let delta = temp.path().join("patch.vcdiff");
+        let output = temp.path().join("output.bin");
+
+        write_fixture(&source, b"before-before-before-before");
+        write_fixture(&target, b"after-after-after-after");
+        write_fixture(
+            &delta,
+            &valid_patch(b"before-before-before-before", b"after-after-after-after"),
+        );
+
+        let source_before = hash_file(&source).expect("source hash");
+        let request = request_for(&source, &delta, &target, &output);
+        let writer = PartialFailureWriter {
+            bytes_before_failure: 5,
+            raw_os_error: Some(112),
+            interrupted: false,
+        };
+
+        let error =
+            apply_with_writer(&request, &writer).expect_err("disk-full staging write must fail");
+
+        assert!(matches!(error, DeltaApplyError::InsufficientDiskSpace));
+        assert!(!output.exists(), "partial staged output must be removed");
+        assert_eq!(
+            hash_file(&source).expect("source hash after disk-full failure"),
+            source_before,
+            "source must remain untouched"
+        );
+    }
+
     #[test]
     fn target_hash_mismatch_removes_staged_output() {
         let temp = tempfile::tempdir().expect("tempdir");
@@ -504,11 +642,23 @@ mod tests {
         assert_eq!(result.output_bytes, target_bytes.len() as u64);
         assert_eq!(fs::read(&output).expect("output"), target_bytes);
 
+        let binding_output_capacity_bytes = source_bytes
+            .len()
+            .saturating_add(patch.len())
+            .saturating_mul(2);
+        let rust_decode_buffer_budget_bytes = source_bytes
+            .len()
+            .saturating_add(patch.len())
+            .saturating_add(binding_output_capacity_bytes);
+        let staged_disk_bytes = patch.len().saturating_add(target_bytes.len());
+
         eprintln!(
-            "XDELTA_BENCH source_bytes={} target_bytes={} delta_bytes={} encode_ms={} apply_ms={}",
+            "XDELTA_BENCH source_bytes={} target_bytes={} delta_bytes={} staged_disk_bytes={} rust_decode_buffer_budget_bytes={} encode_ms={} apply_ms={}",
             source_bytes.len(),
             target_bytes.len(),
             patch.len(),
+            staged_disk_bytes,
+            rust_decode_buffer_budget_bytes,
             encode_elapsed.as_millis(),
             apply_elapsed.as_millis()
         );
