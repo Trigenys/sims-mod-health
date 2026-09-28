@@ -182,6 +182,7 @@ export function DiagnosticsPage({
 }
 
 function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
+  const { t, tx } = useI18n();
   const tone = parseTone(report.parseStatus);
 
   return (
@@ -191,15 +192,15 @@ function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
           <span className="section-kicker">{sourceLabel(report.sourceKind)}</span>
           <h2>{report.reportName}</h2>
         </div>
-        <StatusBadge tone={tone}>{statusLabel(report.parseStatus)}</StatusBadge>
+        <StatusBadge tone={tone}>{tx(statusLabel(report.parseStatus))}</StatusBadge>
       </div>
 
-      <p className="diagnostic-note">{report.note}</p>
+      <p className="diagnostic-note">{tx(report.note)}</p>
 
       {report.telemetryPreview.redactionsApplied > 0 && (
         <div className="privacy-chip">
           <span aria-hidden="true">✓</span>
-          {report.telemetryPreview.redactionsApplied} personal/path values redacted from telemetry preview
+          {t("{{count}} personal/path values redacted from telemetry preview", { count: report.telemetryPreview.redactionsApplied })}
         </div>
       )}
 
@@ -214,16 +215,16 @@ function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
         </div>
       ) : (
         <div className="diagnostic-no-candidate">
-          <strong>No installed mod candidate linked</strong>
+          <strong>{t("No installed mod candidate linked")}</strong>
           <span>
-            The report remains stored as normalized evidence even when no local artifact matches.
+            {t("The report remains stored as normalized evidence even when no local artifact matches.")}
           </span>
         </div>
       )}
 
       {report.observations.length > 0 && (
         <details className="diagnostic-observations">
-          <summary>{report.observations.length} normalized observations</summary>
+          <summary>{t("{{count}} normalized observations", { count: report.observations.length })}</summary>
           <ul>
             {report.observations.map((observation, index) => (
               <li key={observation.kind + "-" + observation.value + "-" + index}>
@@ -240,18 +241,19 @@ function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
 }
 
 function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
+  const { t, tx } = useI18n();
   return (
     <article className="diagnostic-candidate">
       <div className="diagnostic-candidate__top">
         <div>
-          <span className="section-kicker">IMPLICATED CANDIDATE</span>
+          <span className="section-kicker">{t("IMPLICATED CANDIDATE")}</span>
           <strong>{candidate.relativePath}</strong>
           <small>
-            Correlated with report evidence · {candidate.confidenceScore}% local match confidence
+            {t("Correlated with report evidence · {{score}}% local match confidence", { score: candidate.confidenceScore })}
           </small>
         </div>
         <span className={"diagnostic-confidence diagnostic-confidence--" + candidate.confidence}>
-          {candidate.confidence}
+          {tx(candidate.confidence)}
         </span>
       </div>
 
@@ -260,7 +262,7 @@ function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
           <div key={evidence.kind + "-" + evidence.reference}>
             <span>{evidence.kind}</span>
             <code>{evidence.reference}</code>
-            <p>{evidence.explanation}</p>
+            <p>{tx(evidence.explanation)}</p>
           </div>
         ))}
       </div>
@@ -271,11 +273,11 @@ function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
           <div>
             <strong>
               {candidate.canonical.deterministic
-                ? "Canonical artifact resolved"
-                : "Canonical candidate resolved"}
+                ? t("Canonical artifact resolved")
+                : t("Canonical candidate resolved")}
             </strong>
             <small>
-              Registry confidence {candidate.canonical.confidence}
+              {t("Registry confidence {{confidence}}", { confidence: candidate.canonical.confidence })}
             </small>
           </div>
         </div>
