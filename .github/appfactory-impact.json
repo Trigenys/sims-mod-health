@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "fallback": "all",
+  "ignorePaths": [
+    "README.md",
+    "docs/**"
+  ],
+  "surfaces": {
+    "landing": {
+      "paths": [
+        "apps/landing/**",
+        "scripts/landing/**"
+      ],
+      "gates": [
+        "landing-ci"
+      ]
+    },
+    "frontend": {
+      "paths": [
+        "src/**",
+        "package.json",
+        "package-lock.json",
+        "index.html",
+        "vite.config.*",
+        "vitest.config.*",
+        "tsconfig*.json",
+        "scripts/capture-visual-evidence.mjs"
+      ],
+      "gates": [
+        "frontend-ci",
+        "visual-evidence",
+        "security",
+        "windows-installer"
+      ]
+    },
+    "native": {
+      "paths": [
+        "src-tauri/**"
+      ],
+      "gates": [
+        "rust-ci",
+        "security",
+        "windows-installer"
+      ]
+    },
+    "scanner-critical": {
+      "paths": [
+        "src-tauri/src/scanner/**",
+        "src-tauri/src/fingerprint/**",
+        "src-tauri/src/storage/**",
+        "src-tauri/migrations/**",
+        "src-tauri/Cargo.toml"
+      ],
+      "gates": [
+        "scanner-benchmark"
+      ]
+    },
+    "registry": {
+      "paths": [
+        "services/registry-api/**"
+      ],
+      "gates": [
+        "registry-ci",
+        "security"
+      ]
+    },
+    "security-policy": {
+      "paths": [
+        "scripts/security/**",
+        "docs/security/**"
+      ],
+      "gates": [
+        "security"
+      ]
+    },
+    "release-validation": {
+      "paths": [
+        "scripts/release/**",
+        "release-please-config.json",
+        ".release-please-manifest.json"
+      ],
+      "gates": [
+        "windows-installer"
+      ]
+    },
+    "workflow-control": {
+      "paths": [
+        ".github/workflows/**",
+        ".github/appfactory-impact.json"
+      ],
+      "gates": [
+        "landing-ci",
+        "frontend-ci",
+        "visual-evidence",
+        "rust-ci",
+        "scanner-benchmark",
+        "registry-ci",
+        "security",
+        "windows-installer"
+      ]
+    }
+  }
+}
