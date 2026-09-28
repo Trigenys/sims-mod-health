@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0-beta.4](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.3...v0.1.0-beta.4) (2026-09-27)
+
+
+### Features
+
+* scan a real Mods folder and load the real library ([#71](https://github.com/Trigenys/sims-mod-health/issues/71)) ([9c1c660](https://github.com/Trigenys/sims-mod-health/commit/9c1c6600fe61a25acd0f8fdf89fb834a70fc32b8))
+* standardize canonical product navigation ([#68](https://github.com/Trigenys/sims-mod-health/issues/68)) ([8e025bd](https://github.com/Trigenys/sims-mod-health/commit/8e025bdbe5c994cda3bfaee1b1eb343f4aa465c0))
+
 ## [0.1.0-beta.3](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.2...v0.1.0-beta.3) (2026-09-27)
 
 
