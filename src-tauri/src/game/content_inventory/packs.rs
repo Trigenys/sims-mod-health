@@ -52,10 +52,10 @@ fn inventory_packs(install_root: &Path, observed_at: &str) -> Vec<InstalledPackO
     packs
 }
 
-fn measure_pack(root: &Path) -> io::Result<(u64, u64)> {
+fn measure_pack(root: &Path) -> io::Result<(i64, i64)> {
     let mut stack = vec![root.to_path_buf()];
-    let mut total_bytes = 0_u64;
-    let mut marker_count = 0_u64;
+    let mut total_bytes = 0_i64;
+    let mut marker_count = 0_i64;
     let mut entries_seen = 0_usize;
 
     while let Some(directory) = stack.pop() {
@@ -80,8 +80,15 @@ fn measure_pack(root: &Path) -> io::Result<(u64, u64)> {
 
             if file_type.is_file() {
                 let metadata = entry.metadata()?;
-                total_bytes = total_bytes.saturating_add(metadata.len());
-                marker_count = marker_count.saturating_add(1);
+                let file_size = i64::try_from(metadata.len()).map_err(|_| {
+                    io::Error::other("pack file size exceeds SQLite integer range")
+                })?;
+                total_bytes = total_bytes.checked_add(file_size).ok_or_else(|| {
+                    io::Error::other("pack size exceeds SQLite integer range")
+                })?;
+                marker_count = marker_count.checked_add(1).ok_or_else(|| {
+                    io::Error::other("pack marker count exceeds SQLite integer range")
+                })?;
             }
         }
     }
