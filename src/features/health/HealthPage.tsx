@@ -41,6 +41,7 @@ type HealthPageProps = {
   gateway?: OverviewGateway;
   contentGateway?: GameContentGateway;
   initialTab?: HealthTab;
+  onOpenLibrary?: () => void;
 };
 
 type UnifiedFinding =
@@ -80,7 +81,8 @@ const tabs: { value: HealthTab; label: string }[] = [
 export function HealthPage({
   gateway = overviewGateway,
   contentGateway = gameContentGateway,
-  initialTab = "all"
+  initialTab = "all",
+  onOpenLibrary
 }: HealthPageProps) {
   const [snapshot, setSnapshot] = useState<OverviewSnapshot | null>(null);
   const [contentHealth, setContentHealth] = useState<GameContentHealthSnapshot | null>(null);
@@ -320,10 +322,12 @@ export function HealthPage({
                       finding={finding}
                       key={finding.id}
                       onReview={() => {
-                        if (finding.kind !== "mod") {
-                          setSelectedContent(finding.content);
-                          setProviderError(null);
+                        if (finding.kind === "mod") {
+                          onOpenLibrary?.();
+                          return;
                         }
+                        setSelectedContent(finding.content);
+                        setProviderError(null);
                       }}
                     />
                   ))}
