@@ -4,14 +4,11 @@ use std::{
     fs::{self, File},
     io::Read,
     path::{Path, PathBuf},
-    time::Instant,
 };
 
 use sha2::{Digest, Sha256};
 
 const MAX_RND_INPUT_BYTES: u64 = 512 * 1024 * 1024;
-const MAX_RND_OUTPUT_BYTES: u32 = 512 * 1024 * 1024;
-const MIN_DECODE_BUFFER_BYTES: u32 = 64 * 1024;
 
 pub(crate) trait DeltaApplier {
     fn apply(&self, request: &DeltaApplyRequest) -> Result<DeltaApplyResult, DeltaApplyError>;
@@ -55,7 +52,6 @@ pub(crate) enum DeltaApplyError {
         observed: String,
     },
     Decode(String),
-    OutputTooLarge,
 }
 
 impl Display for DeltaApplyError {
@@ -79,10 +75,6 @@ impl Display for DeltaApplyError {
                 "{artifact} SHA-256 mismatch: expected {expected}, observed {observed}"
             ),
             Self::Decode(detail) => write!(formatter, "xdelta3 decode failed: {detail}"),
-            Self::OutputTooLarge => write!(
-                formatter,
-                "xdelta3 output exceeded the {MAX_RND_OUTPUT_BYTES}-byte R&D memory limit"
-            ),
         }
     }
 }
@@ -212,29 +204,19 @@ fn read_bounded(path: &Path, artifact: &'static str) -> Result<Vec<u8>, DeltaApp
 }
 
 fn decode_bounded(delta: &[u8], source: &[u8]) -> Result<Vec<u8>, DeltaApplyError> {
-    let initial = source
-        .len()
-        .saturating_add(delta.len())
-        .max(MIN_DECODE_BUFFER_BYTES as usize)
-        .min(MAX_RND_OUTPUT_BYTES as usize) as u32;
-    let mut output_capacity = initial;
-
-    loop {
-        match xdelta3::decode_with_output_len(delta, source, output_capacity) {
-            Ok(output) => return Ok(output),
-            Err(xdelta3::Error::InsufficientOutputLength)
-                if output_capacity < MAX_RND_OUTPUT_BYTES =>
-            {
-                output_capacity = output_capacity
-                    .saturating_mul(2)
-                    .min(MAX_RND_OUTPUT_BYTES);
-            }
-            Err(xdelta3::Error::InsufficientOutputLength) => {
-                return Err(DeltaApplyError::OutputTooLarge);
-            }
-            Err(error) => return Err(DeltaApplyError::Decode(format!("{error:?}"))),
-        }
+    let combined = source.len().saturating_add(delta.len()) as u64;
+    if combined > (u32::MAX as u64) / 2 {
+        return Err(DeltaApplyError::Decode(
+            "source + delta exceed the safe in-memory bound of the reused xdelta3 API".to_string(),
+        ));
     }
+
+    xdelta3::decode(delta, source).ok_or_else(|| {
+        DeltaApplyError::Decode(
+            "reused xdelta3 binding rejected the VCDIFF stream or its output buffer was insufficient"
+                .to_string(),
+        )
+    })
 }
 
 fn normalize_hash(
@@ -289,6 +271,7 @@ fn cleanup_output(path: &Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Instant;
 
     fn write_fixture(path: &Path, bytes: &[u8]) {
         fs::write(path, bytes).expect("write fixture");
