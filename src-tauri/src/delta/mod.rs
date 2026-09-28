@@ -59,7 +59,10 @@ impl Display for DeltaApplyError {
         match self {
             Self::Io(error) => write!(formatter, "delta I/O error: {error}"),
             Self::InvalidHash { artifact } => {
-                write!(formatter, "{artifact} SHA-256 must be exactly 64 hexadecimal characters")
+                write!(
+                    formatter,
+                    "{artifact} SHA-256 must be exactly 64 hexadecimal characters"
+                )
             }
             Self::UnsafeInput(reason) => write!(formatter, "unsafe delta input: {reason}"),
             Self::InputTooLarge { artifact, bytes } => write!(
@@ -144,10 +147,9 @@ fn validate_request(request: &DeltaApplyRequest) -> Result<(), DeltaApplyError> 
 
     let source = fs::canonicalize(&request.source_path)?;
     let delta = fs::canonicalize(&request.delta_path)?;
-    let output_parent = request
-        .output_path
-        .parent()
-        .ok_or_else(|| DeltaApplyError::UnsafeInput("output has no parent directory".to_string()))?;
+    let output_parent = request.output_path.parent().ok_or_else(|| {
+        DeltaApplyError::UnsafeInput("output has no parent directory".to_string())
+    })?;
 
     if !output_parent.is_dir() {
         return Err(DeltaApplyError::UnsafeInput(
@@ -219,10 +221,7 @@ fn decode_bounded(delta: &[u8], source: &[u8]) -> Result<Vec<u8>, DeltaApplyErro
     })
 }
 
-fn normalize_hash(
-    artifact: &'static str,
-    value: &str,
-) -> Result<String, DeltaApplyError> {
+fn normalize_hash(artifact: &'static str, value: &str) -> Result<String, DeltaApplyError> {
     let normalized = value.trim().to_ascii_lowercase();
     if normalized.len() != 64 || !normalized.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         return Err(DeltaApplyError::InvalidHash { artifact });
@@ -281,12 +280,7 @@ mod tests {
         xdelta3::encode(target, source).expect("encode fixture")
     }
 
-    fn request_for(
-        source: &Path,
-        delta: &Path,
-        target: &Path,
-        output: &Path,
-    ) -> DeltaApplyRequest {
+    fn request_for(source: &Path, delta: &Path, target: &Path, output: &Path) -> DeltaApplyRequest {
         DeltaApplyRequest {
             source_path: source.to_path_buf(),
             delta_path: delta.to_path_buf(),
@@ -375,7 +369,10 @@ mod tests {
             .expect_err("staging adapter must never overwrite an existing output");
 
         assert!(matches!(error, DeltaApplyError::UnsafeInput(_)));
-        assert_eq!(fs::read(&output).expect("existing output"), b"do not overwrite");
+        assert_eq!(
+            fs::read(&output).expect("existing output"),
+            b"do not overwrite"
+        );
     }
 
     #[test]
@@ -401,7 +398,10 @@ mod tests {
             .expect("verified delta apply");
 
         assert_eq!(fs::read(&output).expect("output"), target_bytes);
-        assert_eq!(result.target_sha256, hash_file(&target).expect("target hash"));
+        assert_eq!(
+            result.target_sha256,
+            hash_file(&target).expect("target hash")
+        );
         assert_eq!(result.output_bytes, target_bytes.len() as u64);
     }
 
