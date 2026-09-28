@@ -8,8 +8,8 @@ The product should feel like an **optimistic, evidence-first Windows utility** r
 
 The user should be able to answer these questions quickly:
 
-1. How healthy is my current Sims 4 Mods installation?
-2. What do I have installed?
+1. How healthy is my current Sims 4 installation?
+2. What game build, packs, mods and CC are present?
 3. What needs review or action?
 4. What can I safely add?
 5. How is the local engine configured?
@@ -36,8 +36,10 @@ The following are **not** primary navigation destinations:
 - Conflicts — Health subview.
 - Diagnostics — Health subview.
 - Recovery / restore points — Health subview.
+- Game / DLC / Packs — contextual health domains, not destinations.
+- Updater / Downloader / Launcher — capabilities, not destinations.
 
-This prevents the same installed mod and the same evidence from being presented as separate products.
+This prevents Game, DLC and Mods from becoming separate products that duplicate the same health evidence.
 
 ## 3. Surface responsibilities
 
@@ -49,7 +51,8 @@ Question answered:
 
 Contains:
 
-- installed patch/platform context;
+- installed game build/platform/provider context;
+- installed pack count and mod/CC count;
 - scan action and scan state;
 - verified health score when evidence allows it;
 - installed item count;
@@ -97,6 +100,8 @@ All findings | Updates | Conflicts | Diagnostics | Recovery
 
 Health combines existing evidence without flattening evidence strength.
 
+The **Updates** subview is one queue for Game, Pack and Mod findings. Type is a lightweight marker, not a separate navigation hierarchy. Healthy packs collapse into a compact summary instead of one card per pack. Pack detail opens contextually through progressive disclosure.
+
 It must keep these states distinct:
 
 - deterministic duplicate;
@@ -137,7 +142,8 @@ Question answered:
 
 Owns:
 
-- detected Sims 4 / Mods paths;
+- detected Sims 4 game / user-data / Mods paths;
+- detected update provider and handoff behavior;
 - Registry behavior and offline expectations;
 - privacy / diagnostic telemetry consent;
 - scan behavior;
@@ -197,8 +203,10 @@ The UI must preserve product semantics:
 - Diagnostic correlation ≠ causality.
 - Update available ≠ currently incompatible.
 - Community report ≠ verified fact.
+- Pack present ≠ pack owned/entitled.
+- Provider opened ≠ update completed.
 
-Actions that mutate the Mods folder must not be presented as safer than the underlying mutation pipeline proves.
+Actions that mutate the Mods folder must not be presented as safer than the underlying mutation pipeline proves. Game/DLC provider handoff is only marked complete after local rescan evidence verifies the resulting state.
 
 ## 6. Current production boundaries
 
