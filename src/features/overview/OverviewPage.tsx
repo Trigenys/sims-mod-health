@@ -12,6 +12,12 @@ import { gameContentAttentionCount } from "../game-content/gameContent.presenter
 import type { GameContentHealthSnapshot } from "../game-content/gameContent.types";
 import { overviewGateway, type OverviewGateway } from "./overview.gateway";
 import type { OverviewSnapshot, ScanProgress } from "./overview.types";
+import {
+  localizeAttentionBadge,
+  localizeAttentionCreator,
+  localizeOverviewDetail,
+  localizeOverviewExplanation
+} from "./overview.i18n";
 import { useI18n } from "../../i18n/i18n";
 
 type OverviewPageProps = {
@@ -160,7 +166,7 @@ export function OverviewPage({
                   ? t("Overall health unavailable")
                   : t("Overall health {{score}} percent", { score: data.healthScore })
               }
-              title={data.healthScoreExplanation}
+              title={localizeOverviewExplanation(data.healthScoreExplanation, t)}
             >
               <div
                 className={"score-ring" + (data.healthScore === null ? " score-ring--unknown" : "")}
@@ -183,7 +189,7 @@ export function OverviewPage({
 
           <details className="health-explanation">
             <summary>{t("How this score is calculated")}</summary>
-            <p>{data.healthScoreExplanation}</p>
+            <p>{localizeOverviewExplanation(data.healthScoreExplanation, t)}</p>
           </details>
 
           <GameInstallationSummary
@@ -226,9 +232,9 @@ export function OverviewPage({
                       </div>
                       <div className="item-copy">
                         <strong>{item.name}</strong>
-                        <span>{item.creator} · {item.detail}</span>
+                        <span>{localizeAttentionCreator(item.creator, t)} · {localizeOverviewDetail(item.detail, t)}</span>
                       </div>
-                      <StatusBadge tone={item.tone}>{tx(item.badge)}</StatusBadge>
+                      <StatusBadge tone={item.tone}>{localizeAttentionBadge(item.badge, t)}</StatusBadge>
                       <span className="row-arrow" aria-hidden="true">›</span>
                     </button>
                   ))}
@@ -372,8 +378,8 @@ function OverviewStateBanner({
         <div className={"overview-notice overview-notice--" + notice.tone} key={notice.title}>
           <span aria-hidden="true">{notice.tone === "danger" ? "×" : notice.tone === "update" ? "↻" : "!"}</span>
           <div>
-            <strong>{tx(notice.title)}</strong>
-            <p>{tx(notice.detail)}</p>
+            <strong>{localizeOverviewDetail(notice.title, t)}</strong>
+            <p>{localizeOverviewDetail(notice.detail, t)}</p>
           </div>
         </div>
       ))}
