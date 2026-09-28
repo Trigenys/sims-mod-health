@@ -3614,3 +3614,18 @@ body {
     gap: 4px;
   }
 }
+
+
+.language-select select {
+  min-width: 150px;
+  min-height: 38px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
