@@ -1,3 +1,4 @@
+import { useI18n } from "../../i18n/i18n";
 export type LibraryRegistryState = "ready" | "offline" | "partial" | "failure";
 
 type LibraryStateNoticeProps = {
@@ -20,6 +21,7 @@ const copy: Record<Exclude<LibraryRegistryState, "ready">, { title: string; deta
 };
 
 export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
+  const { t } = useI18n();
   if (state === "ready") {
     return null;
   }
@@ -32,7 +34,7 @@ export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
         {state === "failure" ? "×" : "!"}
       </span>
       <div>
-        <strong>{message.title}</strong>
+        <strong>{t(message.title as keyof typeof import("../../i18n/i18n"))}</strong>
         <p>{message.detail}</p>
       </div>
       {state === "failure" && <button className="button button--secondary">Retry</button>}
