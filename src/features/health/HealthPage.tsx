@@ -349,33 +349,29 @@ export function HealthPage({
             ) : (
               <aside className="health-guardrails">
                 <Panel>
-                  <span className="section-kicker">RECOVERY GUARANTEES</span>
-                  <h2>Actions stay reversible.</h2>
-                  <p>
-                    Mod mutations use verified restore points. Game and pack updates stay with the official provider.
-                  </p>
+                  <span className="section-kicker">{t("health.recoveryGuarantees")}</span>
+                  <h2>{t("health.reversible")}</h2>
+                  <p>{t("health.reversibleCopy")}</p>
                   <ul>
-                    <li><span>✓</span> Restore point before supported mod updates</li>
-                    <li><span>✓</span> SHA-256 integrity checks</li>
-                    <li><span>✓</span> Provider updates require local verification</li>
-                    <li><span>✓</span> Unknown remains distinct from broken</li>
+                    <li><span>✓</span> {t("health.restorePoint")}</li>
+                    <li><span>✓</span> {t("health.integrity")}</li>
+                    <li><span>✓</span> {t("health.providerVerify")}</li>
+                    <li><span>✓</span> {t("health.unknownDistinct")}</li>
                   </ul>
                   <button
                     type="button"
                     className="health-link"
                     onClick={() => setTab("recovery")}
                   >
-                    Open Recovery
+                    {t("health.openRecovery")}
                     <span aria-hidden="true">→</span>
                   </button>
                 </Panel>
 
                 <Panel className="health-safety">
-                  <span className="section-kicker">EVIDENCE POLICY</span>
-                  <h2>Unknown is not broken.</h2>
-                  <p>
-                    Stale metadata, incomplete files and disputed evidence remain distinct states.
-                  </p>
+                  <span className="section-kicker">{t("health.evidencePolicy")}</span>
+                  <h2>{t("health.unknownNotBroken")}</h2>
+                  <p>{t("health.evidencePolicyCopy")}</p>
                 </Panel>
               </aside>
             )}
