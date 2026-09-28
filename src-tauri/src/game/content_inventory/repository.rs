@@ -93,8 +93,7 @@ mod tests {
     use super::*;
     use crate::game::content_inventory::{
         EvidenceConfidence, GameBuildEvidence, GameContentInstallation, GameProvider,
-        InstalledPackObservation, PackKind, PackLocalState, ProviderEvidence,
-        VersionEvidenceKind,
+        InstalledPackObservation, PackKind, PackLocalState, ProviderEvidence, VersionEvidenceKind,
     };
     use rusqlite::Connection;
     use std::path::PathBuf;
@@ -103,7 +102,9 @@ mod tests {
     fn persists_normalized_installation_and_pack_observations() {
         let connection = Connection::open_in_memory().expect("database");
         connection
-            .execute_batch(include_str!("../../../migrations/0007_game_content_inventory.sql"))
+            .execute_batch(include_str!(
+                "../../../migrations/0007_game_content_inventory.sql"
+            ))
             .expect("inventory schema");
 
         let snapshot = GameContentSnapshot {
@@ -142,7 +143,9 @@ mod tests {
             )
             .expect("provider");
         let pack: String = connection
-            .query_row("SELECT pack_code FROM installed_packs", [], |row| row.get(0))
+            .query_row("SELECT pack_code FROM installed_packs", [], |row| {
+                row.get(0)
+            })
             .expect("pack");
 
         assert_eq!(provider, "ea_app");
