@@ -12,6 +12,7 @@ import { gameContentAttentionCount } from "../game-content/gameContent.presenter
 import type { GameContentHealthSnapshot } from "../game-content/gameContent.types";
 import { overviewGateway, type OverviewGateway } from "./overview.gateway";
 import type { OverviewSnapshot, ScanProgress } from "./overview.types";
+import { useI18n } from "../../i18n/i18n";
 
 type OverviewPageProps = {
   gateway?: OverviewGateway;
@@ -22,6 +23,7 @@ export function OverviewPage({
   gateway = overviewGateway,
   contentGateway = gameContentGateway
 }: OverviewPageProps) {
+  const { t, tx } = useI18n();
   const [data, setData] = useState<OverviewSnapshot | null>(null);
   const [gameContent, setGameContent] = useState<GameContentHealthSnapshot | null>(null);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
@@ -108,17 +110,17 @@ export function OverviewPage({
       ? 100
       : 24;
 
-  const headline = overviewHeadline(data);
+  const headline = tx(overviewHeadline(data));
   const unifiedAttention = data.attentionCount + gameContentAttentionCount(gameContent);
   const attentionCopy =
     unifiedAttention === 0
-      ? "No actionable findings are present in the current evidence."
-      : unifiedAttention + " findings need review across the game, packs and mods.";
+      ? t("No actionable findings are present in the current evidence.")
+      : t("{{count}} findings need review across the game, packs and mods.", { count: unifiedAttention });
 
   return (
     <>
       <Topbar
-        gameVersion={data.gameVersion ? "Patch " + data.gameVersion : "Patch unknown"}
+        gameVersion={data.gameVersion ? t("Patch {{version}}", { version: data.gameVersion }) : t("Patch unknown")}
         platform={formatPlatform(data.platform)}
         indexedCount={data.indexedCount}
         onScan={runScan}
@@ -132,13 +134,13 @@ export function OverviewPage({
         <Panel className="overview-empty" aria-labelledby="overview-empty-title">
           <div className="overview-empty__icon" aria-hidden="true">⌁</div>
           <div>
-            <span className="section-kicker">No local scan yet</span>
-            <h1 id="overview-empty-title">Scan a Sims 4 installation to build the health view.</h1>
+            <span className="section-kicker">{t("No local scan yet")}</span>
+            <h1 id="overview-empty-title">{t("Scan a Sims 4 installation to build the health view.")}</h1>
             <p>
-              The Overview does not invent health numbers. Choose your real Mods folder and the desktop scanner will index it locally.
+              {t("The Overview does not invent health numbers. Choose your real Mods folder and the desktop scanner will index it locally.")}
             </p>
             <Button onClick={runScan} disabled={scanning}>
-              {scanning ? "Scanning…" : "Choose Mods folder and scan"}
+              {scanning ? t("Scanning…") : t("Choose Mods folder and scan")}
             </Button>
           </div>
         </Panel>
@@ -146,7 +148,7 @@ export function OverviewPage({
         <>
           <section className="page-heading" aria-labelledby="overview-title">
             <div>
-              <p className="eyebrow">LIBRARY HEALTH</p>
+              <p className="eyebrow">{t("LIBRARY HEALTH")}</p>
               <h1 id="overview-title">{headline}</h1>
               <p className="lede">{attentionCopy}</p>
             </div>
@@ -155,8 +157,8 @@ export function OverviewPage({
               className="health-score"
               aria-label={
                 data.healthScore === null
-                  ? "Overall health unavailable"
-                  : "Overall health " + data.healthScore + " percent"
+                  ? t("Overall health unavailable")
+                  : t("Overall health {{score}} percent", { score: data.healthScore })
               }
               title={data.healthScoreExplanation}
             >
@@ -173,14 +175,14 @@ export function OverviewPage({
                 {data.healthScore !== null && <small>%</small>}
               </div>
               <div>
-                <strong>Verified patch health</strong>
-                <span>{scanLabel(data)}</span>
+                <strong>{t("Verified patch health")}</strong>
+                <span>{tx(scanLabel(data))}</span>
               </div>
             </div>
           </section>
 
           <details className="health-explanation">
-            <summary>How this score is calculated</summary>
+            <summary>{t("How this score is calculated")}</summary>
             <p>{data.healthScoreExplanation}</p>
           </details>
 
@@ -190,29 +192,29 @@ export function OverviewPage({
             fallbackVersion={data.gameVersion}
           />
 
-          <section className="stat-grid" aria-label="Mod health summary">
-            <Stat label="Healthy" value={data.healthCounts.healthy} tone="healthy" />
-            <Stat label="Updates" value={data.healthCounts.updates} tone="update" />
-            <Stat label="Conflicts" value={data.healthCounts.conflicts} tone="warning" />
-            <Stat label="Unknown" value={data.healthCounts.unknown} tone="muted" />
+          <section className="stat-grid" aria-label={t("Mod health summary")}>
+            <Stat label={t("Healthy")} value={data.healthCounts.healthy} tone="healthy" />
+            <Stat label={t("Updates")} value={data.healthCounts.updates} tone="update" />
+            <Stat label={t("Conflicts")} value={data.healthCounts.conflicts} tone="warning" />
+            <Stat label={t("Unknown")} value={data.healthCounts.unknown} tone="muted" />
           </section>
 
           <section className="content-grid">
             <Panel as="article" className="attention-panel">
               <div className="panel-header">
                 <div>
-                  <span className="section-kicker">Needs attention</span>
-                  <h2>Review the most actionable findings first</h2>
+                  <span className="section-kicker">{t("Needs attention")}</span>
+                  <h2>{t("Review the most actionable findings first")}</h2>
                 </div>
-                <Button variant="text">View all</Button>
+                <Button variant="text">{t("View all")}</Button>
               </div>
 
               {data.attention.length === 0 ? (
                 <div className="attention-empty">
                   <span aria-hidden="true">✓</span>
                   <div>
-                    <strong>No actionable findings</strong>
-                    <p>Nothing in the current scan and health evidence needs immediate review.</p>
+                    <strong>{t("No actionable findings")}</strong>
+                    <p>{t("Nothing in the current scan and health evidence needs immediate review.")}</p>
                   </div>
                 </div>
               ) : (
@@ -226,7 +228,7 @@ export function OverviewPage({
                         <strong>{item.name}</strong>
                         <span>{item.creator} · {item.detail}</span>
                       </div>
-                      <StatusBadge tone={item.tone}>{item.badge}</StatusBadge>
+                      <StatusBadge tone={item.tone}>{tx(item.badge)}</StatusBadge>
                       <span className="row-arrow" aria-hidden="true">›</span>
                     </button>
                   ))}
@@ -237,18 +239,18 @@ export function OverviewPage({
             <Panel as="aside" className="scan-panel" aria-labelledby="installation-title">
               <div className="scan-title-row">
                 <div>
-                  <span className="section-kicker">Current installation</span>
-                  <h2 id="installation-title">{data.indexedCount} items indexed</h2>
+                  <span className="section-kicker">{t("Current installation")}</span>
+                  <h2 id="installation-title">{t("{{count}} items indexed", { count: data.indexedCount })}</h2>
                 </div>
                 <span className={"scan-status scan-status--" + data.scan.status}>
-                  {scanning ? "Scanning" : formatScanStatus(data.scan.status)}
+                  {scanning ? t("Scanning") : tx(formatScanStatus(data.scan.status))}
                 </span>
               </div>
 
               <div
                 className="scan-meter"
                 role="progressbar"
-                aria-label="Scan progress"
+                aria-label={t("Scan progress")}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={scanPercent}
@@ -258,21 +260,21 @@ export function OverviewPage({
 
               {scanning && (
                 <p className="scan-progress-copy" role="status">
-                  {liveProgress.filesSeen} seen · {liveProgress.filesHashed} hashed · {liveProgress.filesSkipped} unchanged
+                  {t("{{seen}} seen · {{hashed}} hashed · {{skipped}} unchanged", { seen: liveProgress.filesSeen, hashed: liveProgress.filesHashed, skipped: liveProgress.filesSkipped })}
                 </p>
               )}
 
               <dl className="scan-facts">
-                <div><dt>Script mods</dt><dd>{data.installation.scriptMods}</dd></div>
-                <div><dt>Package / CC files</dt><dd>{data.installation.packageFiles}</dd></div>
+                <div><dt>{t("Script mods")}</dt><dd>{data.installation.scriptMods}</dd></div>
+                <div><dt>{t("Package / CC files")}</dt><dd>{data.installation.packageFiles}</dd></div>
                 <div>
-                  <dt>Unidentified files</dt>
+                  <dt>{t("Unidentified files")}</dt>
                   <dd>{data.installation.unidentified ?? "—"}</dd>
                 </div>
-                <div><dt>Exact duplicate groups</dt><dd>{data.installation.exactDuplicates}</dd></div>
+                <div><dt>{t("Exact duplicate groups")}</dt><dd>{data.installation.exactDuplicates}</dd></div>
               </dl>
               <Button onClick={runScan} disabled={scanning}>
-                {scanning ? "Scanning…" : "Run incremental scan"}
+                {scanning ? t("Scanning…") : t("Run incremental scan")}
               </Button>
             </Panel>
           </section>
@@ -280,13 +282,13 @@ export function OverviewPage({
           <Panel className="recommendation-strip" aria-labelledby="discover-title">
             <div className="recommendation-icon" aria-hidden="true">✦</div>
             <div>
-              <span className="section-kicker">Discover</span>
-              <h2 id="discover-title">Recommendations stay separate from health evidence.</h2>
+              <span className="section-kicker">{t("Discover")}</span>
+              <h2 id="discover-title">{t("Recommendations stay separate from health evidence.")}</h2>
               <p>
-                Discover will use resolved library data only after compatibility and known-conflict filters are applied.
+                {t("Discover will use resolved library data only after compatibility and known-conflict filters are applied.")}
               </p>
             </div>
-            <Button>Open Discover</Button>
+            <Button>{t("Open Discover")}</Button>
           </Panel>
         </>
       )}
@@ -295,10 +297,11 @@ export function OverviewPage({
 }
 
 function OverviewLoading() {
+  const { t } = useI18n();
   return (
     <section className="overview-loading" role="status" aria-live="polite">
       <span className="overview-loading__pulse" aria-hidden="true" />
-      <span>Loading current installation health…</span>
+      <span>{t("Loading current installation health…")}</span>
     </section>
   );
 }
@@ -312,6 +315,7 @@ function OverviewStateBanner({
   scanning: boolean;
   scanError: string | null;
 }) {
+  const { t, tx } = useI18n();
   const notices = useMemo(() => {
     const result: { tone: string; title: string; detail: string }[] = [];
 
@@ -363,13 +367,13 @@ function OverviewStateBanner({
   if (notices.length === 0) return null;
 
   return (
-    <div className="overview-notices" aria-label="Overview data status">
+    <div className="overview-notices" aria-label={t("Overview data status")}>
       {notices.map((notice) => (
         <div className={"overview-notice overview-notice--" + notice.tone} key={notice.title}>
           <span aria-hidden="true">{notice.tone === "danger" ? "×" : notice.tone === "update" ? "↻" : "!"}</span>
           <div>
-            <strong>{notice.title}</strong>
-            <p>{notice.detail}</p>
+            <strong>{tx(notice.title)}</strong>
+            <p>{tx(notice.detail)}</p>
           </div>
         </div>
       ))}
