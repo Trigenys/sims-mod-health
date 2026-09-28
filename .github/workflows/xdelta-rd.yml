@@ -1,8 +1,8 @@
-name: Xdelta R&D
+name: "Xdelta R&D"
 
 on:
-  workflow_call:
-  workflow_dispatch:
+  workflow_call: {}
+  workflow_dispatch: {}
 
 permissions:
   contents: read
