@@ -12,8 +12,7 @@ use crate::{
     conflicts,
     registry::{
         configured_registry_url, ArtifactResolution, HealthAssessment, RegistryArtifactProbe,
-        RegistryClient,
-        RegistryFingerprintProbe, RegistryIdentityHints, RelationshipResponse,
+        RegistryClient, RegistryFingerprintProbe, RegistryIdentityHints, RelationshipResponse,
     },
     storage::{self, StorageError},
 };
