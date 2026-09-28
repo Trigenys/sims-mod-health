@@ -4,6 +4,12 @@ import { Topbar } from "../../components/layout/Topbar";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { diagnosticsGateway } from "../diagnostics/diagnostics.gateway";
+import { gameContentGateway } from "../game-content/gameContent.gateway";
+import { formatProvider } from "../game-content/gameContent.presenter";
+import type {
+  GameContentSnapshot,
+  ProviderUpdateCapability
+} from "../game-content/gameContent.types";
 
 type SettingsSection =
   | "paths"
@@ -35,6 +41,8 @@ export function SettingsPage() {
   const [section, setSection] = useState<SettingsSection>("paths");
   const [installations, setInstallations] = useState<InstallationCandidate[]>([]);
   const [detecting, setDetecting] = useState(true);
+  const [gameInventory, setGameInventory] = useState<GameContentSnapshot>({ installations: [] });
+  const [providerCapability, setProviderCapability] = useState<ProviderUpdateCapability | null>(null);
   const [telemetryEnabled, setTelemetryEnabled] = useState(false);
   const [privacyBusy, setPrivacyBusy] = useState(true);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
@@ -42,10 +50,18 @@ export function SettingsPage() {
   const detect = async () => {
     setDetecting(true);
     try {
-      const values = await invoke<InstallationCandidate[]>("discover_sims_installations");
+      const [values, content, capability] = await Promise.all([
+        invoke<InstallationCandidate[]>("discover_sims_installations"),
+        gameContentGateway.refreshInventory(),
+        gameContentGateway.loadCapability()
+      ]);
       setInstallations(values);
+      setGameInventory(content);
+      setProviderCapability(capability);
     } catch {
       setInstallations([]);
+      setGameInventory({ installations: [] });
+      setProviderCapability(null);
     } finally {
       setDetecting(false);
     }
@@ -86,6 +102,8 @@ export function SettingsPage() {
       setPrivacyBusy(false);
     }
   };
+
+  const programInstallation = gameInventory.installations[0];
 
   return (
     <>
@@ -146,6 +164,8 @@ export function SettingsPage() {
               installations={installations}
               detecting={detecting}
               onDetect={detect}
+              gameInventory={gameInventory}
+              providerCapability={providerCapability}
             />
           )}
 
@@ -171,12 +191,16 @@ function PathsSettings({
   active,
   installations,
   detecting,
-  onDetect
+  onDetect,
+  gameInventory,
+  providerCapability
 }: {
   active?: InstallationCandidate;
   installations: InstallationCandidate[];
   detecting: boolean;
   onDetect: () => Promise<void>;
+  gameInventory: GameContentSnapshot;
+  providerCapability: ProviderUpdateCapability | null;
 }) {
   return (
     <>
@@ -214,7 +238,23 @@ function PathsSettings({
         />
         <PathRow
           label="Game patch"
-          value={versionLabel(active)}
+          value={
+            programInstallation?.build.version?.normalized
+              ? "Patch " + programInstallation.build.version.normalized
+              : versionLabel(active)
+          }
+        />
+        <PathRow
+          label="Game program folder"
+          value={programInstallation?.installRoot ?? "No program installation detected"}
+        />
+        <PathRow
+          label="Update provider"
+          value={formatProvider(programInstallation?.provider ?? providerCapability?.provider ?? "unknown")}
+        />
+        <PathRow
+          label="Installed packs"
+          value={String(programInstallation?.packs.length ?? 0)}
         />
       </Panel>
 
@@ -231,6 +271,16 @@ function PathsSettings({
           </div>
         </Panel>
       )}
+
+      <Panel className="settings-card">
+        <span className="section-kicker">UPDATE PROVIDER</span>
+        <h3>Official provider handoff only</h3>
+        <p>
+          {providerCapability?.detail
+            ?? "Provider capability is resolved locally when a game installation is available."}
+          {" "}After an EA app or Steam update, Sims Mod Health rescans local game and pack evidence before declaring success.
+        </p>
+      </Panel>
 
       <Panel className="settings-card">
         <span className="section-kicker">REGISTRY BEHAVIOR</span>
