@@ -20,7 +20,8 @@ pub(crate) use state::{
 use adapters::{capability, open_provider};
 use repository::{
     begin_verification as begin_verification_transition, create_session,
-    latest_provider_installation, load_session, transition_session, validate_target,
+    latest_pending_session, latest_provider_installation, load_session, transition_session,
+    validate_target,
 };
 
 pub(crate) fn get_capability(
@@ -106,6 +107,13 @@ pub(crate) fn start_provider_update(
             )
         }
     }
+}
+
+pub(crate) fn get_pending_session(
+    database_path: &Path,
+) -> Result<Option<ProviderUpdateSessionView>, String> {
+    let connection = storage::open(database_path).map_err(|error| error.to_string())?;
+    latest_pending_session(&connection)
 }
 
 pub(crate) fn get_session(
