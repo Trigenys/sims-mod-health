@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "visual:verify": "node scripts/capture-visual-evidence.mjs",
     "tauri": "tauri",
-    "security:config": "node scripts/security/audit-tauri-config.mjs"
+    "security:config": "node scripts/security/audit-tauri-config.mjs",
+    "brand:icons": "tauri icon apps/landing/logo.svg --output src-tauri/icons",
+    "brand:check": "node scripts/brand/check-brand.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
