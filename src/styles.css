@@ -3614,3 +3614,13 @@ body {
     gap: 4px;
   }
 }
+
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: none;
+}
