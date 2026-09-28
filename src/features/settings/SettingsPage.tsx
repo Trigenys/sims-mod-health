@@ -10,6 +10,7 @@ import type {
   GameContentSnapshot,
   ProviderUpdateCapability
 } from "../game-content/gameContent.types";
+import { useI18n } from "../../i18n/i18n";
 
 type SettingsSection =
   | "paths"
@@ -38,6 +39,7 @@ const sections: { value: SettingsSection; label: string; icon: string }[] = [
 ];
 
 export function SettingsPage() {
+  const { t, tx } = useI18n();
   const [section, setSection] = useState<SettingsSection>("paths");
   const [installations, setInstallations] = useState<InstallationCandidate[]>([]);
   const [detecting, setDetecting] = useState(true);
@@ -102,30 +104,30 @@ export function SettingsPage() {
   return (
     <>
       <Topbar
-        gameVersion={versionLabel(activeInstallation)}
+        gameVersion={versionLabel(activeInstallation, t)}
         platform="Windows"
         indexedCount={0}
       />
 
       <section className="settings-hero" aria-labelledby="settings-title">
         <div>
-          <p className="eyebrow">PREFERENCES & ENGINE CONFIGURATION</p>
-          <h1 id="settings-title">System Settings</h1>
+          <p className="eyebrow">{t("PREFERENCES & ENGINE CONFIGURATION")}</p>
+          <h1 id="settings-title">{t("System Settings")}</h1>
           <p className="lede">
-            Configure installation paths, privacy boundaries, scanning behavior and recovery storage.
+            {t("Configure installation paths, privacy boundaries, scanning behavior and recovery storage.")}
           </p>
         </div>
         <div className="settings-engine-state">
           <span className="status-dot" aria-hidden="true" />
           <div>
-            <span>Engine mode</span>
-            <strong>Local-first</strong>
+            <span>{t("Engine mode")}</span>
+            <strong>{t("Local-first")}</strong>
           </div>
         </div>
       </section>
 
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label="Settings sections">
+        <nav className="settings-nav" aria-label={t("Settings sections")}>
           {sections.map((item) => (
             <button
               type="button"
@@ -139,14 +141,14 @@ export function SettingsPage() {
               onClick={() => setSection(item.value)}
             >
               <span aria-hidden="true">{item.icon}</span>
-              {item.label}
+              {t(item.label as "Paths & Registry" | "Checks & Privacy" | "Scan Behavior" | "Recovery & Data" | "Appearance")}
             </button>
           ))}
 
           <div className="settings-nav__note">
-            <span className="section-kicker">BETA POLICY</span>
+            <span className="section-kicker">{t("BETA POLICY")}</span>
             <p>
-              Local evidence remains usable when Registry-backed features are unavailable.
+              {t("Local evidence remains usable when Registry-backed features are unavailable.")}
             </p>
           </div>
         </nav>
@@ -167,7 +169,7 @@ export function SettingsPage() {
             <PrivacySettings
               enabled={telemetryEnabled}
               busy={privacyBusy}
-              error={privacyError}
+              error={privacyError ? tx(privacyError) : null}
               onChange={setTelemetry}
             />
           )}
