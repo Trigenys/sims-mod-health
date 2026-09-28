@@ -96,17 +96,7 @@
         "scanner-benchmark",
         "registry-ci",
         "security",
-        "windows-installer",
-        "xdelta-rd"
-      ]
-    },
-    "xdelta-rd": {
-      "paths": [
-        "src-tauri/src/delta/**",
-        "docs/engineering/XDELTA_VCDIFF_RD.md"
-      ],
-      "gates": [
-        "xdelta-rd"
+        "windows-installer"
       ]
     }
   }
