@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Topbar } from "../../components/layout/Topbar";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { useI18n } from "../../i18n/I18nProvider";
 import { LibraryStateNotice, type LibraryRegistryState } from "./LibraryStateNotice";
 import {
   libraryGateway,
@@ -50,6 +51,7 @@ export function LibraryPage({
   registryState = "ready",
   gateway = libraryGateway
 }: LibraryPageProps) {
+  const { t } = useI18n();
   const [snapshot, setSnapshot] = useState<LibrarySnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -133,32 +135,30 @@ export function LibraryPage({
 
   const patchLabel = snapshot?.gameVersion
     ? "Patch " + snapshot.gameVersion
-    : "Patch unknown";
+    : t("common.patchUnknown");
 
   return (
     <>
       <Topbar
         gameVersion={patchLabel}
-        platform="Windows"
+        platform={t("common.windows")}
         indexedCount={snapshot?.indexedCount ?? 0}
       />
 
       <section className="library-heading" aria-labelledby="library-title">
         <div>
-          <p className="eyebrow">LOCAL INVENTORY</p>
-          <h1 id="library-title">Library</h1>
-          <p className="lede">
-            Files indexed from your selected Mods folder. Canonical identity stays unresolved until there is evidence for it.
-          </p>
+          <p className="eyebrow">{t("library.eyebrow")}</p>
+          <h1 id="library-title">{t("library.title")}</h1>
+          <p className="lede">{t("library.lede")}</p>
           {snapshot?.modsRoot && (
             <p className="detail-muted">
               <code>{snapshot.modsRoot}</code>
             </p>
           )}
         </div>
-        <div className="library-summary" aria-label={visibleItems.length + " visible items"}>
+        <div className="library-summary" aria-label={t("library.visibleItems", { count: visibleItems.length })}>
           <strong>{visibleItems.length}</strong>
-          <span>visible items</span>
+          <span>{t("library.visibleItems", { count: visibleItems.length }).replace(String(visibleItems.length) + " ", "")}</span>
         </div>
       </section>
 
@@ -175,34 +175,30 @@ export function LibraryPage({
       {!snapshot ? (
         <section className="library-empty" role="status">
           <div className="library-empty__icon" aria-hidden="true">…</div>
-          <h2>Loading local inventory</h2>
-          <p>Reading the latest scan from local storage.</p>
+          <h2>{t("library.loadingTitle")}</h2>
+          <p>{t("library.loadingCopy")}</p>
         </section>
       ) : !snapshot.hasInstallation ? (
         <section className="library-empty">
           <div className="library-empty__icon" aria-hidden="true">⌂</div>
-          <h2>No Mods folder scanned yet</h2>
-          <p>
-            Go to Overview, choose your real Sims 4 Mods folder, and run the first scan. This page will not invent sample mods.
-          </p>
+          <h2>{t("library.noScanTitle")}</h2>
+          <p>{t("library.noScanCopy")}</p>
         </section>
       ) : snapshot.items.length === 0 ? (
         <section className="library-empty">
           <div className="library-empty__icon" aria-hidden="true">0</div>
-          <h2>No supported mod files found</h2>
-          <p>
-            The selected folder was scanned, but no .package or .ts4script files were indexed.
-          </p>
+          <h2>{t("library.noFilesTitle")}</h2>
+          <p>{t("library.noFilesCopy")}</p>
         </section>
       ) : (
         <>
           <section className="library-toolbar" aria-label="Library search and filters">
             <label className="library-search">
               <span aria-hidden="true">⌕</span>
-              <span className="sr-only">Search local filename</span>
+              <span className="sr-only">{t("library.search")}</span>
               <input
-                aria-label="Search local filename"
-                placeholder="Search filename or folder…"
+                aria-label={t("library.search")}
+                placeholder={t("library.searchPlaceholder")}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -243,12 +239,10 @@ export function LibraryPage({
           {visibleItems.length === 0 ? (
             <section className="library-empty" aria-live="polite">
               <div className="library-empty__icon" aria-hidden="true">⌕</div>
-              <h2>No matching items</h2>
-              <p>
-                Try a filename or folder name, or clear the active filters.
-              </p>
+              <h2>{t("library.noMatch")}</h2>
+              <p>{t("library.noMatchCopy")}</p>
               <button className="button button--secondary" onClick={resetFilters}>
-                Clear filters
+                {t("library.clearFilters")}
               </button>
             </section>
           ) : (
