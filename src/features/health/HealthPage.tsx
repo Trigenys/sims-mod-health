@@ -28,6 +28,11 @@ import type {
   OverviewAttentionItem,
   OverviewSnapshot
 } from "../overview/overview.types";
+import {
+  localizeAttentionBadge,
+  localizeAttentionCreator,
+  localizeOverviewDetail
+} from "../overview/overview.i18n";
 import { useI18n } from "../../i18n/i18n";
 
 export type HealthTab =
@@ -447,9 +452,9 @@ function buildUnifiedFindings(
     kind: "mod",
     label: "Mod",
     name: finding.name,
-    creator: finding.creator,
-    detail: finding.detail,
-    badge: finding.badge,
+    creator: localizeAttentionCreator(finding.creator, t),
+    detail: localizeOverviewDetail(finding.detail, t),
+    badge: localizeAttentionBadge(finding.badge, t),
     tone: finding.tone,
     priority: modPriority(finding),
     mod: finding
