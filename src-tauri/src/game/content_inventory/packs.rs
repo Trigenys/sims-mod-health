@@ -1,11 +1,6 @@
-use std::{
-    fs, io,
-    path::Path,
-};
+use std::{fs, io, path::Path};
 
-use super::{
-    InstalledPackObservation, PackInventoryProbe, PackKind, PackLocalState,
-};
+use super::{InstalledPackObservation, PackInventoryProbe, PackKind, PackLocalState};
 
 const MAX_PACK_WALK_ENTRIES: usize = 2_000_000;
 
@@ -38,9 +33,7 @@ fn inventory_packs(install_root: &Path, observed_at: &str) -> Vec<InstalledPackO
 
         let normalized = name.to_ascii_uppercase();
         let (local_state, size_bytes, marker_count) = match measure_pack(&entry.path()) {
-            Ok((bytes, markers)) if bytes > 0 => {
-                (PackLocalState::Installed, Some(bytes), markers)
-            }
+            Ok((bytes, markers)) if bytes > 0 => (PackLocalState::Installed, Some(bytes), markers),
             Ok((bytes, markers)) => (PackLocalState::Partial, Some(bytes), markers),
             Err(_) => (PackLocalState::Unknown, None, 0),
         };
@@ -110,10 +103,7 @@ fn pack_kind_from_code(name: &str) -> Option<PackKind> {
         return None;
     };
 
-    if digits.len() < 2
-        || digits.len() > 3
-        || !digits.chars().all(|value| value.is_ascii_digit())
-    {
+    if digits.len() < 2 || digits.len() > 3 || !digits.chars().all(|value| value.is_ascii_digit()) {
         return None;
     }
 
