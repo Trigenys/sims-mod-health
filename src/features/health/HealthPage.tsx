@@ -12,6 +12,7 @@ import {
 import {
   gameContentBadge,
   gameContentTone,
+  localizedGameContentReason,
   isActionableGameContent,
   isUpdateGameContent,
   packHealthSummary
@@ -126,8 +127,8 @@ export function HealthPage({
   }, [gateway, contentGateway]);
 
   const allFindings = useMemo(
-    () => buildUnifiedFindings(snapshot?.attention ?? [], contentHealth),
-    [snapshot, contentHealth]
+    () => buildUnifiedFindings(snapshot?.attention ?? [], contentHealth, t),
+    [snapshot, contentHealth, t]
   );
 
   const findings = useMemo(
@@ -438,7 +439,8 @@ function FindingCard({
 
 function buildUnifiedFindings(
   modFindings: OverviewAttentionItem[],
-  content: GameContentHealthSnapshot | null
+  content: GameContentHealthSnapshot | null,
+  t: ReturnType<typeof useI18n>["t"]
 ): UnifiedFinding[] {
   const mods: UnifiedFinding[] = modFindings.map((finding, index) => ({
     id: "mod-" + finding.name + "-" + index,
@@ -462,9 +464,9 @@ function buildUnifiedFindings(
       label: finding.kind === "game" ? "Game" : "Pack",
       name: finding.kind === "game" ? "The Sims 4" : finding.targetId,
       creator: finding.disputed
-        ? "Conflicting compatibility evidence"
-        : "Game & DLC health",
-      detail: finding.reason,
+        ? t("Conflicting compatibility evidence")
+        : t("Game & DLC health"),
+      detail: localizedGameContentReason(finding, t),
       badge: gameContentBadge(finding.state),
       tone: gameContentTone(finding.state),
       priority: contentPriority(finding),
