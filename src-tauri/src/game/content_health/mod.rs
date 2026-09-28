@@ -2,11 +2,7 @@ mod manifest;
 mod repository;
 mod resolver;
 
-use std::{
-    future::Future,
-    path::Path,
-    pin::Pin,
-};
+use std::{future::Future, path::Path, pin::Pin};
 
 use crate::{
     registry::{
@@ -16,9 +12,7 @@ use crate::{
 };
 
 use manifest::adapt_registry_manifest;
-use repository::{
-    load_cached_manifest, load_latest_local_state, save_cached_manifest,
-};
+use repository::{load_cached_manifest, load_latest_local_state, save_cached_manifest};
 pub(crate) use resolver::GameContentHealthSnapshot;
 use resolver::{evaluate, missing_manifest, ManifestState};
 
@@ -69,12 +63,18 @@ pub(crate) async fn evaluate_game_content_health(
     };
 
     let registry_url = configured_registry_url(&connection);
-    let client = RegistryClient::new(registry_url).map_err(|error| error.to_string())?;
-    let source = RegistryManifestSource { client };
+    let cached = load_cached_manifest(&connection)?;
+    drop(connection);
 
-    match source.fetch().await {
+    let live_result = match RegistryClient::new(registry_url) {
+        Ok(client) => RegistryManifestSource { client }.fetch().await,
+        Err(error) => Err(error),
+    };
+
+    match live_result {
         Ok(wire) => {
             let manifest = adapt_registry_manifest(wire.clone())?;
+            let connection = storage::open(database_path).map_err(|error| error.to_string())?;
             save_cached_manifest(&connection, &wire)?;
             Ok(evaluate(
                 &local,
@@ -83,7 +83,7 @@ pub(crate) async fn evaluate_game_content_health(
                 "Game/DLC metadata is current from the Registry.".to_string(),
             ))
         }
-        Err(error) => match load_cached_manifest(&connection)? {
+        Err(error) => match cached {
             Some(cached) => {
                 let manifest = adapt_registry_manifest(cached.manifest)?;
                 Ok(evaluate(
