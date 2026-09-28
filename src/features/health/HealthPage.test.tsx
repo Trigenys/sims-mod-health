@@ -1,12 +1,19 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { HealthPage } from "./HealthPage";
+import type { GameContentGateway } from "../game-content/gameContent.gateway";
+import {
+  gameContentVisualHealth,
+  gameContentVisualInventory,
+  providerVisualCapability,
+  providerVisualSession
+} from "../game-content/gameContent.visual";
 import type { OverviewGateway } from "../overview/overview.gateway";
 import type { OverviewSnapshot } from "../overview/overview.types";
 
 const snapshot: OverviewSnapshot = {
   hasInstallation: true,
-  gameVersion: "1.128.90",
+  gameVersion: "1.127.80.1020",
   platform: "windows",
   indexedCount: 12,
   healthScore: 82,
@@ -70,26 +77,74 @@ const gateway: OverviewGateway = {
   subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
 };
 
+function contentGateway(): GameContentGateway {
+  return {
+    loadHealth: vi.fn().mockResolvedValue(gameContentVisualHealth),
+    refreshInventory: vi.fn().mockResolvedValue(gameContentVisualInventory),
+    loadCapability: vi.fn().mockResolvedValue(providerVisualCapability),
+    startProviderUpdate: vi.fn().mockImplementation((kind, id) =>
+      Promise.resolve(providerVisualSession(kind, id))
+    ),
+    verifyProviderUpdate: vi.fn().mockImplementation((sessionId) =>
+      Promise.resolve({
+        session: {
+          ...providerVisualSession("pack", "EP17"),
+          id: sessionId,
+          state: "verified"
+        },
+        gameContentHealth: gameContentVisualHealth
+      })
+    )
+  };
+}
+
 describe("HealthPage", () => {
-  it("consolidates findings and filters them into Health subviews", async () => {
-    render(<HealthPage gateway={gateway} />);
+  it("combines Game, Pack and Mod findings and filters one update queue", async () => {
+    render(<HealthPage gateway={gateway} contentGateway={contentGateway()} />);
 
     expect(await screen.findByRole("heading", { name: "Review what needs attention." })).toBeVisible();
+    expect(screen.getByText("The Sims 4")).toBeVisible();
+    expect(screen.getByText("EP17")).toBeVisible();
     expect(screen.getByText("A")).toBeVisible();
     expect(screen.getByText("B")).toBeVisible();
-    expect(screen.getByText("C")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: /Updates/ }));
+    expect(screen.getByText("The Sims 4")).toBeVisible();
+    expect(screen.getByText("EP17")).toBeVisible();
     expect(screen.getByText("A")).toBeVisible();
     expect(screen.queryByText("B")).not.toBeInTheDocument();
+    expect(screen.getByText("16 packs current")).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: /Conflicts/ }));
-    expect(screen.getByText("B")).toBeVisible();
-    expect(screen.queryByText("A")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Mods" }));
+    expect(screen.getByText("A")).toBeVisible();
+    expect(screen.queryByText("EP17")).not.toBeInTheDocument();
+  });
+
+  it("opens pack evidence progressively and keeps provider action contextual", async () => {
+    const content = contentGateway();
+    render(<HealthPage gateway={gateway} contentGateway={content} initialTab="updates" />);
+
+    const pack = await screen.findByText("EP17");
+    const card = pack.closest("article");
+    expect(card).not.toBeNull();
+    fireEvent.click(within(card as HTMLElement).getByRole("button", { name: "Review details" }));
+
+    const drawer = screen.getByRole("dialog", { name: "EP17" });
+    expect(within(drawer).getByText("Minimum game build")).toBeVisible();
+    expect(within(drawer).getByText("1.128.90.1030")).toBeVisible();
+
+    fireEvent.click(within(drawer).getByRole("button", { name: "Open EA app to update" }));
+    expect(content.startProviderUpdate).toHaveBeenCalledWith("pack", "EP17");
   });
 
   it("treats recovery as a Health subview rather than primary navigation", async () => {
-    render(<HealthPage gateway={gateway} initialTab="recovery" />);
+    render(
+      <HealthPage
+        gateway={gateway}
+        contentGateway={contentGateway()}
+        initialTab="recovery"
+      />
+    );
 
     expect(await screen.findByText("Restore points belong to actions, not a separate backup product.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Recovery" })).toHaveAttribute("aria-current", "page");
