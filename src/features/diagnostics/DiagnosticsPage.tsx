@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge, type StatusTone } from "../../components/ui/StatusBadge";
+import { useI18n } from "../../i18n/I18nProvider";
 import { diagnosticsGateway, type DiagnosticsGateway } from "./diagnostics.gateway";
 import type {
   DiagnosticCandidate,
@@ -18,6 +19,7 @@ export function DiagnosticsPage({
   gateway = diagnosticsGateway,
   embedded = false
 }: DiagnosticsPageProps) {
+  const { t } = useI18n();
   const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [telemetryEnabled, setTelemetryEnabled] = useState(false);
@@ -72,7 +74,7 @@ export function DiagnosticsPage({
   if (!snapshot) {
     return (
       <section className="diagnostics-loading" role="status">
-        Reading local diagnostic reports…
+        {t("diagnostics.loading")}
       </section>
     );
   }
@@ -82,14 +84,12 @@ export function DiagnosticsPage({
       {!embedded && (
         <section className="diagnostics-heading" aria-labelledby="diagnostics-title">
           <div>
-            <p className="eyebrow">DIAGNOSTIC EVIDENCE</p>
-            <h1 id="diagnostics-title">Diagnostics</h1>
-            <p className="lede">
-              Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.
-            </p>
+            <p className="eyebrow">{t("diagnostics.eyebrow")}</p>
+            <h1 id="diagnostics-title">{t("diagnostics.title")}</h1>
+            <p className="lede">{t("diagnostics.lede")}</p>
           </div>
           <Button variant="primary" onClick={analyze} disabled={loading}>
-            {loading ? "Analyzing…" : "Analyze reports"}
+            {loading ? t("diagnostics.analyzing") : t("diagnostics.analyze")}
           </Button>
         </section>
       )}
@@ -97,8 +97,8 @@ export function DiagnosticsPage({
       {embedded && (
         <div className="health-embedded-actions">
           <div>
-            <span className="section-kicker">DIAGNOSTIC EVIDENCE</span>
-            <strong>Exception reports stay evidence-led.</strong>
+            <span className="section-kicker">{t("diagnostics.eyebrow")}</span>
+            <strong>{t("diagnostics.embedded")}</strong>
           </div>
           <Button variant="secondary" onClick={analyze} disabled={loading}>
             {loading ? "Analyzing…" : "Analyze reports"}
@@ -106,22 +106,20 @@ export function DiagnosticsPage({
         </div>
       )}
 
-      <section className="diagnostics-summary" aria-label="Diagnostics summary">
-        <SummaryFact label="Reports" value={snapshot.reports.length} />
-        <SummaryFact label="Implicated candidates" value={candidateCount} />
+      <section className="diagnostics-summary" aria-label={t("diagnostics.summary")}>
+        <SummaryFact label={t("diagnostics.reports")} value={snapshot.reports.length} />
+        <SummaryFact label={t("diagnostics.candidates")} value={candidateCount} />
         <SummaryFact
-          label="Registry"
-          value={snapshot.registryState === "ready" ? "Resolved" : snapshot.registryState}
+          label={t("diagnostics.registry")}
+          value={snapshot.registryState === "ready" ? t("diagnostics.resolved") : snapshot.registryState}
         />
       </section>
 
-      <section className="diagnostics-privacy" aria-label="Diagnostic privacy">
+      <section className="diagnostics-privacy" aria-label={t("diagnostics.privacy")}>
         <div>
           <span className="section-kicker">PRIVACY</span>
-          <strong>Diagnostic telemetry is {telemetryEnabled ? "on" : "off"}</strong>
-          <p>
-            Off by default. Only redacted diagnostic summaries may be eligible for telemetry after explicit consent; raw reports are never uploaded automatically.
-          </p>
+          <strong>{t("diagnostics.telemetry", { state: telemetryEnabled ? t("settings.on") : t("settings.off") })}</strong>
+          <p>{t("diagnostics.telemetryCopy")}</p>
           {privacyError && <small role="status">{privacyError}</small>}
         </div>
         <label className="privacy-toggle">
@@ -131,7 +129,7 @@ export function DiagnosticsPage({
             disabled={privacyBusy}
             onChange={(event) => void updateTelemetryConsent(event.target.checked)}
           />
-          <span>Allow redacted diagnostic telemetry</span>
+          <span>{t("diagnostics.allowTelemetry")}</span>
         </label>
       </section>
 
@@ -141,8 +139,8 @@ export function DiagnosticsPage({
           <div>
             <strong>
               {snapshot.registryState === "offline"
-                ? "Registry offline"
-                : "Registry resolution is partial"}
+                ? t("diagnostics.offline")
+                : t("diagnostics.partial")}
             </strong>
             <p>
               Local module, filename and resource evidence remains available.{" "}
@@ -156,10 +154,8 @@ export function DiagnosticsPage({
         <Panel className="diagnostics-empty">
           <div className="diagnostics-empty__icon" aria-hidden="true">⌁</div>
           <div>
-            <h2>No supported diagnostic report found</h2>
-            <p>
-              The parser checks recent lastException, lastUIException, MCCC and Better Exceptions reports in the current Sims user folder.
-            </p>
+            <h2>{t("diagnostics.noReport")}</h2>
+            <p>{t("diagnostics.noReportCopy")}</p>
           </div>
         </Panel>
       ) : (
