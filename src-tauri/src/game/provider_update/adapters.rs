@@ -1,9 +1,4 @@
-use std::{
-    collections::BTreeSet,
-    env, fmt,
-    path::PathBuf,
-    process::Command,
-};
+use std::{collections::BTreeSet, env, fmt, path::PathBuf, process::Command};
 
 use serde::Serialize;
 
@@ -69,9 +64,9 @@ trait PlatformUpdateAdapter {
     }
 
     fn open(&self) -> Result<ProviderLaunch, ProviderLaunchError> {
-        let executable = self.resolve_executable().ok_or_else(|| {
-            ProviderLaunchError::NotFound(self.manual_detail().to_string())
-        })?;
+        let executable = self
+            .resolve_executable()
+            .ok_or_else(|| ProviderLaunchError::NotFound(self.manual_detail().to_string()))?;
         let executable_name = executable
             .file_name()
             .and_then(|value| value.to_str())
@@ -184,7 +179,10 @@ fn validated_executable(path: PathBuf, expected_name: &str) -> Option<PathBuf> {
         .then_some(canonical)
 }
 
-fn first_valid(candidates: impl IntoIterator<Item = PathBuf>, expected_name: &str) -> Option<PathBuf> {
+fn first_valid(
+    candidates: impl IntoIterator<Item = PathBuf>,
+    expected_name: &str,
+) -> Option<PathBuf> {
     candidates
         .into_iter()
         .find_map(|candidate| validated_executable(candidate, expected_name))
@@ -194,7 +192,9 @@ fn ea_default_candidates() -> Vec<PathBuf> {
     let mut candidates = BTreeSet::new();
     for variable in ["ProgramFiles", "ProgramFiles(x86)"] {
         if let Some(root) = env::var_os(variable) {
-            let root = PathBuf::from(root).join("Electronic Arts").join("EA Desktop");
+            let root = PathBuf::from(root)
+                .join("Electronic Arts")
+                .join("EA Desktop");
             candidates.insert(root.join("EA Desktop").join("EADesktop.exe"));
             candidates.insert(root.join("EADesktop.exe"));
         }
@@ -292,8 +292,7 @@ fn steam_registry_candidates() -> Vec<PathBuf> {
     }
     if let Ok(value) = key.get_value::<String, _>("SteamPath") {
         candidates.insert(
-            PathBuf::from(value.replace('/', std::path::MAIN_SEPARATOR_STR))
-                .join("steam.exe"),
+            PathBuf::from(value.replace('/', std::path::MAIN_SEPARATOR_STR)).join("steam.exe"),
         );
     }
 
