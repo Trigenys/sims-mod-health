@@ -80,12 +80,11 @@ fn measure_pack(root: &Path) -> io::Result<(i64, i64)> {
 
             if file_type.is_file() {
                 let metadata = entry.metadata()?;
-                let file_size = i64::try_from(metadata.len()).map_err(|_| {
-                    io::Error::other("pack file size exceeds SQLite integer range")
-                })?;
-                total_bytes = total_bytes.checked_add(file_size).ok_or_else(|| {
-                    io::Error::other("pack size exceeds SQLite integer range")
-                })?;
+                let file_size = i64::try_from(metadata.len())
+                    .map_err(|_| io::Error::other("pack file size exceeds SQLite integer range"))?;
+                total_bytes = total_bytes
+                    .checked_add(file_size)
+                    .ok_or_else(|| io::Error::other("pack size exceeds SQLite integer range"))?;
                 marker_count = marker_count.checked_add(1).ok_or_else(|| {
                     io::Error::other("pack marker count exceeds SQLite integer range")
                 })?;
