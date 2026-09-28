@@ -1,10 +1,22 @@
 mod content_health;
 mod content_inventory;
+mod provider_update;
 
 pub(crate) use content_health::{evaluate_game_content_health, GameContentHealthSnapshot};
 pub(crate) use content_inventory::{
-    discover_game_content, inspect_game_content_path, GameContentInstallation,
-    GameContentRepository, GameContentSnapshot, SqliteGameContentRepository,
+    discover_game_content, inspect_game_content_path, refresh_and_persist_game_content,
+    GameContentInstallation, GameContentRepository, GameContentSnapshot,
+    SqliteGameContentRepository,
+};
+pub(crate) use provider_update::{
+    begin_verification as begin_provider_update_verification,
+    complete_verification as complete_provider_update_verification,
+    current_program_version_for_session, fail_verification as fail_provider_update_verification,
+    get_capability as get_provider_update_capability,
+    get_session as get_provider_update_session,
+    latest_mod_user_root, start_provider_update, sync_latest_mod_game_version,
+    ProviderUpdateCapability, ProviderUpdateSessionView, ProviderUpdateState,
+    ProviderUpdateTargetKind,
 };
 
 use std::{
