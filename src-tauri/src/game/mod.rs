@@ -13,8 +13,9 @@ pub(crate) use provider_update::{
     complete_verification as complete_provider_update_verification,
     current_program_version_for_session, fail_verification as fail_provider_update_verification,
     get_capability as get_provider_update_capability,
-    get_session as get_provider_update_session,
-    latest_mod_user_root, start_provider_update, sync_latest_mod_game_version,
+    get_pending_session as get_pending_provider_update_session,
+    get_session as get_provider_update_session, latest_mod_user_root, start_provider_update,
+    sync_latest_mod_game_version,
     ProviderUpdateCapability, ProviderUpdateSessionView, ProviderUpdateState,
     ProviderUpdateTargetKind,
 };
