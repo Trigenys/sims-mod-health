@@ -11,6 +11,8 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
+use crate::storage;
+
 use super::GameVersion;
 use packs::LocalPackProbe;
 use providers::{infer_provider_from_path, is_game_install_root, EaAppProbe, SteamProbe};
@@ -204,6 +206,17 @@ pub(crate) trait GameVersionProbe {
 
 pub(crate) trait PackInventoryProbe {
     fn probe(&self, install_root: &Path, observed_at: &str) -> Vec<InstalledPackObservation>;
+}
+
+pub(crate) fn refresh_and_persist_game_content(
+    database_path: &Path,
+) -> Result<GameContentSnapshot, String> {
+    let snapshot = discover_game_content();
+    let connection = storage::open(database_path).map_err(|error| error.to_string())?;
+    SqliteGameContentRepository::new(&connection)
+        .persist_snapshot(&snapshot)
+        .map_err(|error| error.to_string())?;
+    Ok(snapshot)
 }
 
 pub(crate) fn discover_game_content() -> GameContentSnapshot {
