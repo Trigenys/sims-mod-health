@@ -57,3 +57,8 @@ jobs:
     needs: impact
     if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'windows-installer') }}
     uses: ./.github/workflows/beta-windows.yml
+
+  xdelta-rd:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'xdelta-rd') }}
+    uses: ./.github/workflows/xdelta-rd.yml
