@@ -1,7 +1,7 @@
 mod conflicts;
 mod dbpf;
-mod diagnostics;
 mod delta;
+mod diagnostics;
 mod discovery;
 mod fingerprint;
 mod game;
