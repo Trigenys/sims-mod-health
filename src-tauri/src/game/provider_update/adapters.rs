@@ -286,10 +286,15 @@ fn steam_registry_candidates() -> Vec<PathBuf> {
     };
 
     if let Ok(value) = key.get_value::<String, _>("SteamExe") {
-        candidates.insert(PathBuf::from(value.replace('/', "\\")));
+        candidates.insert(PathBuf::from(
+            value.replace('/', std::path::MAIN_SEPARATOR_STR),
+        ));
     }
     if let Ok(value) = key.get_value::<String, _>("SteamPath") {
-        candidates.insert(PathBuf::from(value.replace('/', "\")).join("steam.exe"));
+        candidates.insert(
+            PathBuf::from(value.replace('/', std::path::MAIN_SEPARATOR_STR))
+                .join("steam.exe"),
+        );
     }
 
     candidates.into_iter().collect()
