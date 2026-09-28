@@ -233,7 +233,9 @@ pub(crate) fn discover_game_content() -> GameContentSnapshot {
     GameContentSnapshot {
         installations: by_root
             .into_values()
-            .map(|candidate| inspect_candidate(&candidate, &version_probe, &pack_probe, &observed_at))
+            .map(|candidate| {
+                inspect_candidate(&candidate, &version_probe, &pack_probe, &observed_at)
+            })
             .collect(),
     }
 }
