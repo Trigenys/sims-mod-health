@@ -104,8 +104,8 @@ export function SettingsPage() {
   return (
     <>
       <Topbar
-        gameVersion={versionLabel(activeInstallation)}
-        platform="Windows"
+        gameVersion={activeInstallation?.version.status === "available" ? "Patch " + activeInstallation.version.version.normalized : t("common.patchUnknown")}
+        platform={t("common.windows")}
         indexedCount={0}
       />
 
@@ -194,44 +194,43 @@ function PathsSettings({
   gameInventory: GameContentSnapshot;
   providerCapability: ProviderUpdateCapability | null;
 }) {
+  const { t } = useI18n();
   const programInstallation = gameInventory.installations[0];
 
   return (
     <>
       <div className="settings-section-heading">
         <div>
-          <span className="section-kicker">LOCAL INSTALLATION</span>
-          <h2>Sims 4 & Mods paths</h2>
-          <p>
-            Paths are detected locally. The scanner reads the selected Mods directory without uploading raw files.
-          </p>
+          <span className="section-kicker">{t("settings.localInstallation")}</span>
+          <h2>{t("settings.pathsTitle")}</h2>
+          <p>{t("settings.pathsCopy")}</p>
         </div>
         <Button variant="secondary" onClick={() => void onDetect()} disabled={detecting}>
-          {detecting ? "Detecting…" : "Rescan locations"}
+          {detecting ? t("settings.detecting") : t("settings.rescanLocations")}
         </Button>
       </div>
 
       <Panel className="settings-card settings-card--featured">
         <div className="settings-card__header">
           <div>
-            <span className="section-kicker">ACTIVE SIMS 4 ROOT</span>
-            <h3>{active ? sourceLabel(active.source) : "No installation detected"}</h3>
+            <span className="section-kicker">{t("settings.activeRoot")}</span>
+            <h3>{active ? sourceLabel(active.source) : t("settings.noInstall")}</h3>
           </div>
           <span className={active?.modsAvailable ? "settings-ok" : "settings-muted"}>
-            {active?.modsAvailable ? "Mods folder available" : "Not available"}
+            {active?.modsAvailable ? t("settings.modsAvailable") : t("settings.notAvailable")}
           </span>
         </div>
 
         <PathRow
-          label="Sims 4 user folder"
-          value={active?.root ?? "Run detection in the desktop application"}
+          label={t("settings.userFolder")}
+          value={active?.root ?? t("settings.runDetection")}
         />
         <PathRow
-          label="Mods folder"
-          value={active?.modsRoot ?? "No Mods directory detected"}
+          label={t("settings.modsFolder")}
+          value={active?.modsRoot ?? t("settings.noMods")}
         />
         <PathRow
-          label="Game patch"
+          label={t("settings.gamePatch")}
           value={
             programInstallation?.build.version?.normalized
               ? "Patch " + programInstallation.build.version.normalized
@@ -239,22 +238,22 @@ function PathsSettings({
           }
         />
         <PathRow
-          label="Game program folder"
-          value={programInstallation?.installRoot ?? "No program installation detected"}
+          label={t("settings.programFolder")}
+          value={programInstallation?.installRoot ?? t("settings.noProgram")}
         />
         <PathRow
-          label="Update provider"
+          label={t("settings.updateProvider")}
           value={formatProvider(programInstallation?.provider ?? providerCapability?.provider ?? "unknown")}
         />
         <PathRow
-          label="Installed packs"
+          label={t("settings.installedPacks")}
           value={String(programInstallation?.packs.length ?? 0)}
         />
       </Panel>
 
       {installations.length > 1 && (
         <Panel className="settings-card">
-          <span className="section-kicker">OTHER DETECTED ROOTS</span>
+          <span className="section-kicker">{t("settings.otherRoots")}</span>
           <div className="settings-installations">
             {installations.slice(1).map((item) => (
               <div key={item.root}>
@@ -267,22 +266,19 @@ function PathsSettings({
       )}
 
       <Panel className="settings-card">
-        <span className="section-kicker">UPDATE PROVIDER</span>
-        <h3>Official provider handoff only</h3>
+        <span className="section-kicker">{t("settings.updateProvider").toUpperCase()}</span>
+        <h3>{t("settings.providerTitle")}</h3>
         <p>
           {providerCapability?.detail
-            ?? "Provider capability is resolved locally when a game installation is available."}
-          {" "}After an EA app or Steam update, Sims Mod Health rescans local game and pack evidence before declaring success.
+            ?? t("settings.providerFallback")}
+          {" "}{t("settings.providerCopy")}
         </p>
       </Panel>
 
       <Panel className="settings-card">
-        <span className="section-kicker">REGISTRY BEHAVIOR</span>
-        <h3>Local scan remains the baseline</h3>
-        <p>
-          Registry identity, compatibility, relationships and Discover enrich local evidence.
-          If the Registry is unreachable, the app keeps local inventory, duplicate and diagnostic evidence visible.
-        </p>
+        <span className="section-kicker">{t("settings.registryBehavior")}</span>
+        <h3>{t("settings.registryTitle")}</h3>
+        <p>{t("settings.registryCopy")}</p>
       </Panel>
     </>
   );
@@ -299,24 +295,21 @@ function PrivacySettings({
   error: string | null;
   onChange: (enabled: boolean) => Promise<void>;
 }) {
+  const { t } = useI18n();
   return (
     <>
       <div className="settings-section-heading">
         <div>
           <span className="section-kicker">PRIVACY</span>
-          <h2>Checks & privacy</h2>
-          <p>
-            Diagnostic telemetry is explicit opt-in. Raw diagnostic reports and raw mod files are not uploaded automatically.
-          </p>
+          <h2>{t("settings.privacyTitle")}</h2>
+          <p>{t("settings.privacyCopy")}</p>
         </div>
       </div>
 
       <Panel className="settings-card settings-toggle-card">
         <div>
-          <h3>Redacted diagnostic telemetry</h3>
-          <p>
-            When enabled, only redacted summary metadata is eligible for telemetry. Invalid consent state fails closed.
-          </p>
+          <h3>{t("settings.telemetryTitle")}</h3>
+          <p>{t("settings.telemetryCopy")}</p>
           {error && <small className="settings-error">{error}</small>}
         </div>
         <label className="settings-switch">
@@ -326,7 +319,7 @@ function PrivacySettings({
             disabled={busy}
             onChange={(event) => void onChange(event.target.checked)}
           />
-          <span>{enabled ? "On" : "Off"}</span>
+          <span>{enabled ? t("settings.on") : t("settings.off")}</span>
         </label>
       </Panel>
 
@@ -349,15 +342,14 @@ function PrivacySettings({
 }
 
 function ScanSettings() {
+  const { t } = useI18n();
   return (
     <>
       <div className="settings-section-heading">
         <div>
           <span className="section-kicker">SCANNER</span>
-          <h2>Scan behavior</h2>
-          <p>
-            The production scanner defaults to incremental work so unchanged files can be skipped safely.
-          </p>
+          <h2>{t("settings.scanTitle")}</h2>
+          <p>{t("settings.scanCopy")}</p>
         </div>
       </div>
       <div className="settings-grid">
@@ -379,15 +371,14 @@ function ScanSettings() {
 }
 
 function RecoverySettings() {
+  const { t } = useI18n();
   return (
     <>
       <div className="settings-section-heading">
         <div>
-          <span className="section-kicker">RECOVERY & STORAGE</span>
-          <h2>Safe mutation policy</h2>
-          <p>
-            Supported updates use app-controlled staging and verified restore points.
-          </p>
+          <span className="section-kicker">{t("settings.recoveryStorage")}</span>
+          <h2>{t("settings.recoveryTitle")}</h2>
+          <p>{t("settings.recoveryCopy")}</p>
         </div>
       </div>
       <div className="settings-grid">
@@ -446,7 +437,7 @@ function AppearanceSettings() {
         <div className="appearance-swatch appearance-swatch--indigo" />
         <div>
           <strong>Light / Porcelain</strong>
-          <span>{locale === "fr" ? "Thème actuel" : "Current product theme"}</span>
+          <span>{t("settings.theme")}</span>
         </div>
       </Panel>
     </>
