@@ -607,6 +607,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "R&D benchmark is invoked explicitly by Impact-aware Rust CI"]
     fn eight_megabyte_fixture_benchmark() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source = temp.path().join("source.bin");
