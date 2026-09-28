@@ -3,30 +3,52 @@ import { Topbar } from "../../components/layout/Topbar";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { GameInstallationSummary } from "../game-content/GameInstallationSummary";
+import {
+  gameContentGateway,
+  type GameContentGateway
+} from "../game-content/gameContent.gateway";
+import { gameContentAttentionCount } from "../game-content/gameContent.presenter";
+import type { GameContentHealthSnapshot } from "../game-content/gameContent.types";
 import { overviewGateway, type OverviewGateway } from "./overview.gateway";
 import type { OverviewSnapshot, ScanProgress } from "./overview.types";
 
 type OverviewPageProps = {
   gateway?: OverviewGateway;
+  contentGateway?: GameContentGateway;
 };
 
-export function OverviewPage({ gateway = overviewGateway }: OverviewPageProps) {
+export function OverviewPage({
+  gateway = overviewGateway,
+  contentGateway = gameContentGateway
+}: OverviewPageProps) {
   const [data, setData] = useState<OverviewSnapshot | null>(null);
+  const [gameContent, setGameContent] = useState<GameContentHealthSnapshot | null>(null);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
 
   const refresh = async () => {
-    setData(await gateway.load());
+    const [overview, content] = await Promise.all([
+      gateway.load(),
+      contentGateway.loadHealth()
+    ]);
+    setData(overview);
+    setGameContent(content);
   };
 
   useEffect(() => {
     let active = true;
     let stop: (() => void) | undefined;
 
-    gateway.load().then((snapshot) => {
-      if (active) setData(snapshot);
-    });
+    Promise.all([gateway.load(), contentGateway.loadHealth()]).then(
+      ([snapshot, content]) => {
+        if (active) {
+          setData(snapshot);
+          setGameContent(content);
+        }
+      }
+    );
 
     gateway.subscribeProgress((next) => {
       if (active) {
@@ -45,7 +67,7 @@ export function OverviewPage({ gateway = overviewGateway }: OverviewPageProps) {
       active = false;
       stop?.();
     };
-  }, [gateway]);
+  }, [gateway, contentGateway]);
 
   const runScan = async () => {
     setScanning(true);
@@ -87,10 +109,11 @@ export function OverviewPage({ gateway = overviewGateway }: OverviewPageProps) {
       : 24;
 
   const headline = overviewHeadline(data);
+  const unifiedAttention = data.attentionCount + gameContentAttentionCount(gameContent);
   const attentionCopy =
-    data.attentionCount === 0
+    unifiedAttention === 0
       ? "No actionable findings are present in the current evidence."
-      : data.attentionCount + " findings need review.";
+      : unifiedAttention + " findings need review across the game, packs and mods.";
 
   return (
     <>
@@ -161,7 +184,13 @@ export function OverviewPage({ gateway = overviewGateway }: OverviewPageProps) {
             <p>{data.healthScoreExplanation}</p>
           </details>
 
-          <section className="stat-grid" aria-label="Health summary">
+          <GameInstallationSummary
+            health={gameContent}
+            modCount={data.indexedCount}
+            fallbackVersion={data.gameVersion}
+          />
+
+          <section className="stat-grid" aria-label="Mod health summary">
             <Stat label="Healthy" value={data.healthCounts.healthy} tone="healthy" />
             <Stat label="Updates" value={data.healthCounts.updates} tone="update" />
             <Stat label="Conflicts" value={data.healthCounts.conflicts} tone="warning" />
