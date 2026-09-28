@@ -17,7 +17,9 @@ const allowlistedLiteralCopy = new Set([
   "SMH",
   "Windows",
   "EA app",
-  "Steam"
+  "Steam",
+  "EN",
+  "FR"
 ]);
 
 const failures = [];
