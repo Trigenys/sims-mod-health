@@ -98,6 +98,15 @@
         "security",
         "windows-installer"
       ]
+    },
+    "xdelta-rd": {
+      "paths": [
+        "src-tauri/src/delta/**",
+        "docs/engineering/XDELTA_VCDIFF_RD.md"
+      ],
+      "gates": [
+        "rust-ci"
+      ]
     }
   }
 }
