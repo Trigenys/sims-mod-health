@@ -19,13 +19,7 @@ use resolver::{evaluate, missing_manifest, ManifestState};
 pub(crate) trait ContentManifestSource {
     fn fetch<'a>(
         &'a self,
-    ) -> Pin<
-        Box<
-            dyn Future<Output = Result<RegistryGameContentManifest, RegistryError>>
-                + Send
-                + 'a,
-        >,
-    >;
+    ) -> Pin<Box<dyn Future<Output = Result<RegistryGameContentManifest, RegistryError>> + Send + 'a>>;
 }
 
 struct RegistryManifestSource {
@@ -35,13 +29,8 @@ struct RegistryManifestSource {
 impl ContentManifestSource for RegistryManifestSource {
     fn fetch<'a>(
         &'a self,
-    ) -> Pin<
-        Box<
-            dyn Future<Output = Result<RegistryGameContentManifest, RegistryError>>
-                + Send
-                + 'a,
-        >,
-    > {
+    ) -> Pin<Box<dyn Future<Output = Result<RegistryGameContentManifest, RegistryError>> + Send + 'a>>
+    {
         Box::pin(self.client.fetch_game_content_manifest())
     }
 }
@@ -56,7 +45,8 @@ pub(crate) async fn evaluate_game_content_health(
             manifest_version: None,
             source_identity: None,
             source_url: None,
-            detail: "No local The Sims 4 program installation has been inventoried yet.".to_string(),
+            detail: "No local The Sims 4 program installation has been inventoried yet."
+                .to_string(),
             game: None,
             packs: Vec::new(),
         });
