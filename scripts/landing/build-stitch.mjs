@@ -1,7 +1,11 @@
 import { mkdir, readFile, writeFile, copyFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { join, resolve } from "node:path";
-import { buildSitePages, renderProductHeader } from "./site-pages.mjs";
+import {
+  buildSitePages,
+  renderFaviconLinks,
+  renderProductHeader
+} from "./site-pages.mjs";
 
 const root = resolve(process.cwd());
 const source = join(root, "apps", "landing", "stitch-live.html.gz.b64");
@@ -11,6 +15,23 @@ await mkdir(outDir, { recursive: true });
 
 const encoded = (await readFile(source, "utf8")).trim();
 let html = gunzipSync(Buffer.from(encoded, "base64")).toString("utf8");
+
+// Normalize favicon handling on the root page as well as nested generated routes.
+// Remove any Stitch-exported icon links first so the browser has one canonical,
+// root-absolute product icon to resolve from every URL.
+html = html.replace(
+  /<link\b[^>]*\brel=["'][^"']*icon[^"']*["'][^>]*>\s*/gi,
+  ""
+);
+
+if (!html.includes("<head>")) {
+  throw new Error("Could not locate head tag for canonical favicon.");
+}
+
+html = html.replace(
+  "<head>",
+  `<head>\n  ${renderFaviconLinks()}`
+);
 
 html = html.replace(
   "Telemetry Off by Default Guarantee",
