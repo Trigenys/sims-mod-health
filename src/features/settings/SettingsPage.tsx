@@ -5,7 +5,10 @@ import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { diagnosticsGateway } from "../diagnostics/diagnostics.gateway";
 import { gameContentGateway } from "../game-content/gameContent.gateway";
-import { formatProvider } from "../game-content/gameContent.presenter";
+import {
+  formatProvider,
+  providerCapabilityDetail
+} from "../game-content/gameContent.presenter";
 import type {
   GameContentSnapshot,
   ProviderUpdateCapability
@@ -275,8 +278,8 @@ function PathsSettings({
         <span className="section-kicker">{t("UPDATE PROVIDER")}</span>
         <h3>{t("Official provider handoff only")}</h3>
         <p>
-          {providerCapability?.detail
-            ? tx(providerCapability.detail)
+          {providerCapability
+            ? providerCapabilityDetail(providerCapability.provider, providerCapability.supported, t)
             : t("Provider capability is resolved locally when a game installation is available.")}
           {" "}{t("After an EA app or Steam update, Sims Mod Health rescans local game and pack evidence before declaring success.")}
         </p>
