@@ -129,11 +129,13 @@ Fixtures prove:
 - a deterministic source/target fixture round-trips through the reused binding;
 - a corrupted delta fails closed;
 - wrong target hash removes the staged result;
-- an 8 MiB synthetic fixture is encoded/decoded while printing source, target and delta sizes plus encode/apply duration.
+- an interrupted staging write after a partial write removes the partial output and leaves the source hash unchanged;
+- a deterministic Windows `ERROR_DISK_FULL` write failure after a partial write removes the partial output and leaves the source hash unchanged;
+- an 8 MiB synthetic fixture is encoded/decoded while publishing source, target, delta, staging-disk budget, Rust decode-buffer budget and encode/apply duration.
 
 No copyrighted Sims payload is committed or used by these tests.
 
-The existing Impact-Aware native surface is sufficient:
+The existing Impact-Aware native gates remain the execution path:
 
 ```text
 src-tauri/**
@@ -142,7 +144,7 @@ src-tauri/**
     → Windows installer validation
 ```
 
-A separate `xdelta-rd` CI gate was removed because reusing the Rust dependency makes it redundant.
+The impact map also labels `src-tauri/src/delta/**` as the `xdelta-rd` surface, but that surface still maps to the existing `rust-ci` gate. Its only extra behavior is to request the ignored 8 MiB R&D benchmark with `--nocapture` so benchmark evidence is visible in the Rust job log. There is no separate xdelta workflow.
 
 ## Failure-model status
 
@@ -154,17 +156,63 @@ A changed source or delta fails before decode. A corrupted VCDIFF stream either 
 
 ### Interruption
 
-**Reduced, but not yet a production claim.**
+**Covered at the primitive/staging boundary.**
 
-Removing the external `xdelta3.exe` process eliminates one process-lifecycle failure mode. The adapter still writes only to staging and never mutates the game directory.
+The adapter writes through an injectable staging-writer boundary. The deterministic interruption test writes a partial staged file, returns `ErrorKind::Interrupted`, then proves that:
 
-A future production integration must explicitly journal the delta-apply state and prove startup recovery around an interrupted staging write before direct patching can be enabled.
+- the partial output is removed;
+- the source file is unchanged;
+- the error is classified as `StagingInterrupted`.
+
+Removing the external `xdelta3.exe` process also eliminates the previous child-process interruption mode.
+
+This is deliberately not a claim that production Game/DLC mutation is enabled. If promoted later, the existing mutation transaction owner must journal the delta stage and use its startup recovery / restore-point lifecycle before any real target replacement.
 
 ### Low disk
 
-**Not yet proven on a constrained filesystem.**
+**Covered deterministically at the staging-write boundary.**
 
-A staging write error leaves the source untouched and the adapter removes failed output where possible, but #77 remains open until a reproducible low-disk test demonstrates cleanup behavior.
+The low-disk test writes a partial staged file and then injects Windows `ERROR_DISK_FULL` (112). The adapter classifies it as `InsufficientDiskSpace`, deletes the partial output and proves the source hash is unchanged.
+
+This avoids filling a CI runner disk while still exercising the exact partial-write cleanup path. A future production integration may add a free-space preflight for user experience, but correctness does not depend on such a preflight.
+
+## Transaction-model reuse
+
+The R&D primitive reuses the existing mutation architecture rather than inventing a second transaction system.
+
+The ownership split is:
+
+```text
+existing mutation owner
+  restore point ready
+        ↓
+delta primitive
+  verify source + delta
+  decode
+  partial-write cleanup
+  verify staged target
+        ↓
+existing mutation owner
+  journal/install/validate/rollback
+```
+
+The repository already marks unfinished mutation states as `interrupted` at startup and retains the verified restore point for rollback. The delta prototype stays below that boundary and never writes directly into the Game/DLC installation.
+
+## Benchmark method
+
+The 8 MiB synthetic benchmark is intentionally isolated from the normal unit suite and is invoked only when Impact-Aware CI reports the `xdelta-rd` surface.
+
+It reports:
+
+- source bytes;
+- target bytes;
+- delta bytes;
+- staging-disk bytes = delta + reconstructed target;
+- Rust decode-buffer budget = source + delta + the binding's allocated output capacity;
+- encode milliseconds;
+- apply milliseconds.
+
+The memory number is a deterministic **Rust-owned decode-buffer budget**, not whole-process RSS and not Xdelta C-internal peak allocation. That limitation is explicit because this binding is memory-oriented; it is one reason production large-file patching remains blocked pending a streaming decision.
 
 ## Packaging impact
 
@@ -201,8 +249,7 @@ Promotion remains blocked until all of the following exist:
 - a payload source with documented authorization to distribute/use;
 - retained provenance for each delta;
 - expected source/delta/target hashes from trusted metadata;
-- reproducible interruption recovery evidence;
-- reproducible low-disk failure evidence;
+- end-to-end journal integration for an actual Game/DLC mutation path;
 - dependency notice/package review;
 - explicit integration into the existing transaction journal and restore-point lifecycle;
 - a large-file/streaming decision suitable for real Game/DLC payload sizes.
