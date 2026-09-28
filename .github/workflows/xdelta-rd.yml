@@ -1,0 +1,65 @@
+name: "Xdelta R&D"
+
+on:
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+jobs:
+  xdelta-rd:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      XDELTA_VERSION: "3.2.0"
+      XDELTA_WINDOWS_ZIP_SHA256: "af8ef036cb077a48df080c9a8ac1be4a6e7511c32d11f8bec89b6803a9e52576"
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache Rust dependencies and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-xdelta-rd-cargo-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Fetch and verify pinned xdelta3 release
+        id: xdelta
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "xdelta3.zip"
+          $extract = Join-Path $env:RUNNER_TEMP "xdelta3"
+
+          $url = "https://github.com/jmacd/xdelta/releases/download/v$env:XDELTA_VERSION/xdelta3-$env:XDELTA_VERSION-windows-x86_64.zip"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+
+          $observed = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
+          if ($observed -ne $env:XDELTA_WINDOWS_ZIP_SHA256) {
+            throw "xdelta3 archive SHA-256 mismatch: expected $env:XDELTA_WINDOWS_ZIP_SHA256, observed $observed"
+          }
+
+          Expand-Archive -Path $archive -DestinationPath $extract -Force
+          $binary = Get-ChildItem -Path $extract -Recurse -Filter "xdelta3.exe" |
+            Select-Object -First 1
+
+          if (-not $binary) {
+            throw "Verified xdelta3 archive did not contain xdelta3.exe"
+          }
+
+          "binary=$($binary.FullName)" >> $env:GITHUB_OUTPUT
+          & $binary.FullName -V
+
+      - name: Run deterministic xdelta adapter fixtures
+        shell: pwsh
+        env:
+          XDELTA3_BIN: ${{ steps.xdelta.outputs.binary }}
+        run: |
+          cargo test --manifest-path src-tauri/Cargo.toml delta::tests::xdelta3_ -- --ignored --nocapture
+
+      - name: Run normal delta unit tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml delta::tests:: -- --nocapture
