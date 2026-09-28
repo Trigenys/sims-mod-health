@@ -116,6 +116,28 @@ Controls:
 - generated staging filenames under app-controlled storage;
 - verified restore point before download/mutation.
 
+### Game/DLC entitlement confusion
+
+Threat: locally present content-pack files are interpreted as proof that a user owns or is entitled to the pack, or update logic accidentally incorporates entitlement circumvention.
+
+Controls:
+- local pack presence and entitlement are separate concepts;
+- Sims Mod Health does not infer ownership from files;
+- no unlocker, entitlement emulator or ownership-bypass adapter is supported;
+- production Game/DLC update behavior defaults to official-provider handoff;
+- direct patch payloads require an explicit source/licensing/integrity gate before implementation.
+
+### Untrusted Game/DLC patch payloads
+
+Threat: a third-party delta or full payload modifies the game installation with corrupted, unauthorized or malicious content.
+
+Controls:
+- direct binary patching is disabled by default;
+- provider handoff is the baseline production path;
+- any future delta engine requires source authorization, payload hash, base hash and resulting-target hash;
+- patch output stages outside the game installation before any replacement;
+- interrupted/low-disk/corrupt-payload paths must fail recoverably.
+
 ### Registry poisoning
 
 Threat: false compatibility, creator or release data.
@@ -207,6 +229,9 @@ The first releases do not attempt to:
 - execute mods safely in a sandbox;
 - prove that arbitrary gameplay behavior is semantically correct;
 - crack, decompile or bypass paid mod access;
+- bypass EA/Steam or other platform DLC entitlement/ownership controls;
+- operate as a DLC unlocker or entitlement emulator;
+- download Game/DLC payloads from sources whose redistribution/use rights are not established;
 - download from sources that prohibit automated retrieval.
 
 ## Security reporting

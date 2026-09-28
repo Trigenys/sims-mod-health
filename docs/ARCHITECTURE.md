@@ -6,10 +6,10 @@ Sims Mod Health is an offline-first desktop application backed by a shared regis
 
 The architecture separates two trust domains:
 
-1. **Local trust domain:** the player's filesystem, installed game version, Mods folder and diagnostics.
-2. **Shared trust domain:** public mod metadata, release fingerprints, compatibility state, source adapters and recommendations.
+1. **Local trust domain:** the player's filesystem, installed game build, locally present content packs, Mods folder and diagnostics.
+2. **Shared trust domain:** public mod metadata, public game/pack compatibility metadata, release fingerprints, compatibility state, source adapters and recommendations.
 
-Raw local mod files do not cross this boundary by default.
+Raw local mod files and game/content-pack payloads do not cross this boundary by default. Local pack presence is not treated as proof of ownership or entitlement.
 
 ## 2. Context
 
@@ -42,9 +42,11 @@ The WebView is responsible for presentation and user interaction. Privileged ope
 
 Planned native modules:
 
-- installation discovery
+- user-data and game-installation discovery
 - game-version resolution
-- recursive inventory
+- installed content-pack inventory
+- provider capability detection
+- recursive mod inventory
 - incremental scan cache
 - DBPF read-only parser
 - TS4Script archive inspector
@@ -99,6 +101,9 @@ The generated AppFactory scaffold starts with the desktop shell at repository ro
 SQLite is expected to own:
 
 - installations
+- game build observations
+- installed pack observations
+- provider/update workflow state
 - scan sessions
 - local files
 - local artifacts
@@ -122,6 +127,8 @@ Core entities:
 - Fingerprint
 - Source
 - GamePatch
+- ContentPack
+- PackCompatibility
 - CompatibilityReport
 - Dependency
 - ConflictRule
@@ -165,7 +172,32 @@ The product uses a small explicit state machine:
 
 When a new Sims patch is released, compatibility inherited from earlier patches may expire to `Unknown` until a trusted source confirms the mod or a compatible release is resolved.
 
-## 10. Update safety
+## 10. Game and DLC health boundary
+
+Game and DLC support follows ADR-0005 and extends the health model rather than creating a separate updater product.
+
+The native core exposes narrow ports:
+
+- `GameVersionProbe`;
+- `PackInventoryProbe`;
+- `ContentManifestSource`;
+- `PlatformUpdateAdapter`;
+- `ContentHealthRepository`.
+
+Provider-specific behavior uses Strategy adapters. External manifest/provider schemas cross an Anti-Corruption Layer before entering the domain. Update progress is an explicit state machine:
+
+```text
+Detected -> ActionRequired -> ProviderOpened -> AwaitingRescan
+         -> Verified | StillOutdated | Unknown | Failed
+```
+
+The default Game/DLC update action is an official-provider handoff. Sims Mod Health does not infer entitlement from local pack folders and does not include entitlement unlockers.
+
+After a provider update, local game/pack state is rescanned and the mod compatibility engine is reevaluated against the newly observed patch.
+
+Direct binary patching is not part of this baseline. Any future delta engine is gated on independently verified payload rights, provenance and integrity.
+
+## 11. Update safety
 
 Single-artifact automatic update is implemented behind a narrow Rust/Tauri mutation boundary.
 
@@ -185,7 +217,7 @@ Startup marks unfinished transactions as interrupted instead of assuming success
 
 Bulk update remains disabled. See `docs/security/STAGED_UPDATE_ROLLBACK.md`.
 
-## 11. Performance strategy
+## 12. Performance strategy
 
 - stream directory enumeration;
 - cache hashes;
@@ -195,7 +227,7 @@ Bulk update remains disabled. See `docs/security/STAGED_UPDATE_ROLLBACK.md`.
 - keep UI work off the scanner thread;
 - expose scan progress and cancellation.
 
-## 12. Observability
+## 13. Observability
 
 Target instrumentation:
 
@@ -209,7 +241,7 @@ Target instrumentation:
 
 The most important product metric is the percentage of installed artifacts identified with high confidence.
 
-## 13. Architecture decisions
+## 14. Architecture decisions
 
 The initial decision set is encoded directly in this document and the threat model:
 
@@ -217,6 +249,8 @@ The initial decision set is encoded directly in this document and the threat mod
 - Tauri/Rust privileged boundary;
 - deterministic health state as source of truth;
 - source adapters rather than generalized scraping;
+- unified Game/DLC/Mod health rather than separate launcher-style products;
+- provider handoff before direct Game/DLC patching;
 - modular monolith backend before microservices.
 
 These decisions should become ADRs if they need independent revision history.
