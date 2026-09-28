@@ -1,3 +1,4 @@
+import { useI18n } from "../../i18n/I18nProvider";
 import { Button } from "../ui/Button";
 import { SearchField } from "../ui/SearchField";
 
@@ -18,6 +19,8 @@ export function Topbar({
   scanning = false,
   scanDisabled = false
 }: TopbarProps) {
+  const { t } = useI18n();
+
   return (
     <header className="topbar">
       <div>
@@ -30,15 +33,15 @@ export function Topbar({
 
       <div className="topbar-actions">
         <SearchField
-          label="Search library"
-          placeholder={`Search ${indexedCount} mods & CC`}
+          label={t("topbar.searchLabel")}
+          placeholder={t("topbar.searchPlaceholder", { count: indexedCount })}
         />
         <Button
           variant="primary"
           onClick={onScan}
           disabled={scanDisabled || scanning}
         >
-          {scanning ? "Scanning…" : "Scan now"}
+          {scanning ? t("topbar.scanning") : t("topbar.scan")}
         </Button>
       </div>
     </header>
