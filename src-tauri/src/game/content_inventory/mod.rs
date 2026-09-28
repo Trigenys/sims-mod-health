@@ -165,8 +165,8 @@ pub(crate) struct InstalledPackObservation {
     pub(crate) pack_code: String,
     pub(crate) pack_kind: PackKind,
     pub(crate) local_state: PackLocalState,
-    pub(crate) size_bytes: Option<u64>,
-    pub(crate) marker_count: u64,
+    pub(crate) size_bytes: Option<i64>,
+    pub(crate) marker_count: i64,
     pub(crate) observed_at: String,
 }
 
