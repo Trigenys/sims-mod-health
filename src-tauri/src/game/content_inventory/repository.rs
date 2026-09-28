@@ -87,7 +87,6 @@ impl GameContentRepository for SqliteGameContentRepository<'_> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
