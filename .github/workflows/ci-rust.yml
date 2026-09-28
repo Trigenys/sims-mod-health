@@ -2,7 +2,19 @@ name: Rust CI
 
 on:
   workflow_call:
+    inputs:
+      run_xdelta_benchmark:
+        description: Run the isolated xdelta R&D benchmark and publish its metrics.
+        required: false
+        default: false
+        type: boolean
   workflow_dispatch:
+    inputs:
+      run_xdelta_benchmark:
+        description: Run the isolated xdelta R&D benchmark and publish its metrics.
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -29,3 +41,7 @@ jobs:
 
       - name: Run native tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Run xdelta R&D benchmark
+        if: ${{ inputs.run_xdelta_benchmark }}
+        run: cargo test --manifest-path src-tauri/Cargo.toml delta::tests::eight_megabyte_fixture_benchmark -- --ignored --exact --nocapture

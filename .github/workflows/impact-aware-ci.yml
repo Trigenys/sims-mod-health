@@ -37,6 +37,8 @@ jobs:
     needs: impact
     if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'rust-ci') }}
     uses: ./.github/workflows/ci-rust.yml
+    with:
+      run_xdelta_benchmark: ${{ contains(fromJSON(needs.impact.outputs.surfaces), 'xdelta-rd') }}
 
   scanner-benchmark:
     needs: impact
@@ -57,3 +59,4 @@ jobs:
     needs: impact
     if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'windows-installer') }}
     uses: ./.github/workflows/beta-windows.yml
+
