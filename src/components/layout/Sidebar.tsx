@@ -1,3 +1,4 @@
+import brandLogo from "../../assets/brand-logo.svg";
 type NavItem = {
   label: "Overview" | "Library" | "Health" | "Discover";
   icon: string;
@@ -24,7 +25,7 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark" aria-hidden="true">SMH</div>
+        <img className="brand-logo" src={brandLogo} alt="" aria-hidden="true" />
         <div className="brand-copy">
           <strong>Sims Mod Health</strong>
           <span>Offline desktop engine</span>
