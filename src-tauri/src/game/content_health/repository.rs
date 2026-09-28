@@ -2,10 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{params, Connection, OptionalExtension};
 
-use crate::{
-    game::content_inventory::SentinelFingerprint,
-    registry::RegistryGameContentManifest,
-};
+use crate::{game::content_inventory::SentinelFingerprint, registry::RegistryGameContentManifest};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct LocalPackState {
@@ -131,9 +128,8 @@ pub(crate) fn load_cached_manifest(
         .optional()
         .map_err(|error| error.to_string())?
         .map(|(manifest_json, cached_at)| {
-            let manifest =
-                serde_json::from_str::<RegistryGameContentManifest>(&manifest_json)
-                    .map_err(|error| error.to_string())?;
+            let manifest = serde_json::from_str::<RegistryGameContentManifest>(&manifest_json)
+                .map_err(|error| error.to_string())?;
             Ok(CachedManifest {
                 manifest,
                 cached_at,
@@ -154,17 +150,19 @@ fn observation_timestamp() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::registry::{
-        RegistryGameBuildManifestEntry, RegistryManifestFingerprint,
-    };
+    use crate::registry::{RegistryGameBuildManifestEntry, RegistryManifestFingerprint};
 
     fn connection() -> Connection {
         let connection = Connection::open_in_memory().expect("db");
         connection
-            .execute_batch(include_str!("../../../migrations/0007_game_content_inventory.sql"))
+            .execute_batch(include_str!(
+                "../../../migrations/0007_game_content_inventory.sql"
+            ))
             .expect("inventory schema");
         connection
-            .execute_batch(include_str!("../../../migrations/0008_game_content_manifest_cache.sql"))
+            .execute_batch(include_str!(
+                "../../../migrations/0008_game_content_manifest_cache.sql"
+            ))
             .expect("cache schema");
         connection
     }
