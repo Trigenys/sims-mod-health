@@ -22,7 +22,7 @@ serde_json = "1"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 zip = { version = "8.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
-xdelta3 = { git = "https://github.com/sigp/xdelta3-rs", rev = "fe3906605c87b6c0515bd7c8fc671f47875e3ccc", default-features = false }
+xdelta3 = { git = "https://github.com/liushuyu/xdelta3-rs", rev = "7bca8bc72548bd88a92a308dcd01225c3e842bc7", default-features = false }
 
 
 [target.'cfg(windows)'.dependencies]
