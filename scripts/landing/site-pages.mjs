@@ -9,6 +9,10 @@ export const productNav = [
   ["/support/", "Support", "Assistance"]
 ];
 
+export function renderFaviconLinks() {
+  return `<link rel="icon" type="image/svg+xml" href="/logo.svg" />`;
+}
+
 const sections = {
   download: {
     titleEn: "Download Sims Mod Health",
@@ -235,6 +239,7 @@ function page(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="${escapeAttr(introEn)}" />
   <title>${escapeHtml(titleEn)} — Sims Mod Health</title>
+  ${renderFaviconLinks()}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />

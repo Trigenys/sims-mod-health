@@ -42,6 +42,7 @@ const requiredHtml = [
   "data-download-size",
   "data-checksum-link",
   "./logo.svg",
+  'rel="icon" type="image/svg+xml" href="/logo.svg"',
   "./release.js",
   "cdn.tailwindcss.com",
   "Plus+Jakarta+Sans",
@@ -146,6 +147,31 @@ for (const [label, pageHtml, activeHref] of [
     throw new Error(
       `${label} page must expose its canonical active navigation state: ${activeHref}`
     );
+  }
+}
+
+const faviconMarker = 'rel="icon" type="image/svg+xml" href="/logo.svg"';
+for (const [label, path] of [
+  ["home", "index.html"],
+  ["download", "download/index.html"],
+  ["release notes", "release-notes/index.html"],
+  ["verify", "verify/index.html"],
+  ["architecture", "architecture/index.html"],
+  ["security", "security/index.html"],
+  ["docs", "docs/index.html"],
+  ["support", "support/index.html"],
+  ["source", "source/index.html"],
+  ["404", "404.html"]
+]) {
+  const pageHtml =
+    path === "index.html" ? html : await readFile(join(site, path), "utf8");
+
+  if (!pageHtml.includes(faviconMarker)) {
+    throw new Error(`${label} page must use the canonical root favicon.`);
+  }
+
+  if ((pageHtml.match(/rel="icon"/g) ?? []).length !== 1) {
+    throw new Error(`${label} page must expose exactly one canonical favicon.`);
   }
 }
 
