@@ -385,11 +385,47 @@ const fr = {
   "Privacy settings could not be loaded. Telemetry remains off.": "Les paramètres de confidentialité n’ont pas pu être chargés. La télémétrie reste désactivée.",
   "Consent could not be saved. Telemetry remains off.": "Le consentement n’a pas pu être enregistré. La télémétrie reste désactivée.",
   "Manual path": "Chemin manuel",
-  "OneDrive Documents": "Documents OneDrive"
+  "OneDrive Documents": "Documents OneDrive",
+  "Manual provider": "Fournisseur manuel",
+  "Conflicting compatibility evidence": "Preuves de compatibilité contradictoires",
+  "Game & DLC health": "Santé du jeu et des DLC",
+  "No trusted Game/DLC manifest is available; update state cannot be concluded.": "Aucun manifeste Jeu/DLC fiable n’est disponible ; l’état de mise à jour ne peut pas être déterminé.",
+  "Pack is present locally, but compatibility metadata is unavailable.": "Le pack est présent localement, mais les métadonnées de compatibilité sont indisponibles.",
+  "Pack files are incomplete or could not be inspected reliably.": "Les fichiers du pack sont incomplets ou n’ont pas pu être inspectés de manière fiable.",
+  "Game-build evidence conflicts, so no update conclusion is safe.": "Les preuves sur la version du jeu se contredisent ; aucune conclusion de mise à jour n’est sûre.",
+  "Installed game build could not be resolved from trusted local evidence.": "La version installée du jeu n’a pas pu être déterminée à partir de preuves locales fiables.",
+  "Cached metadata indicates game build {{required}} is newer than installed {{current}}.": "Les métadonnées en cache indiquent que la version {{required}} du jeu est plus récente que la version installée {{current}}.",
+  "Game build {{required}} is newer than installed {{current}}.": "La version {{required}} du jeu est plus récente que la version installée {{current}}.",
+  "Installed game matches the cached latest build, but Registry metadata is stale.": "Le jeu installé correspond à la dernière version en cache, mais les métadonnées du registre sont anciennes.",
+  "Installed game matches the latest known build.": "Le jeu installé correspond à la dernière version connue.",
+  "Installed build {{current}} is newer than manifest latest {{required}}; metadata needs refresh.": "La version installée {{current}} est plus récente que la dernière version {{required}} du manifeste ; les métadonnées doivent être actualisées.",
+  "Game versions could not be compared safely.": "Les versions du jeu n’ont pas pu être comparées de manière fiable.",
+  "Pack is installed, but the manifest has no compatibility metadata for it.": "Le pack est installé, mais le manifeste ne contient aucune métadonnée de compatibilité pour celui-ci.",
+  "Trusted metadata sources disagree about this pack's compatibility requirements.": "Les sources fiables de métadonnées ne s’accordent pas sur les exigences de compatibilité de ce pack.",
+  "Game-build evidence is disputed, so pack compatibility cannot be concluded.": "Les preuves sur la version du jeu sont contestées ; la compatibilité du pack ne peut pas être déterminée.",
+  "{{code}} requires game build {{required}} or newer; installed build is {{current}}.": "{{code}} nécessite la version {{required}} du jeu ou une version plus récente ; la version installée est {{current}}.",
+  "Pack minimum version could not be compared safely.": "La version minimale requise par le pack n’a pas pu être comparée de manière fiable.",
+  "Pack has a minimum game build, but the installed game build is unknown.": "Le pack exige une version minimale du jeu, mais la version installée est inconnue.",
+  "Cached metadata does not show a compatibility problem, but it is stale.": "Les métadonnées en cache ne signalent aucun problème de compatibilité, mais elles sont anciennes.",
+  "Installed game satisfies the pack's known compatibility requirement.": "Le jeu installé satisfait l’exigence de compatibilité connue du pack.",
+  "Installed game version {{current}} was read locally.": "La version {{current}} du jeu installé a été lue localement.",
+  "Sentinel fingerprints resolve uniquely to game build {{current}}.": "Les empreintes sentinelles correspondent de façon unique à la version {{current}} du jeu.",
+  "Manifest latest game build is {{required}}.": "La dernière version du jeu indiquée par le manifeste est {{required}}.",
+  "Minimum game build: {{required}}.": "Version minimale du jeu : {{required}}.",
+  "No minimum game build is declared.": "Aucune version minimale du jeu n’est déclarée.",
+  "Open EA app to update": "Ouvrir EA app pour mettre à jour",
+  "Open Steam to update": "Ouvrir Steam pour mettre à jour",
+  "Update in your game provider": "Mettre à jour dans votre fournisseur de jeu",
+  "EA app is available. Sims Mod Health will open the official client and wait for local verification.": "EA app est disponible. Sims Mod Health ouvrira le client officiel et attendra une vérification locale.",
+  "Steam is available. Sims Mod Health will open the official client and wait for local verification.": "Steam est disponible. Sims Mod Health ouvrira le client officiel et attendra une vérification locale.",
+  "EA app was detected for the game, but EADesktop.exe could not be located. Open EA app manually, update The Sims 4, then return to verify.": "EA app a été détectée pour le jeu, mais EADesktop.exe est introuvable. Ouvrez EA app manuellement, mettez Les Sims 4 à jour, puis revenez pour vérifier.",
+  "Steam was detected for the game, but steam.exe could not be located. Open Steam manually, update The Sims 4, then return to verify.": "Steam a été détecté pour le jeu, mais steam.exe est introuvable. Ouvrez Steam manuellement, mettez Les Sims 4 à jour, puis revenez pour vérifier.",
+  "The update provider could not be identified. Update The Sims 4 in the client you normally use, then return to verify.": "Le fournisseur de mise à jour n’a pas pu être identifié. Mettez Les Sims 4 à jour dans votre client habituel, puis revenez pour vérifier."
 } as const;
 
-type TranslationKey = keyof typeof fr;
-type Vars = Record<string, string | number>;
+export type TranslationKey = keyof typeof fr;
+export type Vars = Record<string, string | number>;
+export type TranslationFn = (key: TranslationKey, vars?: Vars) => string;
 
 function interpolate(value: string, vars?: Vars) {
   if (!vars) return value;
