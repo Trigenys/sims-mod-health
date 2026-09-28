@@ -1,15 +1,7 @@
 name: Scanner benchmark
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "src-tauri/src/scanner/**"
-      - "src-tauri/src/fingerprint/**"
-      - "src-tauri/src/storage/**"
-      - "src-tauri/migrations/**"
-      - "src-tauri/Cargo.toml"
-      - ".github/workflows/scanner-benchmark.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
