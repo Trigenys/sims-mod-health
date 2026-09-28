@@ -1,7 +1,7 @@
 use std::{
     collections::BTreeSet,
     env, fmt,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::Command,
 };
 
@@ -286,7 +286,7 @@ fn steam_registry_candidates() -> Vec<PathBuf> {
     };
 
     if let Ok(value) = key.get_value::<String, _>("SteamExe") {
-        candidates.insert(PathBuf::from(value.replace('/', "\")));
+        candidates.insert(PathBuf::from(value.replace('/', "\\")));
     }
     if let Ok(value) = key.get_value::<String, _>("SteamPath") {
         candidates.insert(PathBuf::from(value.replace('/', "\")).join("steam.exe"));
