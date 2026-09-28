@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.0-beta.5](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.4...v0.1.0-beta.5) (2026-09-28)
+
+
+### Features
+
+* add official provider update handoff and post-update verification ([#90](https://github.com/Trigenys/sims-mod-health/issues/90)) ([a10844f](https://github.com/Trigenys/sims-mod-health/commit/a10844fb09fbcd703309058c441964a0d8339f0f))
+* add provenance-bearing Game/DLC manifest health engine ([#89](https://github.com/Trigenys/sims-mod-health/issues/89)) ([8f7ec1e](https://github.com/Trigenys/sims-mod-health/commit/8f7ec1e352039aa00f63cf1bf94f9cd67bcc5a1d))
+* detect local game build provider and DLC inventory ([#84](https://github.com/Trigenys/sims-mod-health/issues/84)) ([7d27131](https://github.com/Trigenys/sims-mod-health/commit/7d271310d96bf1ca8c0d0f00078de9ec3f70c3c3))
+* unify Game, DLC and Mod health UI ([#92](https://github.com/Trigenys/sims-mod-health/issues/92)) ([d8ef2a5](https://github.com/Trigenys/sims-mod-health/commit/d8ef2a5f9aa98cfd5a4dc25cf06af7bfb73b509e))
+
+
+### Documentation
+
+* define unified Game + DLC health architecture ([#83](https://github.com/Trigenys/sims-mod-health/issues/83)) ([d390153](https://github.com/Trigenys/sims-mod-health/commit/d39015356616b9f26c6a8cbe42b9369c8900a167))
+
 ## [0.1.0-beta.4](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.3...v0.1.0-beta.4) (2026-09-27)
 
 
