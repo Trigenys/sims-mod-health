@@ -224,7 +224,7 @@ export function HealthPage({
         </div>
       </section>
 
-      <section className="health-metrics" aria-label="Health summary">
+      <section className="health-metrics" aria-label={t("Game / pack / mod health")}>
         <Metric label={t("Needs attention")} value={combinedAttention} tone="danger" />
         <Metric label={t("Updates")} value={updateCount} tone="update" />
         <Metric label={t("Conflicts")} value={snapshot.healthCounts.conflicts} tone="warning" />
@@ -258,7 +258,7 @@ export function HealthPage({
       </nav>
 
       {tab === "diagnostics" ? (
-        <section className="health-diagnostics" aria-label="Diagnostic evidence">
+        <section className="health-diagnostics" aria-label={t("DIAGNOSTIC EVIDENCE")}>
           <DiagnosticsPage embedded />
         </section>
       ) : tab === "recovery" ? (
@@ -300,7 +300,7 @@ export function HealthPage({
           )}
 
           <div className={selectedContent ? "health-layout health-layout--drawer" : "health-layout"}>
-            <section className="health-findings" aria-label={tabLabel(tab)}>
+            <section className="health-findings" aria-label={tx(tabLabel(tab))}>
               <div className="health-section-heading">
                 <div>
                   <span className="section-kicker">{tx(tabLabel(tab)).toUpperCase()}</span>
@@ -395,6 +395,7 @@ function FindingCard({
   finding: UnifiedFinding;
   onReview: () => void;
 }) {
+  const { t, tx } = useI18n();
   return (
     <Panel as="article" className="health-finding-card">
       <div className="health-finding-card__icon" aria-hidden="true">
@@ -412,22 +413,22 @@ function FindingCard({
         <div className="health-finding-card__title">
           <div>
             <span className={"finding-kind finding-kind--" + finding.kind}>
-              {finding.label}
+              {tx(finding.label)}
             </span>
             <strong>{finding.name}</strong>
-            <span>{finding.creator}</span>
+            <span>{tx(finding.creator)}</span>
           </div>
-          <StatusBadge tone={finding.tone}>{finding.badge}</StatusBadge>
+          <StatusBadge tone={finding.tone}>{tx(finding.badge)}</StatusBadge>
         </div>
-        <p>{finding.detail}</p>
+        <p>{tx(finding.detail)}</p>
         <div className="health-finding-card__footer">
           <span>
             {finding.kind === "mod"
-              ? "Current local scan / registry mod evidence"
-              : "Local installation / Game & DLC manifest evidence"}
+              ? t("Current local scan / registry mod evidence")
+              : t("Local installation / Game & DLC manifest evidence")}
           </span>
           <button type="button" onClick={onReview}>
-            {finding.kind === "mod" ? "Review in Library" : "Review details"}
+            {finding.kind === "mod" ? t("Review in Library") : t("Review details")}
           </button>
         </div>
       </div>
@@ -542,38 +543,38 @@ function countUnknown(findings: UnifiedFinding[]) {
 }
 
 function RecoveryPanel() {
+  const { t } = useI18n();
   return (
     <div className="health-recovery-grid">
       <Panel className="recovery-card recovery-card--primary">
-        <span className="section-kicker">RECOVERY</span>
-        <h2>Restore points belong to actions, not a separate backup product.</h2>
+        <span className="section-kicker">{t("Recovery").toUpperCase()}</span>
+        <h2>{t("Restore points belong to actions, not a separate backup product.")}</h2>
         <p>
-          Sims Mod Health keeps app-controlled restore points for supported mod update operations.
-          Game and DLC updates remain owned by the official provider and are verified after rescan.
+          {t("Sims Mod Health keeps app-controlled restore points for supported mod update operations. Game and DLC updates remain owned by the official provider and are verified after rescan.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">BEFORE MOD MUTATION</span>
-        <h3>Verified snapshot</h3>
+        <span className="section-kicker">{t("BEFORE MOD MUTATION")}</span>
+        <h3>{t("Verified snapshot")}</h3>
         <p>
-          The original artifact is copied to app data and its SHA-256 must match before mutation proceeds.
+          {t("The original artifact is copied to app data and its SHA-256 must match before mutation proceeds.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">PROVIDER UPDATE</span>
-        <h3>Verify after return</h3>
+        <span className="section-kicker">{t("PROVIDER UPDATE")}</span>
+        <h3>{t("Verify after return")}</h3>
         <p>
-          Opening EA app or Steam never counts as success until the local game and pack state is rescanned.
+          {t("Opening EA app or Steam never counts as success until the local game and pack state is rescanned.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">ROLLBACK</span>
-        <h3>Safe overwrite policy</h3>
+        <span className="section-kicker">{t("ROLLBACK")}</span>
+        <h3>{t("Safe overwrite policy")}</h3>
         <p>
-          Mod rollback refuses to overwrite a target that changed independently after the update.
+          {t("Mod rollback refuses to overwrite a target that changed independently after the update.")}
         </p>
       </Panel>
     </div>
