@@ -124,9 +124,7 @@ pub(crate) fn adapt_registry_manifest(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::registry::{
-        RegistryGameBuildManifestEntry, RegistryManifestFingerprint,
-    };
+    use crate::registry::{RegistryGameBuildManifestEntry, RegistryManifestFingerprint};
 
     fn wire() -> RegistryGameContentManifest {
         RegistryGameContentManifest {
