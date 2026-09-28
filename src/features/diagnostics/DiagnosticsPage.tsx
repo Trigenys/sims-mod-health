@@ -8,6 +8,7 @@ import type {
   DiagnosticReport,
   DiagnosticsSnapshot
 } from "./diagnostics.types";
+import { useI18n } from "../../i18n/i18n";
 
 type DiagnosticsPageProps = {
   gateway?: DiagnosticsGateway;
@@ -18,6 +19,7 @@ export function DiagnosticsPage({
   gateway = diagnosticsGateway,
   embedded = false
 }: DiagnosticsPageProps) {
+  const { t, tx } = useI18n();
   const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [telemetryEnabled, setTelemetryEnabled] = useState(false);
@@ -40,7 +42,7 @@ export function DiagnosticsPage({
       })
       .catch(() => {
         setTelemetryEnabled(false);
-        setPrivacyError("Privacy settings could not be loaded. Diagnostic telemetry remains off.");
+        setPrivacyError(t("Privacy settings could not be loaded. Diagnostic telemetry remains off."));
       })
       .finally(() => setPrivacyBusy(false));
   }, [gateway]);
@@ -54,7 +56,7 @@ export function DiagnosticsPage({
       setTelemetryEnabled(preferences.diagnosticTelemetryEnabled);
     } catch {
       setTelemetryEnabled(false);
-      setPrivacyError("Consent could not be saved. Diagnostic telemetry remains off.");
+      setPrivacyError(t("Consent could not be saved. Diagnostic telemetry remains off."));
     } finally {
       setPrivacyBusy(false);
     }
@@ -72,7 +74,7 @@ export function DiagnosticsPage({
   if (!snapshot) {
     return (
       <section className="diagnostics-loading" role="status">
-        Reading local diagnostic reports…
+        {t("Reading local diagnostic reports…")}
       </section>
     );
   }
@@ -82,14 +84,14 @@ export function DiagnosticsPage({
       {!embedded && (
         <section className="diagnostics-heading" aria-labelledby="diagnostics-title">
           <div>
-            <p className="eyebrow">DIAGNOSTIC EVIDENCE</p>
-            <h1 id="diagnostics-title">Diagnostics</h1>
+            <p className="eyebrow">{t("DIAGNOSTIC EVIDENCE")}</p>
+            <h1 id="diagnostics-title">{t("Diagnostics")}</h1>
             <p className="lede">
-              Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.
+              {t("Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.")}
             </p>
           </div>
           <Button variant="primary" onClick={analyze} disabled={loading}>
-            {loading ? "Analyzing…" : "Analyze reports"}
+            {loading ? t("Analyzing…") : t("Analyze reports")}
           </Button>
         </section>
       )}
@@ -97,8 +99,8 @@ export function DiagnosticsPage({
       {embedded && (
         <div className="health-embedded-actions">
           <div>
-            <span className="section-kicker">DIAGNOSTIC EVIDENCE</span>
-            <strong>Exception reports stay evidence-led.</strong>
+            <span className="section-kicker">{t("DIAGNOSTIC EVIDENCE")}</span>
+            <strong>{t("Exception reports stay evidence-led.")}</strong>
           </div>
           <Button variant="secondary" onClick={analyze} disabled={loading}>
             {loading ? "Analyzing…" : "Analyze reports"}
@@ -106,21 +108,21 @@ export function DiagnosticsPage({
         </div>
       )}
 
-      <section className="diagnostics-summary" aria-label="Diagnostics summary">
-        <SummaryFact label="Reports" value={snapshot.reports.length} />
-        <SummaryFact label="Implicated candidates" value={candidateCount} />
+      <section className="diagnostics-summary" aria-label={t("Diagnostics summary")}>
+        <SummaryFact label={t("Reports")} value={snapshot.reports.length} />
+        <SummaryFact label={t("Implicated candidates")} value={candidateCount} />
         <SummaryFact
-          label="Registry"
-          value={snapshot.registryState === "ready" ? "Resolved" : snapshot.registryState}
+          label={t("Registry")}
+          value={snapshot.registryState === "ready" ? t("Resolved") : tx(snapshot.registryState)}
         />
       </section>
 
-      <section className="diagnostics-privacy" aria-label="Diagnostic privacy">
+      <section className="diagnostics-privacy" aria-label={t("Diagnostic privacy")}>
         <div>
-          <span className="section-kicker">PRIVACY</span>
-          <strong>Diagnostic telemetry is {telemetryEnabled ? "on" : "off"}</strong>
+          <span className="section-kicker">{t("PRIVACY")}</span>
+          <strong>{t("Diagnostic telemetry is {{state}}", { state: telemetryEnabled ? t("on") : t("off") })}</strong>
           <p>
-            Off by default. Only redacted diagnostic summaries may be eligible for telemetry after explicit consent; raw reports are never uploaded automatically.
+            {t("Off by default. Only redacted diagnostic summaries may be eligible for telemetry after explicit consent; raw reports are never uploaded automatically.")}
           </p>
           {privacyError && <small role="status">{privacyError}</small>}
         </div>
@@ -131,7 +133,7 @@ export function DiagnosticsPage({
             disabled={privacyBusy}
             onChange={(event) => void updateTelemetryConsent(event.target.checked)}
           />
-          <span>Allow redacted diagnostic telemetry</span>
+          <span>{t("Allow redacted diagnostic telemetry")}</span>
         </label>
       </section>
 
@@ -141,12 +143,12 @@ export function DiagnosticsPage({
           <div>
             <strong>
               {snapshot.registryState === "offline"
-                ? "Registry offline"
-                : "Registry resolution is partial"}
+                ? t("Registry offline")
+                : t("Registry resolution is partial")}
             </strong>
             <p>
-              Local module, filename and resource evidence remains available.{" "}
-              {snapshot.registryDetail}
+              {t("Local module, filename and resource evidence remains available.")}{" "}
+              {tx(snapshot.registryDetail)}
             </p>
           </div>
         </section>
@@ -156,14 +158,14 @@ export function DiagnosticsPage({
         <Panel className="diagnostics-empty">
           <div className="diagnostics-empty__icon" aria-hidden="true">⌁</div>
           <div>
-            <h2>No supported diagnostic report found</h2>
+            <h2>{t("No supported diagnostic report found")}</h2>
             <p>
-              The parser checks recent lastException, lastUIException, MCCC and Better Exceptions reports in the current Sims user folder.
+              {t("The parser checks recent lastException, lastUIException, MCCC and Better Exceptions reports in the current Sims user folder.")}
             </p>
           </div>
         </Panel>
       ) : (
-        <section className="diagnostics-list" aria-label="Parsed diagnostic reports">
+        <section className="diagnostics-list" aria-label={t("Parsed diagnostic reports")}>
           {snapshot.reports.map((report) => (
             <DiagnosticReportCard
               key={
