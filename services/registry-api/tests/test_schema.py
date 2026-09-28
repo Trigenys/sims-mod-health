@@ -19,6 +19,7 @@ def test_migrated_schema_contains_registry_core_entities() -> None:
         "compatibility_reports",
         "dependency_rules",
         "conflict_rules",
+        "game_content_manifests",
     }.issubset(tables)
 
 
@@ -93,3 +94,18 @@ def test_mods_include_deterministic_discovery_taxonomy() -> None:
 
     assert columns["categories"]["nullable"] is False
     assert columns["features"]["nullable"] is False
+
+
+def test_game_content_manifest_retains_provenance_and_integrity_metadata() -> None:
+    columns = {
+        column["name"]: column
+        for column in inspect(engine).get_columns("game_content_manifests")
+    }
+
+    assert columns["source_identity"]["nullable"] is False
+    assert columns["retrieved_at"]["nullable"] is False
+    assert "source_url" in columns
+    assert "expires_at" in columns
+    assert "checksum_sha256" in columns
+    assert "signature" in columns
+    assert columns["payload_json"]["nullable"] is False

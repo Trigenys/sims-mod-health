@@ -26,6 +26,8 @@ Use public repository/release metadata for creators who publish releases on GitH
 
 Game-build and content-pack compatibility metadata must come from sources that can be attributed and reviewed. Provider/community data is normalized into the Sims Mod Health domain before use.
 
+The desktop accepts Game/DLC metadata only through the Registry's normalized manifest contract. Each stored manifest retains source identity, retrieval time, optional expiry, optional checksum/signature metadata and per-pack evidence source. The public desktop API has no arbitrary manifest URL parameter and the Registry exposes no public manifest-write endpoint in the #74 implementation.
+
 Local pack folders may establish **presence only**. They are never used as proof of purchase, account entitlement or authorization.
 
 The production Game/DLC update path prefers official provider handoff. A direct patch or payload source must pass a separate review proving permission to distribute/use the payload, provenance and integrity.

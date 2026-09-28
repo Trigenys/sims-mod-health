@@ -9,7 +9,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::GameVersion;
 use packs::LocalPackProbe;
@@ -99,7 +99,7 @@ impl VersionEvidenceKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SentinelFingerprint {
     pub(crate) relative_path: String,

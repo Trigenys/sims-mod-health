@@ -197,6 +197,8 @@ After a provider update, local game/pack state is rescanned and the mod compatib
 
 Direct binary patching is not part of this baseline. Any future delta engine is gated on independently verified payload rights, provenance and integrity.
 
+Game/DLC compatibility metadata crosses a Registry anti-corruption boundary through `GET /v1/game-content/manifest`. The desktop caches the latest validated normalized manifest for offline use and marks cached results stale rather than silently treating them as current. Conflicting local/manifest evidence produces a disputed Unknown state.
+
 ## 11. Update safety
 
 Single-artifact automatic update is implemented behind a narrow Rust/Tauri mutation boundary.

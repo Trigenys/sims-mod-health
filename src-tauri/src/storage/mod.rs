@@ -7,7 +7,7 @@ use std::{
 
 use rusqlite::Connection;
 
-pub(crate) const LATEST_SCHEMA_VERSION: u32 = 7;
+pub(crate) const LATEST_SCHEMA_VERSION: u32 = 8;
 
 struct Migration {
     version: u32,
@@ -42,6 +42,10 @@ const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 7,
         sql: include_str!("../../migrations/0007_game_content_inventory.sql"),
+    },
+    Migration {
+        version: 8,
+        sql: include_str!("../../migrations/0008_game_content_manifest_cache.sql"),
     },
 ];
 
@@ -222,6 +226,7 @@ mod tests {
             "diagnostics".to_string(),
             "fingerprints".to_string(),
             "game_content_installations".to_string(),
+            "game_content_manifest_cache".to_string(),
             "installations".to_string(),
             "installed_packs".to_string(),
             "local_artifacts".to_string(),

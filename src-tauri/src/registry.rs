@@ -5,11 +5,13 @@ use std::{
 };
 
 use reqwest::Client;
+use rusqlite::{Connection, OptionalExtension};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 const ARTIFACT_BATCH: usize = 100;
 const HEALTH_BATCH: usize = 100;
 const RELATIONSHIP_MAX: usize = 500;
+const DEFAULT_REGISTRY_URL: &str = "http://127.0.0.1:8000";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -139,6 +141,45 @@ struct DiscoveryResponse {
     recommendations: Vec<DiscoveryRecommendation>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct RegistryManifestFingerprint {
+    pub(crate) relative_path: String,
+    pub(crate) sha256: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct RegistryGameBuildManifestEntry {
+    pub(crate) version: String,
+    pub(crate) released_at: Option<String>,
+    pub(crate) fingerprints: Vec<RegistryManifestFingerprint>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct RegistryPackManifestEntry {
+    pub(crate) code: String,
+    pub(crate) pack_kind: String,
+    pub(crate) min_game_version: Option<String>,
+    pub(crate) released_at: Option<String>,
+    pub(crate) expected_fingerprints: Vec<RegistryManifestFingerprint>,
+    pub(crate) evidence_source: String,
+    pub(crate) evidence_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct RegistryGameContentManifest {
+    pub(crate) schema_version: u32,
+    pub(crate) manifest_version: String,
+    pub(crate) source_identity: String,
+    pub(crate) source_url: Option<String>,
+    pub(crate) retrieved_at: String,
+    pub(crate) expires_at: Option<String>,
+    pub(crate) checksum_sha256: Option<String>,
+    pub(crate) signature: Option<String>,
+    pub(crate) latest_game_build: String,
+    pub(crate) game_builds: Vec<RegistryGameBuildManifestEntry>,
+    pub(crate) packs: Vec<RegistryPackManifestEntry>,
+}
+
 #[derive(Debug)]
 pub(crate) enum RegistryError {
     Transport(reqwest::Error),
@@ -196,6 +237,12 @@ impl RegistryClient {
             base_url: base_url.trim_end_matches('/').to_string(),
             client,
         })
+    }
+
+    pub(crate) async fn fetch_game_content_manifest(
+        &self,
+    ) -> Result<RegistryGameContentManifest, RegistryError> {
+        self.get_json("/v1/game-content/manifest").await
     }
 
     pub(crate) async fn resolve_artifacts(
@@ -302,6 +349,28 @@ impl RegistryClient {
         .await
     }
 
+    async fn get_json<Response>(&self, path: &str) -> Result<Response, RegistryError>
+    where
+        Response: DeserializeOwned,
+    {
+        let response = self
+            .client
+            .get(format!("{}{}", self.base_url, path))
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let body = response.text().await.unwrap_or_default();
+            return Err(RegistryError::Status {
+                status: status.as_u16(),
+                body,
+            });
+        }
+
+        Ok(response.json::<Response>().await?)
+    }
+
     async fn post_json<Request, Response>(
         &self,
         path: &str,
@@ -329,6 +398,29 @@ impl RegistryClient {
 
         Ok(response.json::<Response>().await?)
     }
+}
+
+pub(crate) fn configured_registry_url(connection: &Connection) -> String {
+    if let Ok(value) = std::env::var("SIMS_MOD_HEALTH_REGISTRY_URL") {
+        if !value.trim().is_empty() {
+            return value;
+        }
+    }
+
+    let preference = connection
+        .query_row(
+            "SELECT value_json FROM preferences WHERE key = 'registry.base_url'",
+            [],
+            |row| row.get::<_, String>(0),
+        )
+        .optional()
+        .ok()
+        .flatten();
+
+    preference
+        .and_then(|value| serde_json::from_str::<String>(&value).ok())
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| DEFAULT_REGISTRY_URL.to_string())
 }
 
 fn validate_relationship_set_size(count: usize) -> Result<(), RegistryError> {

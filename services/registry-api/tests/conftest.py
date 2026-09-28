@@ -9,6 +9,7 @@ from app.db.session import SessionFactory, engine
 
 TRUNCATE_SQL = """
 TRUNCATE TABLE
+    game_content_manifests,
     conflict_rules,
     dependency_rules,
     compatibility_reports,

@@ -20,8 +20,8 @@ use diagnostics::DiagnosticsSnapshot;
 use discovery::DiscoverySnapshot;
 use fingerprint::ExactDuplicateGroup;
 use game::{
-    GameContentInstallation, GameContentRepository, GameContentSnapshot, InstallationCandidate,
-    ManualInspection, SqliteGameContentRepository,
+    GameContentHealthSnapshot, GameContentInstallation, GameContentRepository, GameContentSnapshot,
+    InstallationCandidate, ManualInspection, SqliteGameContentRepository,
 };
 use library::LibrarySnapshot;
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
@@ -73,6 +73,13 @@ async fn refresh_game_content_inventory(
 #[tauri::command]
 fn inspect_game_content_installation(path: String) -> Result<GameContentInstallation, String> {
     game::inspect_game_content_path(&PathBuf::from(path))
+}
+
+#[tauri::command]
+async fn get_game_content_health(
+    state: State<'_, AppState>,
+) -> Result<GameContentHealthSnapshot, String> {
+    game::evaluate_game_content_health(&state.database_path).await
 }
 
 #[tauri::command]
@@ -321,6 +328,7 @@ pub fn run() {
             inspect_sims_installation,
             refresh_game_content_inventory,
             inspect_game_content_installation,
+            get_game_content_health,
             scan_sims_mods,
             scan_current_sims_mods,
             cancel_mod_scan,
