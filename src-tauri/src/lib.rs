@@ -15,13 +15,16 @@ mod ts4script;
 
 use std::{path::PathBuf, sync::Arc};
 
+use serde::Serialize;
+
 use conflicts::LocalConflictAnalysis;
 use diagnostics::DiagnosticsSnapshot;
 use discovery::DiscoverySnapshot;
 use fingerprint::ExactDuplicateGroup;
 use game::{
-    GameContentHealthSnapshot, GameContentInstallation, GameContentRepository, GameContentSnapshot,
-    InstallationCandidate, ManualInspection, SqliteGameContentRepository,
+    GameContentHealthSnapshot, GameContentInstallation, GameContentSnapshot,
+    InstallationCandidate, ManualInspection, ProviderUpdateCapability,
+    ProviderUpdateSessionView, ProviderUpdateTargetKind,
 };
 use library::LibrarySnapshot;
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
@@ -59,12 +62,7 @@ async fn refresh_game_content_inventory(
     let database_path = state.database_path.clone();
 
     tauri::async_runtime::spawn_blocking(move || {
-        let snapshot = game::discover_game_content();
-        let connection = storage::open(&database_path).map_err(|error| error.to_string())?;
-        SqliteGameContentRepository::new(&connection)
-            .persist_snapshot(&snapshot)
-            .map_err(|error| error.to_string())?;
-        Ok::<GameContentSnapshot, String>(snapshot)
+        game::refresh_and_persist_game_content(&database_path)
     })
     .await
     .map_err(|error| format!("game content inventory worker failed: {error}"))?
@@ -80,6 +78,158 @@ async fn get_game_content_health(
     state: State<'_, AppState>,
 ) -> Result<GameContentHealthSnapshot, String> {
     game::evaluate_game_content_health(&state.database_path).await
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProviderUpdateVerificationView {
+    session: ProviderUpdateSessionView,
+    game_content_health: GameContentHealthSnapshot,
+    mod_scan: Option<ScanSummary>,
+    mod_health: OverviewSnapshot,
+}
+
+#[tauri::command]
+fn get_provider_update_capability(
+    state: State<'_, AppState>,
+) -> Result<ProviderUpdateCapability, String> {
+    game::get_provider_update_capability(&state.database_path)
+}
+
+#[tauri::command]
+fn start_game_content_provider_update(
+    state: State<'_, AppState>,
+    target_kind: ProviderUpdateTargetKind,
+    target_id: String,
+) -> Result<ProviderUpdateSessionView, String> {
+    game::start_provider_update(
+        &state.database_path,
+        target_kind,
+        &target_id,
+    )
+}
+
+#[tauri::command]
+fn get_game_content_provider_update_session(
+    state: State<'_, AppState>,
+    session_id: i64,
+) -> Result<ProviderUpdateSessionView, String> {
+    game::get_provider_update_session(&state.database_path, session_id)
+}
+
+#[tauri::command]
+async fn verify_game_content_provider_update(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    session_id: i64,
+) -> Result<ProviderUpdateVerificationView, String> {
+    game::begin_provider_update_verification(&state.database_path, session_id)?;
+
+    let verification = async {
+        let inventory_database_path = state.database_path.clone();
+        let inventory = tauri::async_runtime::spawn_blocking(move || {
+            game::refresh_and_persist_game_content(&inventory_database_path)
+        })
+        .await
+        .map_err(|error| format!("game content inventory worker failed: {error}"))??;
+
+        if inventory.installations.is_empty() {
+            return Err(
+                "The Sims 4 program installation could not be rediscovered after provider handoff."
+                    .to_string(),
+            );
+        }
+
+        let lookup_database_path = state.database_path.clone();
+        let (program_version, mod_user_root) =
+            tauri::async_runtime::spawn_blocking(move || {
+                let connection = storage::open(&lookup_database_path)
+                    .map_err(|error| error.to_string())?;
+                let program_version =
+                    game::current_program_version_for_session(&connection, session_id)?;
+                let mod_user_root = game::latest_mod_user_root(&connection)?;
+                Ok::<_, String>((program_version, mod_user_root))
+            })
+            .await
+            .map_err(|error| format!("post-update lookup worker failed: {error}"))??;
+
+        let mod_scan = if let Some(mod_user_root) = mod_user_root {
+            let scan_database_path = state.database_path.clone();
+            let scanner = Arc::clone(&state.scanner);
+            let app_for_scan = app.clone();
+
+            let summary = tauri::async_runtime::spawn_blocking(move || {
+                scanner::scan_path(
+                    &scan_database_path,
+                    &mod_user_root,
+                    ScanMode::Incremental,
+                    scanner.as_ref(),
+                    |progress| {
+                        let _ = app_for_scan.emit("scanner://progress", progress);
+                    },
+                )
+                .map_err(|error| error.to_string())
+            })
+            .await
+            .map_err(|error| format!("post-update Mods scan worker failed: {error}"))??;
+
+            Some(summary)
+        } else {
+            None
+        };
+
+        if let Some(program_version) = program_version.as_deref() {
+            let sync_database_path = state.database_path.clone();
+            let version = program_version.to_string();
+            tauri::async_runtime::spawn_blocking(move || {
+                let connection =
+                    storage::open(&sync_database_path).map_err(|error| error.to_string())?;
+                game::sync_latest_mod_game_version(&connection, &version)
+            })
+            .await
+            .map_err(|error| format!("game-version synchronization worker failed: {error}"))??;
+        }
+
+        let game_content_health =
+            game::evaluate_game_content_health(&state.database_path).await?;
+
+        let overview_database_path = state.database_path.clone();
+        let local_overview = tauri::async_runtime::spawn_blocking(move || {
+            overview::load_local_context(&overview_database_path)
+                .map_err(|error| error.to_string())
+        })
+        .await
+        .map_err(|error| format!("post-update overview worker failed: {error}"))??;
+        let mod_health = overview::build_snapshot(local_overview).await;
+
+        Ok::<_, String>((game_content_health, mod_scan, mod_health))
+    }
+    .await;
+
+    match verification {
+        Ok((game_content_health, mod_scan, mod_health)) => {
+            let session = game::complete_provider_update_verification(
+                &state.database_path,
+                session_id,
+                &game_content_health,
+            )?;
+
+            Ok(ProviderUpdateVerificationView {
+                session,
+                game_content_health,
+                mod_scan,
+                mod_health,
+            })
+        }
+        Err(error) => {
+            let _ = game::fail_provider_update_verification(
+                &state.database_path,
+                session_id,
+                &error,
+            );
+            Err(error)
+        }
+    }
 }
 
 #[tauri::command]
@@ -329,6 +479,10 @@ pub fn run() {
             refresh_game_content_inventory,
             inspect_game_content_installation,
             get_game_content_health,
+            get_provider_update_capability,
+            start_game_content_provider_update,
+            get_game_content_provider_update_session,
+            verify_game_content_provider_update,
             scan_sims_mods,
             scan_current_sims_mods,
             cancel_mod_scan,
