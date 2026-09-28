@@ -103,8 +103,6 @@ export function SettingsPage() {
     }
   };
 
-  const programInstallation = gameInventory.installations[0];
-
   return (
     <>
       <Topbar
@@ -202,6 +200,8 @@ function PathsSettings({
   gameInventory: GameContentSnapshot;
   providerCapability: ProviderUpdateCapability | null;
 }) {
+  const programInstallation = gameInventory.installations[0];
+
   return (
     <>
       <div className="settings-section-heading">
