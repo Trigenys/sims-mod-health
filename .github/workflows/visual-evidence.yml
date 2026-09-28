@@ -1,15 +1,8 @@
 name: Visual evidence
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "scripts/capture-visual-evidence.mjs"
-      - "package.json"
-      - "vite.config.ts"
-      - "vitest.config.ts"
-      - ".github/workflows/visual-evidence.yml"
+  workflow_call:
+  workflow_dispatch:
 
 permissions:
   contents: read
