@@ -242,6 +242,14 @@ mod tests {
     }
 
     #[test]
+    fn ea_like_path_is_classified_as_ea_provider() {
+        assert_eq!(
+            infer_provider_from_path(Path::new(r"C:\Program Files\EA Games\The Sims 4")),
+            GameProvider::EaApp
+        );
+    }
+
+    #[test]
     fn game_root_requires_program_markers() {
         let temp = TempDir::new().expect("temp");
         assert!(!is_game_install_root(temp.path()));
