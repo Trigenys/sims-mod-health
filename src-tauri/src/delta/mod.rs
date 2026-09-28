@@ -4,10 +4,14 @@ use std::{
     fs::{self, File},
     io::Read,
     path::{Path, PathBuf},
-    process::Command,
+    time::Instant,
 };
 
 use sha2::{Digest, Sha256};
+
+const MAX_RND_INPUT_BYTES: u64 = 512 * 1024 * 1024;
+const MAX_RND_OUTPUT_BYTES: u32 = 512 * 1024 * 1024;
+const MIN_DECODE_BUFFER_BYTES: u32 = 64 * 1024;
 
 pub(crate) trait DeltaApplier {
     fn apply(&self, request: &DeltaApplyRequest) -> Result<DeltaApplyResult, DeltaApplyError>;
@@ -31,31 +35,27 @@ pub(crate) struct DeltaApplyResult {
     pub(crate) output_bytes: u64,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct Xdelta3CliApplier {
-    binary_path: PathBuf,
-}
-
-impl Xdelta3CliApplier {
-    pub(crate) fn new(binary_path: impl Into<PathBuf>) -> Self {
-        Self {
-            binary_path: binary_path.into(),
-        }
-    }
-}
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct Xdelta3RustApplier;
 
 #[derive(Debug)]
 pub(crate) enum DeltaApplyError {
     Io(std::io::Error),
-    InvalidHash { artifact: &'static str },
+    InvalidHash {
+        artifact: &'static str,
+    },
     UnsafeInput(String),
+    InputTooLarge {
+        artifact: &'static str,
+        bytes: u64,
+    },
     IntegrityMismatch {
         artifact: &'static str,
         expected: String,
         observed: String,
     },
-    ExecutionFailed { status: Option<i32>, stderr: String },
-    MissingOutput,
+    Decode(String),
+    OutputTooLarge,
 }
 
 impl Display for DeltaApplyError {
@@ -66,6 +66,10 @@ impl Display for DeltaApplyError {
                 write!(formatter, "{artifact} SHA-256 must be exactly 64 hexadecimal characters")
             }
             Self::UnsafeInput(reason) => write!(formatter, "unsafe delta input: {reason}"),
+            Self::InputTooLarge { artifact, bytes } => write!(
+                formatter,
+                "{artifact} is {bytes} bytes, above the {MAX_RND_INPUT_BYTES}-byte R&D memory limit"
+            ),
             Self::IntegrityMismatch {
                 artifact,
                 expected,
@@ -74,17 +78,11 @@ impl Display for DeltaApplyError {
                 formatter,
                 "{artifact} SHA-256 mismatch: expected {expected}, observed {observed}"
             ),
-            Self::ExecutionFailed { status, stderr } => write!(
+            Self::Decode(detail) => write!(formatter, "xdelta3 decode failed: {detail}"),
+            Self::OutputTooLarge => write!(
                 formatter,
-                "xdelta3 decode failed with status {}: {}",
-                status
-                    .map(|value| value.to_string())
-                    .unwrap_or_else(|| "terminated".to_string()),
-                stderr.trim()
+                "xdelta3 output exceeded the {MAX_RND_OUTPUT_BYTES}-byte R&D memory limit"
             ),
-            Self::MissingOutput => {
-                write!(formatter, "xdelta3 reported success without producing an output file")
-            }
         }
     }
 }
@@ -104,7 +102,7 @@ impl From<std::io::Error> for DeltaApplyError {
     }
 }
 
-impl DeltaApplier for Xdelta3CliApplier {
+impl DeltaApplier for Xdelta3RustApplier {
     fn apply(&self, request: &DeltaApplyRequest) -> Result<DeltaApplyResult, DeltaApplyError> {
         validate_request(request)?;
 
@@ -118,25 +116,13 @@ impl DeltaApplier for Xdelta3CliApplier {
         let delta_sha = hash_file(&request.delta_path)?;
         verify_hash("delta", &expected_delta, &delta_sha)?;
 
-        let execution = Command::new(&self.binary_path)
-            .arg("-d")
-            .arg("-s")
-            .arg(&request.source_path)
-            .arg(&request.delta_path)
-            .arg(&request.output_path)
-            .output()?;
+        let source_bytes = read_bounded(&request.source_path, "source")?;
+        let delta_bytes = read_bounded(&request.delta_path, "delta")?;
+        let target_bytes = decode_bounded(&delta_bytes, &source_bytes)?;
 
-        if !execution.status.success() {
+        if let Err(error) = fs::write(&request.output_path, &target_bytes) {
             cleanup_output(&request.output_path);
-            return Err(DeltaApplyError::ExecutionFailed {
-                status: execution.status.code(),
-                stderr: String::from_utf8_lossy(&execution.stderr).into_owned(),
-            });
-        }
-
-        if !request.output_path.is_file() {
-            cleanup_output(&request.output_path);
-            return Err(DeltaApplyError::MissingOutput);
+            return Err(DeltaApplyError::Io(error));
         }
 
         let target_sha = hash_file(&request.output_path)?;
@@ -149,7 +135,7 @@ impl DeltaApplier for Xdelta3CliApplier {
             source_sha256: source_sha,
             delta_sha256: delta_sha,
             target_sha256: target_sha,
-            output_bytes: fs::metadata(&request.output_path)?.len(),
+            output_bytes: target_bytes.len() as u64,
         })
     }
 }
@@ -204,7 +190,51 @@ fn ensure_regular_input(path: &Path, label: &'static str) -> Result<(), DeltaApp
         )));
     }
 
+    if metadata.len() > MAX_RND_INPUT_BYTES {
+        return Err(DeltaApplyError::InputTooLarge {
+            artifact: label,
+            bytes: metadata.len(),
+        });
+    }
+
     Ok(())
+}
+
+fn read_bounded(path: &Path, artifact: &'static str) -> Result<Vec<u8>, DeltaApplyError> {
+    let metadata = fs::metadata(path)?;
+    if metadata.len() > MAX_RND_INPUT_BYTES {
+        return Err(DeltaApplyError::InputTooLarge {
+            artifact,
+            bytes: metadata.len(),
+        });
+    }
+    fs::read(path).map_err(DeltaApplyError::Io)
+}
+
+fn decode_bounded(delta: &[u8], source: &[u8]) -> Result<Vec<u8>, DeltaApplyError> {
+    let initial = source
+        .len()
+        .saturating_add(delta.len())
+        .max(MIN_DECODE_BUFFER_BYTES as usize)
+        .min(MAX_RND_OUTPUT_BYTES as usize) as u32;
+    let mut output_capacity = initial;
+
+    loop {
+        match xdelta3::decode_with_output_len(delta, source, output_capacity) {
+            Ok(output) => return Ok(output),
+            Err(xdelta3::Error::InsufficientOutputLength)
+                if output_capacity < MAX_RND_OUTPUT_BYTES =>
+            {
+                output_capacity = output_capacity
+                    .saturating_mul(2)
+                    .min(MAX_RND_OUTPUT_BYTES);
+            }
+            Err(xdelta3::Error::InsufficientOutputLength) => {
+                return Err(DeltaApplyError::OutputTooLarge);
+            }
+            Err(error) => return Err(DeltaApplyError::Decode(format!("{error:?}"))),
+        }
+    }
 }
 
 fn normalize_hash(
@@ -259,34 +289,49 @@ fn cleanup_output(path: &Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{env, fs, process::Command, time::Instant};
 
     fn write_fixture(path: &Path, bytes: &[u8]) {
         fs::write(path, bytes).expect("write fixture");
     }
 
+    fn valid_patch(source: &[u8], target: &[u8]) -> Vec<u8> {
+        xdelta3::encode(target, source).expect("encode fixture")
+    }
+
+    fn request_for(
+        source: &Path,
+        delta: &Path,
+        target: &Path,
+        output: &Path,
+    ) -> DeltaApplyRequest {
+        DeltaApplyRequest {
+            source_path: source.to_path_buf(),
+            delta_path: delta.to_path_buf(),
+            output_path: output.to_path_buf(),
+            expected_source_sha256: hash_file(source).expect("source hash"),
+            expected_delta_sha256: hash_file(delta).expect("delta hash"),
+            expected_target_sha256: hash_file(target).expect("target hash"),
+        }
+    }
+
     #[test]
-    fn rejects_source_hash_mismatch_before_execution() {
+    fn rejects_source_hash_mismatch_before_decode() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source = temp.path().join("source.bin");
+        let target = temp.path().join("target.bin");
         let delta = temp.path().join("patch.vcdiff");
         let output = temp.path().join("output.bin");
 
         write_fixture(&source, b"source");
-        write_fixture(&delta, b"delta");
+        write_fixture(&target, b"target");
+        write_fixture(&delta, &valid_patch(b"source", b"target"));
 
-        let request = DeltaApplyRequest {
-            source_path: source,
-            delta_path: delta.clone(),
-            output_path: output,
-            expected_source_sha256: "0".repeat(64),
-            expected_delta_sha256: hash_file(&delta).expect("delta hash"),
-            expected_target_sha256: "1".repeat(64),
-        };
+        let mut request = request_for(&source, &delta, &target, &output);
+        request.expected_source_sha256 = "0".repeat(64);
 
-        let error = Xdelta3CliApplier::new(temp.path().join("missing-xdelta3"))
+        let error = Xdelta3RustApplier
             .apply(&request)
-            .expect_err("source mismatch must fail before process execution");
+            .expect_err("source mismatch must fail before decode");
 
         assert!(matches!(
             error,
@@ -295,30 +340,27 @@ mod tests {
                 ..
             }
         ));
+        assert!(!output.exists());
     }
 
     #[test]
-    fn rejects_delta_hash_mismatch_before_execution() {
+    fn rejects_delta_hash_mismatch_before_decode() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source = temp.path().join("source.bin");
+        let target = temp.path().join("target.bin");
         let delta = temp.path().join("patch.vcdiff");
         let output = temp.path().join("output.bin");
 
         write_fixture(&source, b"source");
-        write_fixture(&delta, b"delta");
+        write_fixture(&target, b"target");
+        write_fixture(&delta, &valid_patch(b"source", b"target"));
 
-        let request = DeltaApplyRequest {
-            source_path: source.clone(),
-            delta_path: delta,
-            output_path: output,
-            expected_source_sha256: hash_file(&source).expect("source hash"),
-            expected_delta_sha256: "0".repeat(64),
-            expected_target_sha256: "1".repeat(64),
-        };
+        let mut request = request_for(&source, &delta, &target, &output);
+        request.expected_delta_sha256 = "0".repeat(64);
 
-        let error = Xdelta3CliApplier::new(temp.path().join("missing-xdelta3"))
+        let error = Xdelta3RustApplier
             .apply(&request)
-            .expect_err("delta mismatch must fail before process execution");
+            .expect_err("delta mismatch must fail before decode");
 
         assert!(matches!(
             error,
@@ -327,39 +369,34 @@ mod tests {
                 ..
             }
         ));
+        assert!(!output.exists());
     }
 
     #[test]
     fn refuses_existing_output() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source = temp.path().join("source.bin");
+        let target = temp.path().join("target.bin");
         let delta = temp.path().join("patch.vcdiff");
         let output = temp.path().join("output.bin");
 
         write_fixture(&source, b"source");
-        write_fixture(&delta, b"delta");
+        write_fixture(&target, b"target");
+        write_fixture(&delta, &valid_patch(b"source", b"target"));
         write_fixture(&output, b"do not overwrite");
 
-        let request = DeltaApplyRequest {
-            source_path: source.clone(),
-            delta_path: delta.clone(),
-            output_path: output,
-            expected_source_sha256: hash_file(&source).expect("source hash"),
-            expected_delta_sha256: hash_file(&delta).expect("delta hash"),
-            expected_target_sha256: "1".repeat(64),
-        };
+        let request = request_for(&source, &delta, &target, &output);
 
-        let error = Xdelta3CliApplier::new(temp.path().join("missing-xdelta3"))
+        let error = Xdelta3RustApplier
             .apply(&request)
             .expect_err("staging adapter must never overwrite an existing output");
 
         assert!(matches!(error, DeltaApplyError::UnsafeInput(_)));
+        assert_eq!(fs::read(&output).expect("existing output"), b"do not overwrite");
     }
 
     #[test]
-    #[ignore = "requires the pinned xdelta3 3.2.0 binary via XDELTA3_BIN"]
-    fn xdelta3_fixture_round_trip() {
-        let binary = env::var_os("XDELTA3_BIN").expect("XDELTA3_BIN");
+    fn rust_binding_fixture_round_trip() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source = temp.path().join("source.bin");
         let target = temp.path().join("target.bin");
@@ -367,45 +404,60 @@ mod tests {
         let output = temp.path().join("output.bin");
 
         let source_bytes = b"Sims Mod Health\nfixture-version=1\nstate=before\n";
-        let target_bytes = b"Sims Mod Health\nfixture-version=1\nstate=after\ncompatibility=verified\n";
+        let target_bytes =
+            b"Sims Mod Health\nfixture-version=1\nstate=after\ncompatibility=verified\n";
+        let patch = valid_patch(source_bytes, target_bytes);
+
         write_fixture(&source, source_bytes);
         write_fixture(&target, target_bytes);
+        write_fixture(&delta, &patch);
 
-        let encoded = Command::new(&binary)
-            .arg("-e")
-            .arg("-s")
-            .arg(&source)
-            .arg(&target)
-            .arg(&delta)
-            .output()
-            .expect("run xdelta3 encoder");
-        assert!(
-            encoded.status.success(),
-            "xdelta3 encode failed: {}",
-            String::from_utf8_lossy(&encoded.stderr)
-        );
-
-        let request = DeltaApplyRequest {
-            source_path: source.clone(),
-            delta_path: delta.clone(),
-            output_path: output.clone(),
-            expected_source_sha256: hash_file(&source).expect("source hash"),
-            expected_delta_sha256: hash_file(&delta).expect("delta hash"),
-            expected_target_sha256: hash_file(&target).expect("target hash"),
-        };
-
-        let result = Xdelta3CliApplier::new(binary)
+        let request = request_for(&source, &delta, &target, &output);
+        let result = Xdelta3RustApplier
             .apply(&request)
             .expect("verified delta apply");
 
         assert_eq!(fs::read(&output).expect("output"), target_bytes);
         assert_eq!(result.target_sha256, hash_file(&target).expect("target hash"));
+        assert_eq!(result.output_bytes, target_bytes.len() as u64);
     }
 
     #[test]
-    #[ignore = "requires the pinned xdelta3 3.2.0 binary via XDELTA3_BIN"]
-    fn xdelta3_target_hash_mismatch_removes_staged_output() {
-        let binary = env::var_os("XDELTA3_BIN").expect("XDELTA3_BIN");
+    fn corrupted_delta_fails_closed() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let source = temp.path().join("source.bin");
+        let target = temp.path().join("target.bin");
+        let delta = temp.path().join("patch.vcdiff");
+        let output = temp.path().join("output.bin");
+
+        let source_bytes = b"before-before-before-before";
+        let target_bytes = b"after-after-after-after";
+        let mut patch = valid_patch(source_bytes, target_bytes);
+        let middle = patch.len() / 2;
+        patch[middle] ^= 0x5A;
+
+        write_fixture(&source, source_bytes);
+        write_fixture(&target, target_bytes);
+        write_fixture(&delta, &patch);
+
+        let request = request_for(&source, &delta, &target, &output);
+        let error = Xdelta3RustApplier
+            .apply(&request)
+            .expect_err("corrupted patch must not be accepted");
+
+        assert!(matches!(
+            error,
+            DeltaApplyError::Decode(_)
+                | DeltaApplyError::IntegrityMismatch {
+                    artifact: "target",
+                    ..
+                }
+        ));
+        assert!(!output.exists());
+    }
+
+    #[test]
+    fn target_hash_mismatch_removes_staged_output() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source = temp.path().join("source.bin");
         let target = temp.path().join("target.bin");
@@ -414,27 +466,12 @@ mod tests {
 
         write_fixture(&source, b"before");
         write_fixture(&target, b"after");
+        write_fixture(&delta, &valid_patch(b"before", b"after"));
 
-        let encoded = Command::new(&binary)
-            .arg("-e")
-            .arg("-s")
-            .arg(&source)
-            .arg(&target)
-            .arg(&delta)
-            .output()
-            .expect("run xdelta3 encoder");
-        assert!(encoded.status.success());
+        let mut request = request_for(&source, &delta, &target, &output);
+        request.expected_target_sha256 = "0".repeat(64);
 
-        let request = DeltaApplyRequest {
-            source_path: source.clone(),
-            delta_path: delta.clone(),
-            output_path: output.clone(),
-            expected_source_sha256: hash_file(&source).expect("source hash"),
-            expected_delta_sha256: hash_file(&delta).expect("delta hash"),
-            expected_target_sha256: "0".repeat(64),
-        };
-
-        let error = Xdelta3CliApplier::new(binary)
+        let error = Xdelta3RustApplier
             .apply(&request)
             .expect_err("wrong target hash must fail closed");
 
@@ -449,9 +486,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires the pinned xdelta3 3.2.0 binary via XDELTA3_BIN"]
-    fn xdelta3_benchmark_fixture() {
-        let binary = env::var_os("XDELTA3_BIN").expect("XDELTA3_BIN");
+    fn eight_megabyte_fixture_benchmark() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source = temp.path().join("source.bin");
         let target = temp.path().join("target.bin");
@@ -468,32 +503,17 @@ mod tests {
         }
         target_bytes.extend_from_slice(b"SMH-XDELTA-RD-TARGET");
 
-        write_fixture(&source, &source_bytes);
-        write_fixture(&target, &target_bytes);
-
         let encode_started = Instant::now();
-        let encoded = Command::new(&binary)
-            .arg("-e")
-            .arg("-s")
-            .arg(&source)
-            .arg(&target)
-            .arg(&delta)
-            .output()
-            .expect("run xdelta3 encoder");
-        assert!(encoded.status.success());
+        let patch = valid_patch(&source_bytes, &target_bytes);
         let encode_elapsed = encode_started.elapsed();
 
-        let request = DeltaApplyRequest {
-            source_path: source.clone(),
-            delta_path: delta.clone(),
-            output_path: output.clone(),
-            expected_source_sha256: hash_file(&source).expect("source hash"),
-            expected_delta_sha256: hash_file(&delta).expect("delta hash"),
-            expected_target_sha256: hash_file(&target).expect("target hash"),
-        };
+        write_fixture(&source, &source_bytes);
+        write_fixture(&target, &target_bytes);
+        write_fixture(&delta, &patch);
 
+        let request = request_for(&source, &delta, &target, &output);
         let apply_started = Instant::now();
-        let result = Xdelta3CliApplier::new(binary)
+        let result = Xdelta3RustApplier
             .apply(&request)
             .expect("verified delta apply");
         let apply_elapsed = apply_started.elapsed();
@@ -505,7 +525,7 @@ mod tests {
             "XDELTA_BENCH source_bytes={} target_bytes={} delta_bytes={} encode_ms={} apply_ms={}",
             source_bytes.len(),
             target_bytes.len(),
-            fs::metadata(&delta).expect("delta metadata").len(),
+            patch.len(),
             encode_elapsed.as_millis(),
             apply_elapsed.as_millis()
         );
