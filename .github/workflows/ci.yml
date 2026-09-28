@@ -3,6 +3,17 @@ name: Full CI
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "services/registry-api/**"
+      - "package.json"
+      - "package-lock.json"
+      - "index.html"
+      - "vite.config.*"
+      - "vitest.config.*"
+      - "tsconfig*.json"
+      - ".github/workflows/ci.yml"
 
 permissions:
   contents: read
