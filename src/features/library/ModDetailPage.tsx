@@ -4,6 +4,7 @@ import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { LibraryItem } from "./library.fixture";
 import { useI18n } from "../../i18n/i18n";
+import { localizeLibraryGeneratedCopy } from "./library.i18n";
 
 type ModDetailPageProps = {
   item: LibraryItem;
@@ -47,7 +48,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
             <p className="eyebrow">{item.identified ? t("RESOLVED MOD") : t("LOCAL FILE")}</p>
             <h1 id="mod-detail-title">{item.canonicalName}</h1>
             <p>
-              {item.creator} <span>·</span> {item.category}
+              {tx(item.creator)} <span>·</span> {tx(item.category)}
             </p>
           </div>
         </div>
@@ -75,7 +76,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
           <Panel className="detail-section">
             <span className="section-kicker">{t("What it does")}</span>
             <h2>{t("Purpose and scope")}</h2>
-            <p className="detail-description">{item.whatItDoes}</p>
+            <p className="detail-description">{localizeLibraryGeneratedCopy(item.whatItDoes, t)}</p>
           </Panel>
 
           <Panel className="detail-section">
@@ -99,8 +100,8 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
                     </span>
                     {tx(evidenceLabel[evidence.type])}
                   </div>
-                  <strong>{evidence.title}</strong>
-                  <p>{evidence.detail}</p>
+                  <strong>{tx(evidence.title)}</strong>
+                  <p>{localizeLibraryGeneratedCopy(evidence.detail, t)}</p>
                   {evidence.source && <small>{t("Source: {{source}}", { source: evidence.source })}</small>}
                 </article>
               ))}
@@ -149,7 +150,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
             <span className="section-kicker">{t("Source")}</span>
             <h2>{tx(item.source)}</h2>
             <dl className="detail-source">
-              <div><dt>{t("Creator")}</dt><dd>{item.creator}</dd></div>
+              <div><dt>{t("Creator")}</dt><dd>{tx(item.creator)}</dd></div>
               <div><dt>{t("Category")}</dt><dd>{tx(item.category)}</dd></div>
               <div><dt>{t("File type")}</dt><dd>{tx(item.kind)}</dd></div>
               <div><dt>{t("State")}</dt><dd>{item.enabled ? t("Enabled") : t("Disabled")}</dd></div>
