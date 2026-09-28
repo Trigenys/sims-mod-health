@@ -82,6 +82,18 @@ Tables:
 
 Because `awaiting_rescan` is persisted rather than held in memory, closing and reopening Sims Mod Health does not cause the app to assume success or forget that verification is still required.
 
+## Native commands
+
+```text
+get_provider_update_capability()
+start_game_content_provider_update(targetKind, targetId)
+get_game_content_provider_update_session(sessionId)
+get_pending_game_content_provider_update_session()
+verify_game_content_provider_update(sessionId)
+```
+
+The pending-session command is the restart recovery entry point for the UI.
+
 ## Verification workflow
 
 `verify_game_content_provider_update(sessionId)` performs:
