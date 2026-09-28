@@ -7,7 +7,7 @@ use std::{
 
 use rusqlite::Connection;
 
-pub(crate) const LATEST_SCHEMA_VERSION: u32 = 8;
+pub(crate) const LATEST_SCHEMA_VERSION: u32 = 9;
 
 struct Migration {
     version: u32,
@@ -46,6 +46,10 @@ const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 8,
         sql: include_str!("../../migrations/0008_game_content_manifest_cache.sql"),
+    },
+    Migration {
+        version: 9,
+        sql: include_str!("../../migrations/0009_provider_update_sessions.sql"),
     },
 ];
 
@@ -232,6 +236,8 @@ mod tests {
             "local_artifacts".to_string(),
             "local_files".to_string(),
             "preferences".to_string(),
+            "provider_update_events".to_string(),
+            "provider_update_sessions".to_string(),
             "restore_points".to_string(),
             "scan_observations".to_string(),
             "scan_sessions".to_string(),
