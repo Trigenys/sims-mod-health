@@ -3,6 +3,7 @@ import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { LibraryItem } from "./library.fixture";
+import { useI18n } from "../../i18n/i18n";
 
 type ModDetailPageProps = {
   item: LibraryItem;
@@ -16,24 +17,25 @@ const evidenceLabel = {
 } as const;
 
 export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
+  const { t, tx } = useI18n();
   const identityLabel =
     item.confidence === "exact"
-      ? "Exact fingerprint"
+      ? t("Exact fingerprint")
       : item.confidence === "unresolved"
-        ? "Unresolved"
-        : item.confidence.charAt(0).toUpperCase() + item.confidence.slice(1) + " confidence";
+        ? t("Unresolved")
+        : tx(item.confidence.charAt(0).toUpperCase() + item.confidence.slice(1) + " confidence");
 
   return (
     <>
       <Topbar
-        gameVersion={item.gameVersion ? "Patch " + item.gameVersion : "Patch unknown"}
+        gameVersion={item.gameVersion ? t("Patch {{version}}", { version: item.gameVersion }) : t("Patch unknown")}
         platform="Windows"
         indexedCount={item.libraryCount ?? 0}
       />
 
       <button className="detail-back" onClick={onBack}>
         <span aria-hidden="true">←</span>
-        Back to Library
+        {t("Back to Library")}
       </button>
 
       <section className="detail-hero" aria-labelledby="mod-detail-title">
@@ -42,7 +44,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
             {item.canonicalName.slice(0, 2).toUpperCase()}
           </span>
           <div>
-            <p className="eyebrow">{item.identified ? "RESOLVED MOD" : "LOCAL FILE"}</p>
+            <p className="eyebrow">{item.identified ? t("RESOLVED MOD") : t("LOCAL FILE")}</p>
             <h1 id="mod-detail-title">{item.canonicalName}</h1>
             <p>
               {item.creator} <span>·</span> {item.category}
@@ -50,39 +52,39 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
           </div>
         </div>
 
-        <StatusBadge tone={item.tone}>{item.status}</StatusBadge>
+        <StatusBadge tone={item.tone}>{tx(item.status)}</StatusBadge>
       </section>
 
-      <section className="detail-facts" aria-label="Version and identity facts">
-        <Fact label="Installed" value={item.installedVersion ?? "Unknown"} />
-        <Fact label="Latest" value={item.latestVersion ?? "Unknown"} />
-        <Fact label="Patch" value={item.gameVersion ?? "Unknown"} />
-        <Fact label="Identity" value={identityLabel} />
+      <section className="detail-facts" aria-label={t("Version and identity facts")}>
+        <Fact label={t("Installed")} value={item.installedVersion ?? t("Unknown")} />
+        <Fact label={t("Latest")} value={item.latestVersion ?? t("Unknown")} />
+        <Fact label={t("Patch")} value={item.gameVersion ?? t("Unknown")} />
+        <Fact label={t("Identity")} value={identityLabel} />
       </section>
 
       <div className="detail-actions">
         {item.latestVersion && item.latestVersion !== item.installedVersion && (
-          <Button variant="primary">Review update</Button>
+          <Button variant="primary">{t("Review update")}</Button>
         )}
-        {item.source !== "Local only" && <Button>{item.enabled ? "Disable" : "Enable"}</Button>}
-        {item.source !== "Local only" && <Button>Creator page</Button>}
+        {item.source !== "Local only" && <Button>{item.enabled ? t("Disable") : t("Enable")}</Button>}
+        {item.source !== "Local only" && <Button>{t("Creator page")}</Button>}
       </div>
 
       <section className="detail-layout">
         <div className="detail-main">
           <Panel className="detail-section">
-            <span className="section-kicker">What it does</span>
-            <h2>Purpose and scope</h2>
+            <span className="section-kicker">{t("What it does")}</span>
+            <h2>{t("Purpose and scope")}</h2>
             <p className="detail-description">{item.whatItDoes}</p>
           </Panel>
 
           <Panel className="detail-section">
             <div className="panel-header">
               <div>
-                <span className="section-kicker">Evidence</span>
-                <h2>Why the app says this</h2>
+                <span className="section-kicker">{t("Evidence")}</span>
+                <h2>{t("Why the app says this")}</h2>
               </div>
-              <span className="evidence-count">{item.evidence.length} signals</span>
+              <span className="evidence-count">{t("{{count}} signals", { count: item.evidence.length })}</span>
             </div>
 
             <div className="evidence-list">
@@ -95,25 +97,25 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
                     <span aria-hidden="true">
                       {evidence.type === "fact" ? "✓" : evidence.type === "inference" ? "≈" : "◌"}
                     </span>
-                    {evidenceLabel[evidence.type]}
+                    {tx(evidenceLabel[evidence.type])}
                   </div>
                   <strong>{evidence.title}</strong>
                   <p>{evidence.detail}</p>
-                  {evidence.source && <small>Source: {evidence.source}</small>}
+                  {evidence.source && <small>{t("Source: {{source}}", { source: evidence.source })}</small>}
                 </article>
               ))}
             </div>
           </Panel>
 
           <Panel className="detail-section">
-            <span className="section-kicker">Local files</span>
-            <h2>Installed artifacts</h2>
+            <span className="section-kicker">{t("Local files")}</span>
+            <h2>{t("Installed artifacts")}</h2>
             <ul className="file-list">
               {item.localFiles.map((file) => (
                 <li key={file}>
                   <span aria-hidden="true">⌘</span>
                   <code>{file}</code>
-                  <span>{item.enabled ? "Enabled" : "Disabled"}</span>
+                  <span>{item.enabled ? t("Enabled") : t("Disabled")}</span>
                 </li>
               ))}
             </ul>
@@ -122,11 +124,11 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
 
         <aside className="detail-side">
           <Panel className="detail-section">
-            <span className="section-kicker">Dependencies</span>
+            <span className="section-kicker">{t("Dependencies")}</span>
             <h2>
               {item.dependencies.length === 0
-                ? "No required dependencies"
-                : item.dependencies.length + " required"}
+                ? t("No required dependencies")
+                : t("{{count}} required", { count: item.dependencies.length })}
             </h2>
             {item.dependencies.length > 0 && (
               <ul className="dependency-list">
@@ -134,7 +136,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
                   <li key={dependency.name}>
                     <span>
                       <strong>{dependency.name}</strong>
-                      <small>{dependency.state}</small>
+                      <small>{tx(dependency.state)}</small>
                     </span>
                     <span aria-hidden="true">›</span>
                   </li>
@@ -144,21 +146,21 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
           </Panel>
 
           <Panel className="detail-section">
-            <span className="section-kicker">Source</span>
-            <h2>{item.source}</h2>
+            <span className="section-kicker">{t("Source")}</span>
+            <h2>{tx(item.source)}</h2>
             <dl className="detail-source">
-              <div><dt>Creator</dt><dd>{item.creator}</dd></div>
-              <div><dt>Category</dt><dd>{item.category}</dd></div>
-              <div><dt>File type</dt><dd>{item.kind}</dd></div>
-              <div><dt>State</dt><dd>{item.enabled ? "Enabled" : "Disabled"}</dd></div>
+              <div><dt>{t("Creator")}</dt><dd>{item.creator}</dd></div>
+              <div><dt>{t("Category")}</dt><dd>{tx(item.category)}</dd></div>
+              <div><dt>{t("File type")}</dt><dd>{tx(item.kind)}</dd></div>
+              <div><dt>{t("State")}</dt><dd>{item.enabled ? t("Enabled") : t("Disabled")}</dd></div>
             </dl>
           </Panel>
 
           <Panel className="detail-section">
-            <span className="section-kicker">Related mods</span>
-            <h2>Nearby in your library</h2>
+            <span className="section-kicker">{t("Related mods")}</span>
+            <h2>{t("Nearby in your library")}</h2>
             {item.relatedMods.length === 0 ? (
-              <p className="detail-muted">No related canonical mods yet.</p>
+              <p className="detail-muted">{t("No related canonical mods yet.")}</p>
             ) : (
               <div className="related-list">
                 {item.relatedMods.map((name) => (
