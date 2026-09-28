@@ -11,13 +11,13 @@ use serde::Serialize;
 use crate::{
     conflicts,
     registry::{
-        ArtifactResolution, HealthAssessment, RegistryArtifactProbe, RegistryClient,
+        configured_registry_url, ArtifactResolution, HealthAssessment, RegistryArtifactProbe,
+        RegistryClient,
         RegistryFingerprintProbe, RegistryIdentityHints, RelationshipResponse,
     },
     storage::{self, StorageError},
 };
 
-const DEFAULT_REGISTRY_URL: &str = "http://127.0.0.1:8000";
 const ATTENTION_LIMIT: usize = 6;
 
 #[derive(Debug, Clone, Serialize)]
@@ -708,29 +708,6 @@ fn load_registry_probes(
 
     bindings.retain(|binding| !binding.probe.fingerprints.is_empty());
     Ok(bindings)
-}
-
-fn configured_registry_url(connection: &Connection) -> String {
-    if let Ok(value) = std::env::var("SIMS_MOD_HEALTH_REGISTRY_URL") {
-        if !value.trim().is_empty() {
-            return value;
-        }
-    }
-
-    let preference = connection
-        .query_row(
-            "SELECT value_json FROM preferences WHERE key = 'registry.base_url'",
-            [],
-            |row| row.get::<_, String>(0),
-        )
-        .optional()
-        .ok()
-        .flatten();
-
-    preference
-        .and_then(|value| serde_json::from_str::<String>(&value).ok())
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| DEFAULT_REGISTRY_URL.to_string())
 }
 
 #[derive(Debug)]
