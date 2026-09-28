@@ -81,10 +81,16 @@ impl Display for DeltaApplyError {
             ),
             Self::Decode(detail) => write!(formatter, "xdelta3 decode failed: {detail}"),
             Self::StagingInterrupted => {
-                write!(formatter, "delta staging write was interrupted and cleaned up")
+                write!(
+                    formatter,
+                    "delta staging write was interrupted and cleaned up"
+                )
             }
             Self::InsufficientDiskSpace => {
-                write!(formatter, "delta staging failed because the destination ran out of space")
+                write!(
+                    formatter,
+                    "delta staging failed because the destination ran out of space"
+                )
             }
         }
     }
