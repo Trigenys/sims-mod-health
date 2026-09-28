@@ -141,7 +141,6 @@ struct DiscoveryResponse {
     recommendations: Vec<DiscoveryRecommendation>,
 }
 
-
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct RegistryManifestFingerprint {
     pub(crate) relative_path: String,
@@ -400,7 +399,6 @@ impl RegistryClient {
         Ok(response.json::<Response>().await?)
     }
 }
-
 
 pub(crate) fn configured_registry_url(connection: &Connection) -> String {
     if let Ok(value) = std::env::var("SIMS_MOD_HEALTH_REGISTRY_URL") {
