@@ -22,6 +22,14 @@ Use the official API for projects, files, fingerprints, game versions, dependenc
 
 Use public repository/release metadata for creators who publish releases on GitHub.
 
+### Game and content-pack metadata
+
+Game-build and content-pack compatibility metadata must come from sources that can be attributed and reviewed. Provider/community data is normalized into the Sims Mod Health domain before use.
+
+Local pack folders may establish **presence only**. They are never used as proof of purchase, account entitlement or authorization.
+
+The production Game/DLC update path prefers official provider handoff. A direct patch or payload source must pass a separate review proving permission to distribute/use the payload, provenance and integrity.
+
 ### Creator manifest
 
 Sims Mod Health proposes an optional `simsmod.json` contract so creators can publish canonical identity, version, compatibility and dependency metadata.
@@ -50,7 +58,12 @@ Do not:
 - redistribute mod files without permission;
 - mirror paid or creator-gated content;
 - treat community mirrors as canonical without verification;
-- remove creator attribution.
+- remove creator attribution;
+- infer DLC ownership or entitlement from filesystem presence;
+- bypass platform entitlement, authentication or ownership checks;
+- integrate DLC unlockers, entitlement emulators or equivalent circumvention mechanisms;
+- use torrent/CDN/game-payload indexes whose distribution rights are unclear;
+- enable direct Game/DLC patch payloads without a documented provenance, rights and integrity review.
 
 ## Provenance
 
