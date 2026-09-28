@@ -1,9 +1,7 @@
 mod content_health;
 mod content_inventory;
 
-pub(crate) use content_health::{
-    evaluate_game_content_health, GameContentHealthSnapshot,
-};
+pub(crate) use content_health::{evaluate_game_content_health, GameContentHealthSnapshot};
 pub(crate) use content_inventory::{
     discover_game_content, inspect_game_content_path, GameContentInstallation,
     GameContentRepository, GameContentSnapshot, SqliteGameContentRepository,
