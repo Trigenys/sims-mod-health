@@ -11,6 +11,7 @@ import type {
   IdentificationConfidence,
   LibraryItem
 } from "./library.fixture";
+import { useI18n } from "../../i18n/i18n";
 
 type LibraryPageProps = {
   onOpenItem: (item: LibraryItem) => void;
@@ -50,6 +51,7 @@ export function LibraryPage({
   registryState = "ready",
   gateway = libraryGateway
 }: LibraryPageProps) {
+  const { t, tx } = useI18n();
   const [snapshot, setSnapshot] = useState<LibrarySnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -132,8 +134,8 @@ export function LibraryPage({
   };
 
   const patchLabel = snapshot?.gameVersion
-    ? "Patch " + snapshot.gameVersion
-    : "Patch unknown";
+    ? t("Patch {{version}}", { version: snapshot.gameVersion })
+    : t("Patch unknown");
 
   return (
     <>
@@ -145,10 +147,10 @@ export function LibraryPage({
 
       <section className="library-heading" aria-labelledby="library-title">
         <div>
-          <p className="eyebrow">LOCAL INVENTORY</p>
-          <h1 id="library-title">Library</h1>
+          <p className="eyebrow">{t("LOCAL INVENTORY")}</p>
+          <h1 id="library-title">{t("Library")}</h1>
           <p className="lede">
-            Files indexed from your selected Mods folder. Canonical identity stays unresolved until there is evidence for it.
+            {t("Files indexed from your selected Mods folder. Canonical identity stays unresolved until there is evidence for it.")}
           </p>
           {snapshot?.modsRoot && (
             <p className="detail-muted">
@@ -156,9 +158,9 @@ export function LibraryPage({
             </p>
           )}
         </div>
-        <div className="library-summary" aria-label={visibleItems.length + " visible items"}>
+        <div className="library-summary" aria-label={t("{{count}} visible items", { count: visibleItems.length })}>
           <strong>{visibleItems.length}</strong>
-          <span>visible items</span>
+          <span>{t("visible items")}</span>
         </div>
       </section>
 
@@ -167,7 +169,7 @@ export function LibraryPage({
       {loadError && (
         <section className="library-empty" role="alert">
           <div className="library-empty__icon" aria-hidden="true">!</div>
-          <h2>Library could not be loaded</h2>
+          <h2>{t("Library could not be loaded")}</h2>
           <p>{loadError}</p>
         </section>
       )}
@@ -175,67 +177,67 @@ export function LibraryPage({
       {!snapshot ? (
         <section className="library-empty" role="status">
           <div className="library-empty__icon" aria-hidden="true">…</div>
-          <h2>Loading local inventory</h2>
-          <p>Reading the latest scan from local storage.</p>
+          <h2>{t("Loading local inventory")}</h2>
+          <p>{t("Reading the latest scan from local storage.")}</p>
         </section>
       ) : !snapshot.hasInstallation ? (
         <section className="library-empty">
           <div className="library-empty__icon" aria-hidden="true">⌂</div>
-          <h2>No Mods folder scanned yet</h2>
+          <h2>{t("No Mods folder scanned yet")}</h2>
           <p>
-            Go to Overview, choose your real Sims 4 Mods folder, and run the first scan. This page will not invent sample mods.
+            {t("Go to Overview, choose your real Sims 4 Mods folder, and run the first scan. This page will not invent sample mods.")}
           </p>
         </section>
       ) : snapshot.items.length === 0 ? (
         <section className="library-empty">
           <div className="library-empty__icon" aria-hidden="true">0</div>
-          <h2>No supported mod files found</h2>
+          <h2>{t("No supported mod files found")}</h2>
           <p>
-            The selected folder was scanned, but no .package or .ts4script files were indexed.
+            {t("The selected folder was scanned, but no .package or .ts4script files were indexed.")}
           </p>
         </section>
       ) : (
         <>
-          <section className="library-toolbar" aria-label="Library search and filters">
+          <section className="library-toolbar" aria-label={t("Library search and filters")}>
             <label className="library-search">
               <span aria-hidden="true">⌕</span>
-              <span className="sr-only">Search local filename</span>
+              <span className="sr-only">{t("Search local filename")}</span>
               <input
-                aria-label="Search local filename"
-                placeholder="Search filename or folder…"
+                aria-label={t("Search local filename")}
+                placeholder={t("Search filename or folder…")}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
 
             <div className="filter-strip">
-              <Filter label="Status" value={filters.status} onChange={(value) => updateFilter("status", value)}>
-                {facets.statuses.map((value) => <option key={value}>{value}</option>)}
+              <Filter label={t("Status")} value={filters.status} onChange={(value) => updateFilter("status", value)}>
+                {facets.statuses.map((value) => <option key={value} value={value}>{tx(value)}</option>)}
               </Filter>
-              <Filter label="Category" value={filters.category} onChange={(value) => updateFilter("category", value)}>
-                {facets.categories.map((value) => <option key={value}>{value}</option>)}
+              <Filter label={t("Category")} value={filters.category} onChange={(value) => updateFilter("category", value)}>
+                {facets.categories.map((value) => <option key={value} value={value}>{tx(value)}</option>)}
               </Filter>
-              <Filter label="Creator" value={filters.creator} onChange={(value) => updateFilter("creator", value)}>
-                {facets.creators.map((value) => <option key={value}>{value}</option>)}
+              <Filter label={t("Creator")} value={filters.creator} onChange={(value) => updateFilter("creator", value)}>
+                {facets.creators.map((value) => <option key={value} value={value}>{value}</option>)}
               </Filter>
-              <Filter label="Source" value={filters.source} onChange={(value) => updateFilter("source", value)}>
-                {facets.sources.map((value) => <option key={value}>{value}</option>)}
+              <Filter label={t("Source")} value={filters.source} onChange={(value) => updateFilter("source", value)}>
+                {facets.sources.map((value) => <option key={value} value={value}>{tx(value)}</option>)}
               </Filter>
-              <Filter label="Type" value={filters.kind} onChange={(value) => updateFilter("kind", value)}>
-                <option>Script mod</option>
-                <option>Package only</option>
+              <Filter label={t("Type")} value={filters.kind} onChange={(value) => updateFilter("kind", value)}>
+                <option value="Script mod">{t("Script mod")}</option>
+                <option value="Package only">{t("Package only")}</option>
               </Filter>
               <Filter
-                label="Identification"
+                label={t("Identification")}
                 value={filters.identification}
                 onChange={(value) => updateFilter("identification", value)}
               >
-                <option>Identified</option>
-                <option>Unknown</option>
+                <option value="Identified">{t("Identified")}</option>
+                <option value="Unknown">{t("Unknown")}</option>
               </Filter>
-              <Filter label="State" value={filters.enabled} onChange={(value) => updateFilter("enabled", value)}>
-                <option>Enabled</option>
-                <option>Disabled</option>
+              <Filter label={t("State")} value={filters.enabled} onChange={(value) => updateFilter("enabled", value)}>
+                <option value="Enabled">{t("Enabled")}</option>
+                <option value="Disabled">{t("Disabled")}</option>
               </Filter>
             </div>
           </section>
@@ -243,22 +245,22 @@ export function LibraryPage({
           {visibleItems.length === 0 ? (
             <section className="library-empty" aria-live="polite">
               <div className="library-empty__icon" aria-hidden="true">⌕</div>
-              <h2>No matching items</h2>
+              <h2>{t("No matching items")}</h2>
               <p>
-                Try a filename or folder name, or clear the active filters.
+                {t("Try a filename or folder name, or clear the active filters.")}
               </p>
               <button className="button button--secondary" onClick={resetFilters}>
-                Clear filters
+                {t("Clear filters")}
               </button>
             </section>
           ) : (
-            <section className="library-table" aria-label="Installed library">
+            <section className="library-table" aria-label={t("Installed library")}>
               <div className="library-table__header" aria-hidden="true">
-                <span>Mod / CC</span>
-                <span>Installed</span>
-                <span>Status</span>
-                <span>Source</span>
-                <span>Identity</span>
+                <span>{t("Mod / CC")}</span>
+                <span>{t("Installed")}</span>
+                <span>{t("Status")}</span>
+                <span>{t("Source")}</span>
+                <span>{t("Identity")}</span>
                 <span />
               </div>
 
@@ -268,7 +270,7 @@ export function LibraryPage({
                     className="library-row"
                     key={item.id}
                     onClick={() => onOpenItem(item)}
-                    aria-label={"Open " + item.canonicalName}
+                    aria-label={t("Open {{name}}", { name: item.canonicalName })}
                   >
                     <span className="library-row__identity">
                       <span className="library-avatar" aria-hidden="true">
@@ -277,23 +279,23 @@ export function LibraryPage({
                       <span>
                         <strong>{item.canonicalName}</strong>
                         <small>
-                          {item.creator} · {item.category}
-                          {!item.enabled && " · Disabled"}
+                          {item.creator} · {tx(item.category)}
+                          {!item.enabled && " · " + t("Disabled")}
                         </small>
                         {!item.identified && (
-                          <em>Local file · {item.filenameAliases[0]}</em>
+                          <em>{t("Local file")} · {item.filenameAliases[0]}</em>
                         )}
                       </span>
                     </span>
                     <span className="library-version">{item.installedVersion ?? "—"}</span>
-                    <span><StatusBadge tone={item.tone}>{item.status}</StatusBadge></span>
-                    <span className="library-source">{item.source}</span>
+                    <span><StatusBadge tone={item.tone}>{tx(item.status)}</StatusBadge></span>
+                    <span className="library-source">{tx(item.source)}</span>
                     <span>
                       {item.confidence === "exact" ? (
-                        <span className="identity-exact">Exact</span>
+                        <span className="identity-exact">{t("Exact")}</span>
                       ) : (
                         <span className={"identity-confidence identity-confidence--" + item.confidence}>
-                          {confidenceLabel[item.confidence]}
+                          {tx(confidenceLabel[item.confidence])}
                         </span>
                       )}
                     </span>
@@ -317,15 +319,16 @@ type FilterProps = {
 };
 
 function Filter({ label, value, onChange, children }: FilterProps) {
+  const { t } = useI18n();
   return (
     <label className="filter-control">
       <span>{label}</span>
       <select
-        aria-label={"Filter by " + label.toLowerCase()}
+        aria-label={t("Filter by {{label}}", { label: label.toLocaleLowerCase() })}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option>All</option>
+        <option value="All">{t("All")}</option>
         {children}
       </select>
     </label>
