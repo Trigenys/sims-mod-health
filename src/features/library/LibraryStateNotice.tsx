@@ -1,30 +1,22 @@
+import { useI18n } from "../../i18n/I18nProvider";
 export type LibraryRegistryState = "ready" | "offline" | "partial" | "failure";
 
 type LibraryStateNoticeProps = {
   state: LibraryRegistryState;
 };
 
-const copy: Record<Exclude<LibraryRegistryState, "ready">, { title: string; detail: string }> = {
-  offline: {
-    title: "Registry offline",
-    detail: "Local files, duplicates and cached identities are still available. Online provenance may be stale."
-  },
-  partial: {
-    title: "Partial registry results",
-    detail: "Some source adapters are unavailable. Existing local evidence remains visible while missing source data is marked."
-  },
-  failure: {
-    title: "Registry request failed",
-    detail: "The local library is intact. Retry the registry lookup when connectivity or the upstream source recovers."
-  }
-};
-
 export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
+  const { t } = useI18n();
   if (state === "ready") {
     return null;
   }
 
-  const message = copy[state];
+  const message =
+    state === "offline"
+      ? { title: t("library.registryOffline"), detail: t("library.registryOfflineCopy") }
+      : state === "partial"
+        ? { title: t("library.registryPartial"), detail: t("library.registryPartialCopy") }
+        : { title: t("library.registryFailure"), detail: t("library.registryFailureCopy") };
 
   return (
     <section className={"library-state library-state--" + state} role="status">
@@ -35,7 +27,7 @@ export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
         <strong>{message.title}</strong>
         <p>{message.detail}</p>
       </div>
-      {state === "failure" && <button className="button button--secondary">Retry</button>}
+      {state === "failure" && <button className="button button--secondary">{t("library.retry")}</button>}
     </section>
   );
 }
