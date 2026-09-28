@@ -61,4 +61,4 @@ jobs:
   xdelta-rd:
     needs: impact
     if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'xdelta-rd') }}
-    uses: ./.github/workflows/xdelta-rd.yml
+    uses: $/.github/workflows/xdelta-rd.yml
