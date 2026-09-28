@@ -145,6 +145,33 @@ pub(crate) fn create_session(
         .ok_or_else(|| "provider update session disappeared after creation".to_string())
 }
 
+pub(crate) fn latest_pending_session(
+    connection: &Connection,
+) -> Result<Option<ProviderUpdateSessionView>, String> {
+    let session_id = connection
+        .query_row(
+            "SELECT id
+             FROM provider_update_sessions
+             WHERE state IN (
+                'detected',
+                'action_required',
+                'provider_opened',
+                'awaiting_rescan'
+             )
+             ORDER BY updated_at DESC, id DESC
+             LIMIT 1",
+            [],
+            |row| row.get::<_, i64>(0),
+        )
+        .optional()
+        .map_err(|error| error.to_string())?;
+
+    match session_id {
+        Some(session_id) => load_session(connection, session_id),
+        None => Ok(None),
+    }
+}
+
 pub(crate) fn load_session(
     connection: &Connection,
     session_id: i64,
