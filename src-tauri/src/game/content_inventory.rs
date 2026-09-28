@@ -604,6 +604,9 @@ fn measure_pack(root: &Path) -> io::Result<(u64, u64)> {
 
 fn pack_kind_from_code(name: &str) -> Option<PackKind> {
     let upper = name.to_ascii_uppercase();
+    if !upper.is_ascii() {
+        return None;
+    }
 
     let (prefix, digits) = if upper.starts_with("KIT") {
         ("KIT", &upper[3..])
