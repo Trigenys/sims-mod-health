@@ -102,6 +102,8 @@ Health combines existing evidence without flattening evidence strength.
 
 The **Updates** subview is one queue for Game, Pack and Mod findings. Type is a lightweight marker, not a separate navigation hierarchy. Healthy packs collapse into a compact summary instead of one card per pack. Pack detail opens contextually through progressive disclosure.
 
+A Game/Pack finding may expose one compact provider action such as **Open EA app to update** or **Open Steam to update**. After handoff, the same finding switches to an awaiting-verification state and exposes **Verify update**. Provider launch is never presented as completed update evidence.
+
 It must keep these states distinct:
 
 - deterministic duplicate;
