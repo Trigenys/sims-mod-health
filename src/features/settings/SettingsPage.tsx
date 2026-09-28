@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Topbar } from "../../components/layout/Topbar";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
+import { useI18n } from "../../i18n/I18nProvider";
 import { diagnosticsGateway } from "../diagnostics/diagnostics.gateway";
 import { gameContentGateway } from "../game-content/gameContent.gateway";
 import { formatProvider } from "../game-content/gameContent.presenter";
@@ -29,15 +30,16 @@ type InstallationCandidate = {
     | { status: "invalid"; reason: string };
 };
 
-const sections: { value: SettingsSection; label: string; icon: string }[] = [
-  { value: "paths", label: "Paths & Registry", icon: "⌂" },
-  { value: "privacy", label: "Checks & Privacy", icon: "✓" },
-  { value: "scan", label: "Scan Behavior", icon: "↻" },
-  { value: "recovery", label: "Recovery & Data", icon: "◫" },
-  { value: "appearance", label: "Appearance", icon: "◐" }
+const sections: { value: SettingsSection; key: "settings.paths" | "settings.privacy" | "settings.scan" | "settings.recovery" | "settings.appearance"; icon: string }[] = [
+  { value: "paths", key: "settings.paths", icon: "⌂" },
+  { value: "privacy", key: "settings.privacy", icon: "✓" },
+  { value: "scan", key: "settings.scan", icon: "↻" },
+  { value: "recovery", key: "settings.recovery", icon: "◫" },
+  { value: "appearance", key: "settings.appearance", icon: "◐" }
 ];
 
 export function SettingsPage() {
+  const { t } = useI18n();
   const [section, setSection] = useState<SettingsSection>("paths");
   const [installations, setInstallations] = useState<InstallationCandidate[]>([]);
   const [detecting, setDetecting] = useState(true);
@@ -109,23 +111,21 @@ export function SettingsPage() {
 
       <section className="settings-hero" aria-labelledby="settings-title">
         <div>
-          <p className="eyebrow">PREFERENCES & ENGINE CONFIGURATION</p>
-          <h1 id="settings-title">System Settings</h1>
-          <p className="lede">
-            Configure installation paths, privacy boundaries, scanning behavior and recovery storage.
-          </p>
+          <p className="eyebrow">{t("settings.eyebrow")}</p>
+          <h1 id="settings-title">{t("settings.title")}</h1>
+          <p className="lede">{t("settings.lede")}</p>
         </div>
         <div className="settings-engine-state">
           <span className="status-dot" aria-hidden="true" />
           <div>
-            <span>Engine mode</span>
-            <strong>Local-first</strong>
+            <span>{t("settings.engineMode")}</span>
+            <strong>{t("settings.localFirst")}</strong>
           </div>
         </div>
       </section>
 
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label="Settings sections">
+        <nav className="settings-nav" aria-label={t("settings.sections")}>
           {sections.map((item) => (
             <button
               type="button"
@@ -139,15 +139,13 @@ export function SettingsPage() {
               onClick={() => setSection(item.value)}
             >
               <span aria-hidden="true">{item.icon}</span>
-              {item.label}
+              {t(item.key)}
             </button>
           ))}
 
           <div className="settings-nav__note">
-            <span className="section-kicker">BETA POLICY</span>
-            <p>
-              Local evidence remains usable when Registry-backed features are unavailable.
-            </p>
+            <span className="section-kicker">{t("settings.betaPolicy")}</span>
+            <p>{t("settings.betaPolicyCopy")}</p>
           </div>
         </nav>
 
@@ -411,17 +409,36 @@ function RecoverySettings() {
 }
 
 function AppearanceSettings() {
+  const { locale, setLocale, t } = useI18n();
+
   return (
     <>
       <div className="settings-section-heading">
         <div>
-          <span className="section-kicker">APPEARANCE</span>
-          <h2>Approved light product theme</h2>
-          <p>
-            The current beta uses the approved light Sims Mod Health design system for consistent evidence scanning and accessibility.
-          </p>
+          <span className="section-kicker">{t("settings.appearance")}</span>
+          <h2>{t("settings.language")}</h2>
+          <p>{t("settings.languageCopy")}</p>
         </div>
       </div>
+
+      <Panel className="settings-card settings-toggle-card">
+        <div>
+          <h3>{t("settings.language")}</h3>
+          <p>{t("settings.languageCopy")}</p>
+        </div>
+        <label className="language-select">
+          <span className="sr-only">{t("settings.language")}</span>
+          <select
+            aria-label={t("settings.language")}
+            value={locale}
+            onChange={(event) => setLocale(event.target.value === "fr" ? "fr" : "en")}
+          >
+            <option value="fr">{t("settings.french")}</option>
+            <option value="en">{t("settings.english")}</option>
+          </select>
+        </label>
+      </Panel>
+
       <Panel className="settings-card appearance-preview">
         <div className="appearance-swatch appearance-swatch--primary" />
         <div className="appearance-swatch appearance-swatch--mint" />
@@ -429,7 +446,7 @@ function AppearanceSettings() {
         <div className="appearance-swatch appearance-swatch--indigo" />
         <div>
           <strong>Light / Porcelain</strong>
-          <span>Current product theme</span>
+          <span>{locale === "fr" ? "Thème actuel" : "Current product theme"}</span>
         </div>
       </Panel>
     </>
