@@ -4,9 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{
-    GameProvider, InstallationProviderProbe, ProviderCandidate, ProviderEvidence,
-};
+use super::{GameProvider, InstallationProviderProbe, ProviderCandidate, ProviderEvidence};
 
 const STEAM_APP_ID: &str = "1222670";
 
@@ -234,9 +232,8 @@ mod tests {
 
     #[test]
     fn steam_library_paths_parse_escaped_windows_paths() {
-        let paths = parse_steam_library_paths(
-            "\"libraryfolders\"\n{\n \"path\" \"E:\\\\Games\"\n}\n",
-        );
+        let paths =
+            parse_steam_library_paths("\"libraryfolders\"\n{\n \"path\" \"E:\\\\Games\"\n}\n");
 
         assert_eq!(paths, vec![PathBuf::from(r"E:\Games")]);
     }
