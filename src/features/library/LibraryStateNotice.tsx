@@ -21,7 +21,7 @@ const copy: Record<Exclude<LibraryRegistryState, "ready">, { title: string; deta
 };
 
 export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
-  const { t } = useI18n();
+  const { t, tx } = useI18n();
   if (state === "ready") {
     return null;
   }
@@ -34,10 +34,10 @@ export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
         {state === "failure" ? "×" : "!"}
       </span>
       <div>
-        <strong>{t(message.title as keyof typeof import("../../i18n/i18n"))}</strong>
-        <p>{message.detail}</p>
+        <strong>{tx(message.title)}</strong>
+        <p>{tx(message.detail)}</p>
       </div>
-      {state === "failure" && <button className="button button--secondary">Retry</button>}
+      {state === "failure" && <button className="button button--secondary">{t("Retry")}</button>}
     </section>
   );
 }
