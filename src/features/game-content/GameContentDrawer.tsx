@@ -5,7 +5,11 @@ import {
   formatProvider,
   gameContentBadge,
   gameContentTone,
-  isUpdateGameContent
+  isUpdateGameContent,
+  localizedEvidenceDetail,
+  localizedGameContentReason,
+  providerActionLabel,
+  providerCapabilityDetail
 } from "./gameContent.presenter";
 import type {
   GameContentHealthFinding,
@@ -75,7 +79,7 @@ export function GameContentDrawer({
         {tx(gameContentBadge(finding.state))}
       </StatusBadge>
 
-      <p className="game-content-drawer__reason">{tx(finding.reason)}</p>
+      <p className="game-content-drawer__reason">{localizedGameContentReason(finding, t)}</p>
 
       <dl className="game-content-drawer__facts">
         <div>
@@ -101,7 +105,7 @@ export function GameContentDrawer({
             {finding.evidence.map((item, index) => (
               <li key={item.source + "-" + index}>
                 <strong>{item.source}</strong>
-                <span>{tx(item.detail)}</span>
+                <span>{localizedEvidenceDetail(item.detail, t)}</span>
               </li>
             ))}
           </ul>
@@ -112,7 +116,7 @@ export function GameContentDrawer({
         <section className="game-content-provider-action">
           <span className="section-kicker">{t("OFFICIAL UPDATE PROVIDER")}</span>
           <strong>{formatProvider(capability?.provider ?? "unknown")}</strong>
-          <p>{capability?.detail ? tx(capability.detail) : t("Provider capability is being resolved.")}</p>
+          <p>{capability ? providerCapabilityDetail(capability.provider, capability.supported, t) : t("Provider capability is being resolved.")}</p>
 
           {sessionWaiting ? (
             <Button onClick={onVerify} disabled={busy}>
@@ -123,7 +127,7 @@ export function GameContentDrawer({
               onClick={onUpdate}
               disabled={busy || capability === null || !capability.supported}
             >
-              {busy ? t("Opening…") : capability?.actionLabel ? tx(capability.actionLabel) : t("Resolve provider")}
+              {busy ? t("Opening…") : capability ? providerActionLabel(capability.provider, t) : t("Resolve provider")}
             </Button>
           )}
 
