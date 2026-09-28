@@ -464,7 +464,19 @@ const fr = {
   "Partial": "Partiel",
   "compatible": "compatible",
   "unknown": "inconnue",
-  "potential conflict": "conflit potentiel"
+  "potential conflict": "conflit potentiel",
+  "Compatible": "Compatible",
+  "Update available": "Mise à jour disponible",
+  "Creator page": "Page du créateur",
+  "Local only": "Local uniquement",
+  "Package / CC": "Package / CC",
+  "Unknown creator": "Créateur inconnu",
+  "Installed": "Installée",
+  "Missing": "Manquante",
+  "Outdated": "Obsolète",
+  "This is a real file from the scanned Mods folder. Sims Mod Health has not resolved a canonical mod identity for it yet.": "Ceci est un vrai fichier du dossier Mods analysé. Sims Mod Health n’a pas encore résolu son identité canonique.",
+  "Scanned local file": "Fichier local analysé",
+  "The desktop scanner indexed this file from your selected Mods folder. Parse state: {{state}}.": "Le scanner desktop a indexé ce fichier depuis le dossier Mods sélectionné. État d’analyse : {{state}}."
 } as const;
 
 export type TranslationKey = keyof typeof fr;
