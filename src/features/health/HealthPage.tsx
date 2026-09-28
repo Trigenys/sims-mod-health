@@ -3,6 +3,7 @@ import { Topbar } from "../../components/layout/Topbar";
 import { Button } from "../../components/ui/Button";
 import { Panel } from "../../components/ui/Panel";
 import { StatusBadge, type StatusTone } from "../../components/ui/StatusBadge";
+import { useI18n } from "../../i18n/I18nProvider";
 import { DiagnosticsPage } from "../diagnostics/DiagnosticsPage";
 import { GameContentDrawer } from "../game-content/GameContentDrawer";
 import {
@@ -70,13 +71,7 @@ type UnifiedFinding =
       content: GameContentHealthFinding;
     };
 
-const tabs: { value: HealthTab; label: string }[] = [
-  { value: "all", label: "All findings" },
-  { value: "updates", label: "Updates" },
-  { value: "conflicts", label: "Conflicts" },
-  { value: "diagnostics", label: "Diagnostics" },
-  { value: "recovery", label: "Recovery" }
-];
+const tabs: HealthTab[] = ["all", "updates", "conflicts", "diagnostics", "recovery"];
 
 export function HealthPage({
   gateway = overviewGateway,
@@ -84,6 +79,13 @@ export function HealthPage({
   initialTab = "all",
   onOpenLibrary
 }: HealthPageProps) {
+  const { t } = useI18n();
+  const tabText = (value: HealthTab) =>
+    value === "updates" ? t("health.updates")
+      : value === "conflicts" ? t("health.conflicts")
+        : value === "diagnostics" ? t("health.diagnostics")
+          : value === "recovery" ? t("health.recovery")
+            : t("health.allFindings");
   const [snapshot, setSnapshot] = useState<OverviewSnapshot | null>(null);
   const [contentHealth, setContentHealth] = useState<GameContentHealthSnapshot | null>(null);
   const [capability, setCapability] = useState<ProviderUpdateCapability | null>(null);
@@ -136,7 +138,7 @@ export function HealthPage({
   if (!snapshot) {
     return (
       <section className="health-loading" role="status">
-        Loading current health evidence…
+        {t("health.loading")}
       </section>
     );
   }
@@ -196,7 +198,7 @@ export function HealthPage({
             ? "Patch " + contentHealth.game.currentVersion
             : snapshot.gameVersion
               ? "Patch " + snapshot.gameVersion
-              : "Patch unknown"
+              : t("common.patchUnknown")
         }
         platform={formatPlatform(snapshot.platform)}
         indexedCount={snapshot.indexedCount}
@@ -204,50 +206,48 @@ export function HealthPage({
 
       <section className="health-hero" aria-labelledby="health-title">
         <div>
-          <p className="eyebrow">HEALTH & ACTION CENTER</p>
-          <h1 id="health-title">Review what needs attention.</h1>
-          <p className="lede">
-            Game, packs and mods share one evidence-first action queue. Healthy content stays compact.
-          </p>
+          <p className="eyebrow">{t("health.eyebrow")}</p>
+          <h1 id="health-title">{t("health.title")}</h1>
+          <p className="lede">{t("health.lede")}</p>
         </div>
 
         <div className="health-hero__actions">
           <div className="health-snapshot">
-            <span>Needs attention</span>
+            <span>{t("health.needsAttention")}</span>
             <strong>{combinedAttention}</strong>
           </div>
           <Button variant="primary" onClick={() => setTab("updates")}>
-            Review updates
+            {t("health.reviewUpdates")}
           </Button>
         </div>
       </section>
 
-      <section className="health-metrics" aria-label="Health summary">
-        <Metric label="Needs attention" value={combinedAttention} tone="danger" />
-        <Metric label="Updates" value={updateCount} tone="update" />
-        <Metric label="Conflicts" value={snapshot.healthCounts.conflicts} tone="warning" />
-        <Metric label="Unknown" value={countUnknown(allFindings)} tone="muted" />
+      <section className="health-metrics" aria-label={t("health.metricSummary")}>
+        <Metric label={t("health.needsAttention")} value={combinedAttention} tone="danger" />
+        <Metric label={t("health.updates")} value={updateCount} tone="update" />
+        <Metric label={t("health.conflicts")} value={snapshot.healthCounts.conflicts} tone="warning" />
+        <Metric label={t("health.unknown")} value={countUnknown(allFindings)} tone="muted" />
         <Metric
-          label="Healthy packs"
+          label={t("health.healthyPacks")}
           value={packs.current}
           tone="healthy"
         />
       </section>
 
-      <nav className="health-tabs" aria-label="Health views">
+      <nav className="health-tabs" aria-label={t("health.views")}>
         {tabs.map((item) => {
-          const active = tab === item.value;
+          const active = tab === item;
           return (
             <button
-              key={item.value}
+              key={item}
               type="button"
               aria-current={active ? "page" : undefined}
               className={active ? "health-tab health-tab--active" : "health-tab"}
-              onClick={() => setTab(item.value)}
+              onClick={() => setTab(item)}
             >
-              {item.label}
-              {item.value === "updates" && updateCount > 0 && <span>{updateCount}</span>}
-              {item.value === "conflicts" && snapshot.healthCounts.conflicts > 0 && (
+              {tabText(item)}
+              {item === "updates" && updateCount > 0 && <span>{updateCount}</span>}
+              {item === "conflicts" && snapshot.healthCounts.conflicts > 0 && (
                 <span>{snapshot.healthCounts.conflicts}</span>
               )}
             </button>
@@ -265,11 +265,11 @@ export function HealthPage({
         <>
           {tab === "updates" && (
             <div className="health-update-toolbar">
-              <div className="health-update-scopes" aria-label="Update types">
+              <div className="health-update-scopes" aria-label={t("health.updateTypes")}>
                 {([
-                  ["all", "All"],
-                  ["game", "Game & packs"],
-                  ["mods", "Mods"]
+                  ["all", t("common.all")],
+                  ["game", t("health.gamePacks")],
+                  ["mods", t("health.mods")]
                 ] as const).map(([value, label]) => (
                   <button
                     key={value}
@@ -290,21 +290,21 @@ export function HealthPage({
               {packs.total > 0 && (
                 <div className="healthy-pack-summary" role="status">
                   <span aria-hidden="true">✓</span>
-                  <strong>{packs.current} packs current</strong>
-                  {packs.attention > 0 && <span>{packs.attention} need review</span>}
+                  <strong>{t("health.packsCurrent", { count: packs.current })}</strong>
+                  {packs.attention > 0 && <span>{t("health.needReview", { count: packs.attention })}</span>}
                 </div>
               )}
             </div>
           )}
 
           <div className={selectedContent ? "health-layout health-layout--drawer" : "health-layout"}>
-            <section className="health-findings" aria-label={tabLabel(tab)}>
+            <section className="health-findings" aria-label={tabText(tab)}>
               <div className="health-section-heading">
                 <div>
-                  <span className="section-kicker">{tabLabel(tab).toUpperCase()}</span>
-                  <h2>{healthHeading(tab)}</h2>
+                  <span className="section-kicker">{tabText(tab).toUpperCase()}</span>
+                  <h2>{tab === "updates" ? t("health.oneQueue") : healthHeading(tab)}</h2>
                 </div>
-                <span>{findings.length} shown from current evidence</span>
+                <span>{t("health.shown", { count: findings.length })}</span>
               </div>
 
               {findings.length === 0 ? (
@@ -393,6 +393,7 @@ function FindingCard({
   finding: UnifiedFinding;
   onReview: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <Panel as="article" className="health-finding-card">
       <div className="health-finding-card__icon" aria-hidden="true">
@@ -421,11 +422,11 @@ function FindingCard({
         <div className="health-finding-card__footer">
           <span>
             {finding.kind === "mod"
-              ? "Current local scan / registry mod evidence"
-              : "Local installation / Game & DLC manifest evidence"}
+              ? t("health.modEvidence")
+              : t("health.contentEvidence")}
           </span>
           <button type="button" onClick={onReview}>
-            {finding.kind === "mod" ? "Review in Library" : "Review details"}
+            {finding.kind === "mod" ? t("health.reviewLibrary") : t("health.reviewDetails")}
           </button>
         </div>
       </div>
