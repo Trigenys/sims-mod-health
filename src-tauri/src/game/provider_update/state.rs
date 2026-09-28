@@ -14,6 +14,14 @@ impl ProviderUpdateTargetKind {
             Self::Pack => "pack",
         }
     }
+
+    pub(super) fn from_str(value: &str) -> Option<Self> {
+        match value {
+            "game" => Some(Self::Game),
+            "pack" => Some(Self::Pack),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
