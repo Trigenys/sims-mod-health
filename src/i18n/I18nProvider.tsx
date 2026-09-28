@@ -30,7 +30,15 @@ type I18nContextValue = {
   t: (key: MessageKey, params?: Record<string, string | number>) => string;
 };
 
-const I18nContext = createContext<I18nContextValue | null>(null);
+const fallbackContext: I18nContextValue = {
+  locale: "en",
+  setLocale() {},
+  t(key, params) {
+    return interpolate(messages.en[key] ?? key, params);
+  }
+};
+
+const I18nContext = createContext<I18nContextValue>(fallbackContext);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(detectLocale);
@@ -55,7 +63,5 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 }
 
 export function useI18n() {
-  const value = useContext(I18nContext);
-  if (!value) throw new Error("useI18n must be used inside I18nProvider");
-  return value;
+  return useContext(I18nContext);
 }
