@@ -91,7 +91,7 @@ function addFailure(node, sourceFile, file, value) {
 }
 
 function isUserFacing(value) {
-  return /[A-Za-zÀ-ÿ]/.test(value);
+  return /\p{L}/u.test(value);
 }
 
 async function walk(directory) {
