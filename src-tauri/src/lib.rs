@@ -22,9 +22,9 @@ use diagnostics::DiagnosticsSnapshot;
 use discovery::DiscoverySnapshot;
 use fingerprint::ExactDuplicateGroup;
 use game::{
-    GameContentHealthSnapshot, GameContentInstallation, GameContentSnapshot,
-    InstallationCandidate, ManualInspection, ProviderUpdateCapability,
-    ProviderUpdateSessionView, ProviderUpdateTargetKind,
+    GameContentHealthSnapshot, GameContentInstallation, GameContentSnapshot, InstallationCandidate,
+    ManualInspection, ProviderUpdateCapability, ProviderUpdateSessionView,
+    ProviderUpdateTargetKind,
 };
 use library::LibrarySnapshot;
 use mutation::{ApplyUpdateRequest, UpdateTransactionView};
@@ -102,11 +102,7 @@ fn start_game_content_provider_update(
     target_kind: ProviderUpdateTargetKind,
     target_id: String,
 ) -> Result<ProviderUpdateSessionView, String> {
-    game::start_provider_update(
-        &state.database_path,
-        target_kind,
-        &target_id,
-    )
+    game::start_provider_update(&state.database_path, target_kind, &target_id)
 }
 
 #[tauri::command]
@@ -148,17 +144,16 @@ async fn verify_game_content_provider_update(
         }
 
         let lookup_database_path = state.database_path.clone();
-        let (program_version, mod_user_root) =
-            tauri::async_runtime::spawn_blocking(move || {
-                let connection = storage::open(&lookup_database_path)
-                    .map_err(|error| error.to_string())?;
-                let program_version =
-                    game::current_program_version_for_session(&connection, session_id)?;
-                let mod_user_root = game::latest_mod_user_root(&connection)?;
-                Ok::<_, String>((program_version, mod_user_root))
-            })
-            .await
-            .map_err(|error| format!("post-update lookup worker failed: {error}"))??;
+        let (program_version, mod_user_root) = tauri::async_runtime::spawn_blocking(move || {
+            let connection =
+                storage::open(&lookup_database_path).map_err(|error| error.to_string())?;
+            let program_version =
+                game::current_program_version_for_session(&connection, session_id)?;
+            let mod_user_root = game::latest_mod_user_root(&connection)?;
+            Ok::<_, String>((program_version, mod_user_root))
+        })
+        .await
+        .map_err(|error| format!("post-update lookup worker failed: {error}"))??;
 
         let mod_scan = if let Some(mod_user_root) = mod_user_root {
             let scan_database_path = state.database_path.clone();
@@ -197,13 +192,11 @@ async fn verify_game_content_provider_update(
             .map_err(|error| format!("game-version synchronization worker failed: {error}"))??;
         }
 
-        let game_content_health =
-            game::evaluate_game_content_health(&state.database_path).await?;
+        let game_content_health = game::evaluate_game_content_health(&state.database_path).await?;
 
         let overview_database_path = state.database_path.clone();
         let local_overview = tauri::async_runtime::spawn_blocking(move || {
-            overview::load_local_context(&overview_database_path)
-                .map_err(|error| error.to_string())
+            overview::load_local_context(&overview_database_path).map_err(|error| error.to_string())
         })
         .await
         .map_err(|error| format!("post-update overview worker failed: {error}"))??;
@@ -229,11 +222,8 @@ async fn verify_game_content_provider_update(
             })
         }
         Err(error) => {
-            let _ = game::fail_provider_update_verification(
-                &state.database_path,
-                session_id,
-                &error,
-            );
+            let _ =
+                game::fail_provider_update_verification(&state.database_path, session_id, &error);
             Err(error)
         }
     }
