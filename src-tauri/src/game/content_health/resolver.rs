@@ -86,11 +86,7 @@ pub(crate) fn evaluate(
     let manifest_stale = manifest_state == ManifestState::CachedStale;
     let resolved = resolve_game_version(local, manifest);
 
-    let game = Some(game_finding(
-        &resolved,
-        manifest,
-        manifest_stale,
-    ));
+    let game = Some(game_finding(&resolved, manifest, manifest_stale));
     let packs = local
         .packs
         .iter()
@@ -187,7 +183,11 @@ fn resolve_game_version(
                     source_url: manifest.provenance.source_url.clone(),
                     detail: format!(
                         "Local version {explicit} conflicts with sentinel evidence for {}.",
-                        fingerprint_versions.iter().cloned().collect::<Vec<_>>().join(", ")
+                        fingerprint_versions
+                            .iter()
+                            .cloned()
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     ),
                 }],
             };
@@ -230,7 +230,11 @@ fn resolve_game_version(
                 source_url: manifest.provenance.source_url.clone(),
                 detail: format!(
                     "Sentinel fingerprints match multiple game builds: {}.",
-                    fingerprint_versions.iter().cloned().collect::<Vec<_>>().join(", ")
+                    fingerprint_versions
+                        .iter()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 ),
             }],
         };
@@ -418,8 +422,9 @@ fn pack_finding(
             manifest_stale,
             current_version: resolved.version.clone(),
             required_version: None,
-            reason: "Trusted metadata sources disagree about this pack's compatibility requirements."
-                .to_string(),
+            reason:
+                "Trusted metadata sources disagree about this pack's compatibility requirements."
+                    .to_string(),
             evidence: pack_evidence(&entries),
         };
     }
@@ -515,12 +520,7 @@ fn pack_finding(
 fn metadata_is_disputed(entries: &[&PackMetadata]) -> bool {
     let signatures = entries
         .iter()
-        .map(|entry| {
-            (
-                entry.pack_kind.as_str(),
-                entry.min_game_version.as_deref(),
-            )
-        })
+        .map(|entry| (entry.pack_kind.as_str(), entry.min_game_version.as_deref()))
         .collect::<BTreeSet<_>>();
 
     signatures.len() > 1
@@ -566,8 +566,8 @@ mod tests {
     use crate::game::content_health::manifest::{
         GameBuildMetadata, ManifestFingerprint, ManifestProvenance, PackMetadata,
     };
-    use crate::game::content_inventory::SentinelFingerprint;
     use crate::game::content_health::repository::LocalPackState;
+    use crate::game::content_inventory::SentinelFingerprint;
 
     fn manifest() -> GameContentManifest {
         GameContentManifest {
@@ -619,7 +619,12 @@ mod tests {
             packs: Vec::new(),
         };
 
-        let result = evaluate(&local, &manifest(), ManifestState::Fresh, "live".to_string());
+        let result = evaluate(
+            &local,
+            &manifest(),
+            ManifestState::Fresh,
+            "live".to_string(),
+        );
         assert_eq!(
             result.game.expect("game").state,
             GameContentHealthState::UpdateAvailable
@@ -637,7 +642,12 @@ mod tests {
             }],
         };
 
-        let result = evaluate(&local, &manifest(), ManifestState::Fresh, "live".to_string());
+        let result = evaluate(
+            &local,
+            &manifest(),
+            ManifestState::Fresh,
+            "live".to_string(),
+        );
         assert_eq!(
             result.packs[0].state,
             GameContentHealthState::GameUpdateRequired
@@ -656,7 +666,12 @@ mod tests {
             packs: Vec::new(),
         };
 
-        let result = evaluate(&local, &manifest(), ManifestState::Fresh, "live".to_string());
+        let result = evaluate(
+            &local,
+            &manifest(),
+            ManifestState::Fresh,
+            "live".to_string(),
+        );
         let game = result.game.expect("game");
         assert_eq!(game.current_version.as_deref(), Some("1.128.90.1030"));
         assert_eq!(game.state, GameContentHealthState::Current);
@@ -708,9 +723,6 @@ mod tests {
         );
 
         assert_eq!(result.manifest_state, ManifestState::CachedStale);
-        assert_eq!(
-            result.packs[0].state,
-            GameContentHealthState::MetadataStale
-        );
+        assert_eq!(result.packs[0].state, GameContentHealthState::MetadataStale);
     }
 }
