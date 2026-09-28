@@ -4,6 +4,15 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - "src-tauri/**"
+      - "services/registry-api/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/security/**"
+      - "docs/security/**"
+      - ".github/workflows/security.yml"
   pull_request:
     branches: [main]
     paths:
@@ -11,6 +20,7 @@ on:
       - "services/registry-api/**"
       - "src/**"
       - "package.json"
+      - "package-lock.json"
       - "scripts/security/**"
       - "docs/security/**"
       - ".github/workflows/security.yml"
