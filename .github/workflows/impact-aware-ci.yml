@@ -1,0 +1,59 @@
+name: Impact-aware PR CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: impact-aware-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  impact:
+    uses: EagleFox31/appfactory-project-automation/.github/workflows/reusable-impact-analysis.yml@20c6b99e8dd063a1cac72a5fc2cfa38829a1b899
+    with:
+      appfactory_ref: 20c6b99e8dd063a1cac72a5fc2cfa38829a1b899
+      config_path: .github/appfactory-impact.json
+
+  landing:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'landing-ci') }}
+    uses: ./.github/workflows/landing.yml
+
+  frontend:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'frontend-ci') }}
+    uses: ./.github/workflows/ci-frontend.yml
+
+  visual-evidence:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'visual-evidence') }}
+    uses: ./.github/workflows/visual-evidence.yml
+
+  rust:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'rust-ci') }}
+    uses: ./.github/workflows/ci-rust.yml
+
+  scanner-benchmark:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'scanner-benchmark') }}
+    uses: ./.github/workflows/scanner-benchmark.yml
+
+  registry:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'registry-ci') }}
+    uses: ./.github/workflows/registry-ci.yml
+
+  security:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'security') }}
+    uses: ./.github/workflows/security.yml
+
+  windows-installer:
+    needs: impact
+    if: ${{ contains(fromJSON(needs.impact.outputs.gates), 'windows-installer') }}
+    uses: ./.github/workflows/beta-windows.yml

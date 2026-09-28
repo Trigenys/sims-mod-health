@@ -1,18 +1,8 @@
 name: Windows installer validation
 
 on:
+  workflow_call:
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "src-tauri/**"
-      - "package.json"
-      - "scripts/release/**"
-      - ".github/workflows/beta-windows.yml"
-      - ".github/workflows/release.yml"
-      - "release-please-config.json"
-      - ".release-please-manifest.json"
 
 permissions:
   contents: read
