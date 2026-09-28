@@ -15,9 +15,8 @@ pub(crate) use provider_update::{
     get_capability as get_provider_update_capability,
     get_pending_session as get_pending_provider_update_session,
     get_session as get_provider_update_session, latest_mod_user_root, start_provider_update,
-    sync_latest_mod_game_version,
-    ProviderUpdateCapability, ProviderUpdateSessionView, ProviderUpdateState,
-    ProviderUpdateTargetKind,
+    sync_latest_mod_game_version, ProviderUpdateCapability, ProviderUpdateSessionView,
+    ProviderUpdateState, ProviderUpdateTargetKind,
 };
 
 use std::{
