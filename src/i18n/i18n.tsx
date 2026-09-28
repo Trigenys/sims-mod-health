@@ -469,7 +469,6 @@ const fr = {
   "Local only": "Local uniquement",
   "Package / CC": "Package / CC",
   "Unknown creator": "Créateur inconnu",
-  "Installed": "Installée",
   "Missing": "Manquante",
   "Outdated": "Obsolète",
   "This is a real file from the scanned Mods folder. Sims Mod Health has not resolved a canonical mod identity for it yet.": "Ceci est un vrai fichier du dossier Mods analysé. Sims Mod Health n’a pas encore résolu son identité canonique.",
