@@ -42,7 +42,7 @@ export function DiagnosticsPage({
       })
       .catch(() => {
         setTelemetryEnabled(false);
-        setPrivacyError(t("Privacy settings could not be loaded. Diagnostic telemetry remains off."));
+        setPrivacyError("Privacy settings could not be loaded. Diagnostic telemetry remains off.");
       })
       .finally(() => setPrivacyBusy(false));
   }, [gateway]);
@@ -56,7 +56,7 @@ export function DiagnosticsPage({
       setTelemetryEnabled(preferences.diagnosticTelemetryEnabled);
     } catch {
       setTelemetryEnabled(false);
-      setPrivacyError(t("Consent could not be saved. Diagnostic telemetry remains off."));
+      setPrivacyError("Consent could not be saved. Diagnostic telemetry remains off.");
     } finally {
       setPrivacyBusy(false);
     }
@@ -103,7 +103,7 @@ export function DiagnosticsPage({
             <strong>{t("Exception reports stay evidence-led.")}</strong>
           </div>
           <Button variant="secondary" onClick={analyze} disabled={loading}>
-            {loading ? "Analyzing…" : "Analyze reports"}
+            {loading ? t("Analyzing…") : t("Analyze reports")}
           </Button>
         </div>
       )}
@@ -124,7 +124,7 @@ export function DiagnosticsPage({
           <p>
             {t("Off by default. Only redacted diagnostic summaries may be eligible for telemetry after explicit consent; raw reports are never uploaded automatically.")}
           </p>
-          {privacyError && <small role="status">{privacyError}</small>}
+          {privacyError && <small role="status">{tx(privacyError)}</small>}
         </div>
         <label className="privacy-toggle">
           <input
