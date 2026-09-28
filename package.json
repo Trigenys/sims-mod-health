@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "visual:verify": "node scripts/capture-visual-evidence.mjs",
     "tauri": "tauri",
-    "security:config": "node scripts/security/audit-tauri-config.mjs"
+    "security:config": "node scripts/security/audit-tauri-config.mjs",
+    "i18n:check": "node scripts/i18n/check-desktop-copy.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
