@@ -13,6 +13,82 @@ Important fields:
 - release date when known
 - source/provenance
 
+### GameInstallation
+
+Represents one locally detected The Sims 4 installation.
+
+Important fields:
+
+- installation root;
+- normalized platform/provider when evidence exists;
+- current build evidence;
+- last observed timestamp.
+
+The installation does not imply account ownership or entitlement.
+
+### GameBuildEvidence
+
+A local or trusted-source observation supporting a normalized game build.
+
+Evidence may come from:
+
+- a trusted local version file;
+- a known sentinel-file fingerprint;
+- a provider/manifest source with retained provenance.
+
+When evidence is missing or conflicting, the state remains `Unknown`.
+
+### ContentPack
+
+Canonical metadata for a Sims content pack such as EP, GP, SP, FP or KIT where applicable.
+
+A ContentPack may declare:
+
+- canonical pack code;
+- display name;
+- pack type;
+- minimum compatible game version when sourced;
+- provenance for compatibility metadata.
+
+### InstalledPack
+
+Device-local observation that a content pack is present in a detected installation.
+
+Presence is not entitlement evidence.
+
+Important fields:
+
+- installation;
+- pack code;
+- local path identity;
+- observed size/fingerprints when collected;
+- observation timestamp;
+- local integrity state.
+
+### PackCompatibility
+
+A provenance-bearing conclusion about one installed pack relative to the current game build.
+
+Possible outcomes include:
+
+- Current;
+- Game update required;
+- Metadata stale;
+- Local integrity uncertain;
+- Unknown.
+
+### UpdateFinding
+
+A normalized actionable health item for Game, Pack or Mod.
+
+The UI consumes UpdateFinding instead of provider-specific result types so Game/DLC/Mod updates can share one Health queue.
+
+### UpdateProvider
+
+Normalized provider identity and capability state, for example EA App, Steam or Unknown/manual.
+
+Provider identity is evidence about how updates can be handed off. It is not ownership evidence.
+
 ### Creator
 
 Canonical creator identity plus aliases and source accounts.
