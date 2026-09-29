@@ -75,6 +75,21 @@ fn inspect_game_content_installation(path: String) -> Result<GameContentInstalla
 }
 
 #[tauri::command]
+async fn select_game_content_installation(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<GameContentInstallation, String> {
+    let database_path = state.database_path.clone();
+    let selected_path = PathBuf::from(path);
+
+    tauri::async_runtime::spawn_blocking(move || {
+        game::persist_game_content_path(&database_path, &selected_path)
+    })
+    .await
+    .map_err(|error| format!("game content selection worker failed: {error}"))?
+}
+
+#[tauri::command]
 async fn get_game_content_health(
     state: State<'_, AppState>,
 ) -> Result<GameContentHealthSnapshot, String> {
@@ -476,6 +491,7 @@ pub fn run() {
             inspect_sims_installation,
             refresh_game_content_inventory,
             inspect_game_content_installation,
+            select_game_content_installation,
             get_game_content_health,
             get_provider_update_capability,
             start_game_content_provider_update,
