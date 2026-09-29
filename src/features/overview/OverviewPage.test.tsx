@@ -79,7 +79,7 @@ describe("OverviewPage", () => {
   it("renders current scan and health-engine counts instead of design-target constants", async () => {
     render(<OverviewPage gateway={gateway(snapshot)} contentGateway={contentGateway} />);
 
-    expect(await screen.findByRole("heading", { name: "Some installed items need review." })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "A few things are worth checking." })).toBeVisible();
     expect(screen.getByLabelText("Overall health 80 percent")).toBeVisible();
     expect(screen.getByText("12 items indexed")).toBeVisible();
     const gameSummary = screen.getByLabelText("Sims 4 installation summary");
@@ -91,7 +91,7 @@ describe("OverviewPage", () => {
     expect(screen.getByText("9")).toBeVisible();
     expect(screen.getByText("Verified compatible releases divided by resolved releases plus unresolved files.")).not.toBeVisible();
 
-    fireEvent.click(screen.getByText("How this score is calculated"));
+    fireEvent.click(screen.getByText("How this score works"));
     expect(screen.getByText("Verified compatible releases divided by resolved releases plus unresolved files.")).toBeVisible();
   });
 
@@ -109,7 +109,7 @@ describe("OverviewPage", () => {
 
     render(<OverviewPage gateway={gateway(offline)} contentGateway={contentGateway} />);
 
-    expect(await screen.findByText("Registry offline")).toBeVisible();
+    expect(await screen.findByText("Online checks are temporarily unavailable")).toBeVisible();
     expect(screen.getByText("12 items indexed")).toBeVisible();
     expect(screen.getByText("Exact duplicate groups")).toBeVisible();
     expect(screen.getByLabelText("Overall health unavailable")).toBeVisible();
