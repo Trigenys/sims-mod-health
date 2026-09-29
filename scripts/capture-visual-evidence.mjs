@@ -5,6 +5,10 @@ const baseUrl = process.env.VISUAL_BASE_URL ?? "http://127.0.0.1:4173";
 const outputDir = process.env.VISUAL_OUTPUT_DIR ?? "visual-evidence";
 
 const cases = [
+  { name: "setup-1024x700", width: 1024, height: 700, path: "/?visual=setup", active: "Overview", locale: "en" },
+  { name: "setup-1440x900", width: 1440, height: 900, path: "/?visual=setup", active: "Overview", locale: "en" },
+  { name: "setup-fr-1024x700", width: 1024, height: 700, path: "/?visual=setup", active: "Vue d’ensemble", locale: "fr" },
+  { name: "setup-fr-1440x900", width: 1440, height: 900, path: "/?visual=setup", active: "Vue d’ensemble", locale: "fr" },
   { name: "overview-1024x700", width: 1024, height: 700, path: "/?visual=overview", active: "Overview", locale: "en" },
   { name: "overview-1440x900", width: 1440, height: 900, path: "/?visual=overview", active: "Overview", locale: "en" },
   { name: "overview-fr-1024x700", width: 1024, height: 700, path: "/?visual=overview", active: "Vue d’ensemble", locale: "fr" },
@@ -95,6 +99,9 @@ try {
 
     if (testCase.path.includes("visual=overview")) {
       await page.locator("#overview-title").waitFor();
+    }
+    if (testCase.path.includes("visual=setup")) {
+      await page.locator("#setup-title").waitFor();
     }
     if (testCase.path.includes("surface=health")) {
       await page.locator("#health-title").waitFor();
