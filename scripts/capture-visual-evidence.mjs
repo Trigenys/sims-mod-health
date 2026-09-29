@@ -71,6 +71,38 @@ const cases = [
     active: "Discover"
   },
   {
+    name: "discover-blocked-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=discover&visual=discover-blocked",
+    active: "Discover",
+    locale: "en"
+  },
+  {
+    name: "discover-blocked-1440x900",
+    width: 1440,
+    height: 900,
+    path: "/?surface=discover&visual=discover-blocked",
+    active: "Discover",
+    locale: "en"
+  },
+  {
+    name: "discover-blocked-fr-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=discover&visual=discover-blocked",
+    active: "Découvrir",
+    locale: "fr"
+  },
+  {
+    name: "discover-blocked-fr-1440x900",
+    width: 1440,
+    height: 900,
+    path: "/?surface=discover&visual=discover-blocked",
+    active: "Découvrir",
+    locale: "fr"
+  },
+  {
     name: "settings-1024x700",
     width: 1024,
     height: 700,
