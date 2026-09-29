@@ -99,7 +99,19 @@ function directDetailKey(value: string): Parameters<TranslationFn>[0] | null {
     "An installed dependency is below the required version.",
     "An installed dependency does not satisfy the declared version range.",
     "The latest completed scan is older than 24 hours. Run an incremental scan before relying on the current picture.",
-    "The previous scan did not complete, so the Overview may not include every installed file."
+    "The previous scan did not complete, so the Overview may not include every installed file.",
+    "Scan stopped before finishing",
+    "Try again. If it keeps failing, check that your Sims 4 folders are still available.",
+    "Scanning your mods",
+    "We are checking your local files now. Compatibility and update checks refresh when the scan finishes.",
+    "Your scan is out of date",
+    "Run Scan again to refresh the results before relying on them.",
+    "Some files could not be checked",
+    "Your current results are still available, but scanning again may fill in the missing details.",
+    "Online checks are temporarily unavailable",
+    "Your local scan still works. Mod names, compatibility and update information may be incomplete until online checks are available again.",
+    "Some online checks are unavailable",
+    "Your local scan is available, but some compatibility and update details could not be loaded."
   ] as const;
 
   return values.includes(value as (typeof values)[number])
