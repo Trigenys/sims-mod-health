@@ -7,6 +7,7 @@ use crate::{dbpf::ResourceKey, fingerprint::ExactDuplicateGroup};
 use super::ResourceOverlapFinding;
 
 const MAX_GROUP_RESOURCE_KEY_SAMPLES: usize = 8;
+const MAX_GROUP_PAIR_SAMPLES: usize = 6;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,9 +20,10 @@ pub(crate) struct ResourceOverlapGroup {
     pub(crate) overlap_pair_count: u64,
     pub(crate) shared_resource_count: u64,
     pub(crate) sample_resource_keys: Vec<ResourceKey>,
+    pub(crate) sample_overlap_pairs: Vec<ResourceOverlapFinding>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ConflictAggregation {
     pub(crate) exact_duplicate_group_count: u64,
@@ -96,6 +98,7 @@ pub(crate) fn aggregate_findings(
         let mut pair_count = 0_u64;
         let mut shared_resource_count = 0_u64;
         let mut sample_keys = BTreeSet::new();
+        let mut sample_overlap_pairs = Vec::new();
 
         for overlap in &kept_edges {
             if component.contains(&overlap.left_file_id)
@@ -109,6 +112,9 @@ pub(crate) fn aggregate_findings(
                         break;
                     }
                     sample_keys.insert(*key);
+                }
+                if sample_overlap_pairs.len() < MAX_GROUP_PAIR_SAMPLES {
+                    sample_overlap_pairs.push((*overlap).clone());
                 }
             }
         }
@@ -128,6 +134,7 @@ pub(crate) fn aggregate_findings(
             overlap_pair_count: pair_count,
             shared_resource_count,
             sample_resource_keys: sample_keys.into_iter().collect(),
+            sample_overlap_pairs,
         });
     }
 
