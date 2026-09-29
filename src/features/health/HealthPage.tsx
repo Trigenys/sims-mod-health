@@ -204,7 +204,7 @@ export function HealthPage({
             ? t("Patch {{version}}", { version: contentHealth.game.currentVersion })
             : snapshot.gameVersion
               ? t("Patch {{version}}", { version: snapshot.gameVersion })
-              : t("Patch unknown")
+              : t("Game version not detected yet")
         }
         platform={formatPlatform(snapshot.platform)}
         indexedCount={snapshot.indexedCount}
@@ -212,10 +212,10 @@ export function HealthPage({
 
       <section className="health-hero" aria-labelledby="health-title">
         <div>
-          <p className="eyebrow">{t("HEALTH & ACTION CENTER")}</p>
-          <h1 id="health-title">{t("Review what needs attention.")}</h1>
+          <p className="eyebrow">{t("GAME & MOD HEALTH")}</p>
+          <h1 id="health-title">{t("See what needs your attention.")}</h1>
           <p className="lede">
-            {t("Game, packs and mods share one evidence-first action queue. Healthy content stays compact.")}
+            {t("We combine your game, packs and mods so you can fix the most important things first.")}
           </p>
         </div>
 
@@ -230,11 +230,11 @@ export function HealthPage({
         </div>
       </section>
 
-      <section className="health-metrics" aria-label={t("Game / pack / mod health")}>
+      <section className="health-metrics" aria-label={t("Game, packs and mods summary")}>
         <Metric label={t("Needs attention")} value={combinedAttention} tone="danger" />
         <Metric label={t("Updates")} value={updateCount} tone="update" />
         <Metric label={t("Conflicts")} value={snapshot.healthCounts.conflicts} tone="warning" />
-        <Metric label={t("Unknown")} value={countUnknown(allFindings)} tone="muted" />
+        <Metric label={t("Not identified yet")} value={countUnknown(allFindings)} tone="muted" />
         <Metric
           label={t("Healthy packs")}
           value={packs.current}
@@ -312,7 +312,7 @@ export function HealthPage({
                   <span className="section-kicker">{tx(tabLabel(tab)).toUpperCase()}</span>
                   <h2>{tx(healthHeading(tab))}</h2>
                 </div>
-                <span>{t("{{count}} shown from current evidence", { count: findings.length })}</span>
+                <span>{t("{{count}} items shown", { count: findings.length })}</span>
               </div>
 
               {findings.length === 0 ? (
@@ -357,16 +357,16 @@ export function HealthPage({
             ) : (
               <aside className="health-guardrails">
                 <Panel>
-                  <span className="section-kicker">{t("RECOVERY GUARANTEES")}</span>
-                  <h2>{t("Actions stay reversible.")}</h2>
+                  <span className="section-kicker">{t("SAFE CHANGES")}</span>
+                  <h2>{t("Changes can be undone.")}</h2>
                   <p>
-                    {t("Mod mutations use verified restore points. Game and pack updates stay with the official provider.")}
+                    {t("Before changing supported mods, Sims Mod Health keeps a restore point. Game and pack updates stay with EA app or Steam.")}
                   </p>
                   <ul>
                     <li><span>✓</span> {t("Restore point before supported mod updates")}</li>
                     <li><span>✓</span> {t("SHA-256 integrity checks")}</li>
-                    <li><span>✓</span> {t("Provider updates require local verification")}</li>
-                    <li><span>✓</span> {t("Unknown remains distinct from broken")}</li>
+                    <li><span>✓</span> {t("Game updates are checked again after you return")}</li>
+                    <li><span>✓</span> {t("Unknown does not mean broken")}</li>
                   </ul>
                   <button
                     type="button"
@@ -379,10 +379,10 @@ export function HealthPage({
                 </Panel>
 
                 <Panel className="health-safety">
-                  <span className="section-kicker">{t("EVIDENCE POLICY")}</span>
-                  <h2>{t("Unknown is not broken.")}</h2>
+                  <span className="section-kicker">{t("HOW WE HANDLE UNCERTAINTY")}</span>
+                  <h2>{t("Not enough information does not mean broken.")}</h2>
                   <p>
-                    {t("Stale metadata, incomplete files and disputed evidence remain distinct states.")}
+                    {t("If we cannot confirm something, we show that clearly instead of guessing.")}
                   </p>
                 </Panel>
               </aside>
@@ -614,31 +614,31 @@ function tabLabel(tab: HealthTab) {
 }
 
 function healthHeading(tab: HealthTab) {
-  if (tab === "updates") return "One update queue for game, packs and mods";
-  if (tab === "conflicts") return "Resolve deterministic problems before potential interactions";
-  return "Priority health findings across the installation";
+  if (tab === "updates") return "Updates found for your game, packs and mods";
+  if (tab === "conflicts") return "Fix confirmed problems before possible conflicts";
+  return "What needs your attention first";
 }
 
 function emptyTitle(tab: HealthTab) {
-  if (tab === "updates") return "No update finding is currently surfaced";
-  if (tab === "conflicts") return "No conflict finding is currently surfaced";
-  return "Nothing needs immediate review";
+  if (tab === "updates") return "No updates need your attention";
+  if (tab === "conflicts") return "No conflicts need your attention";
+  return "Nothing needs immediate action";
 }
 
 function emptyCopy(tab: HealthTab, snapshot: OverviewSnapshot) {
   if (!snapshot.hasInstallation) {
-    return "Run a local scan first. Health does not invent findings without an indexed Sims 4 installation.";
+    return "Run a scan first so we can check your game and mods.";
   }
   if (snapshot.registryState === "offline") {
-    return "Local evidence remains available while registry-backed health evidence is offline.";
+    return "Your local scan is still available, but online compatibility checks are temporarily unavailable.";
   }
   if (tab === "updates") {
-    return "The current evidence set does not contain an actionable game, pack or mod update.";
+    return "We did not find any game, pack or mod update that needs action.";
   }
   if (tab === "conflicts") {
-    return "The current evidence set does not contain a duplicate, known incompatibility or potential conflict requiring review.";
+    return "We did not find a duplicate or conflict that needs your attention.";
   }
-  return "The latest local and registry evidence does not expose an actionable finding.";
+  return "We did not find anything that needs your attention right now.";
 }
 
 function formatPlatform(platform: string) {
