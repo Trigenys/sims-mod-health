@@ -233,7 +233,11 @@ try {
     }
 
     if (testCase.path.includes("surface=discover")) {
-      const search = page.getByLabel("Search recommendations");
+      const search = page.getByLabel(
+        (testCase.locale ?? "en") === "fr"
+          ? "Rechercher des recommandations"
+          : "Search recommendations"
+      );
       await search.focus();
       const focus = await search.evaluate((element) => ({
         active: document.activeElement === element,
