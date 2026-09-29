@@ -511,7 +511,30 @@ const fr = {
   "Outdated": "Obsolète",
   "This is a real file from the scanned Mods folder. Sims Mod Health has not resolved a canonical mod identity for it yet.": "Ceci est un vrai fichier du dossier Mods analysé. Sims Mod Health n’a pas encore résolu son identité canonique.",
   "Scanned local file": "Fichier local analysé",
-  "The desktop scanner indexed this file from your selected Mods folder. Parse state: {{state}}.": "Le scanner desktop a indexé ce fichier depuis le dossier Mods sélectionné. État d’analyse : {{state}}."
+  "The desktop scanner indexed this file from your selected Mods folder. Parse state: {{state}}.": "Le scanner desktop a indexé ce fichier depuis le dossier Mods sélectionné. État d’analyse : {{state}}.",
+  "Potential interaction groups": "Groupes d’interactions potentielles",
+  "Potential interactions are low-confidence local evidence and do not increase Needs attention.": "Les interactions potentielles sont des indices locaux à faible confiance et n’augmentent pas le compteur À vérifier.",
+  "Actionable conflicts": "Conflits nécessitant une action",
+  "Potential interaction": "Interaction potentielle",
+  "Grouped local DBPF evidence": "Indices DBPF locaux regroupés",
+  "Review evidence": "Voir les indices",
+  "Potential interaction across {{count}} files": "Interaction potentielle entre {{count}} fichiers",
+  "Low-confidence local evidence": "Indices locaux à faible confiance",
+  "{{files}} files share {{resources}} DBPF resource references across {{pairs}} raw pair observations.": "{{files}} fichiers partagent {{resources}} références de ressources DBPF dans {{pairs}} observations brutes par paire.",
+  "Low confidence": "Faible confiance",
+  "Potential interaction evidence": "Indices d’interaction potentielle",
+  "LOCAL RESOURCE EVIDENCE": "INDICES DE RESSOURCES LOCAUX",
+  "Close evidence": "Fermer les indices",
+  "These files reference some of the same DBPF resources. That can be intentional, so this group does not increase Needs attention until stronger evidence exists.": "Ces fichiers font référence à certaines des mêmes ressources DBPF. Cela peut être volontaire ; ce groupe n’augmente donc pas le compteur À vérifier tant qu’il n’existe pas d’indices plus solides.",
+  "Files in group": "Fichiers du groupe",
+  "Raw pair observations": "Observations brutes par paire",
+  "Shared resource references": "Références de ressources partagées",
+  "Files": "Fichiers",
+  "+{{count}} more files in this group": "+{{count}} autres fichiers dans ce groupe",
+  "Sample raw evidence": "Exemple d’indices bruts",
+  "No pair sample is available in this preview.": "Aucun exemple de paire n’est disponible dans cet aperçu.",
+  "{{count}} shared resource references": "{{count}} références de ressources partagées",
+  "The local analyzer keeps the underlying pair evidence; this view groups it so thousands of pairwise observations do not look like thousands of broken mods.": "L’analyseur local conserve les indices par paire sous-jacents ; cette vue les regroupe afin que des milliers d’observations par paire ne ressemblent pas à des milliers de mods défectueux."
 } as const;
 
 export type TranslationKey = keyof typeof fr;
