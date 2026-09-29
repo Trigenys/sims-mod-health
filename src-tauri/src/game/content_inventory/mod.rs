@@ -336,6 +336,47 @@ mod tests {
     }
 
     #[test]
+    fn manual_game_selection_persists_custom_installation() {
+        let game = create_game_root();
+        fs::write(
+            game.path().join("Game").join("Bin").join("Default.ini"),
+            "[Version]\ngameversion = 1.128.90.1030\n",
+        )
+        .expect("default ini");
+
+        let database = TempDir::new().expect("database temp");
+        let database_path = database.path().join("setup.sqlite3");
+        crate::storage::initialize(&database_path).expect("initialize database");
+
+        let selected =
+            persist_game_content_path(&database_path, game.path()).expect("persist custom game");
+
+        assert_eq!(selected.install_root, game.path());
+        assert_eq!(
+            selected
+                .build
+                .version
+                .as_ref()
+                .map(|version| version.normalized.as_str()),
+            Some("1.128.90.1030")
+        );
+
+        let connection = crate::storage::open(&database_path).expect("open database");
+        let stored: (String, String) = connection
+            .query_row(
+                "SELECT install_root, game_version
+                 FROM game_content_installations
+                 LIMIT 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .expect("stored installation");
+
+        assert_eq!(stored.0, game.path().to_string_lossy());
+        assert_eq!(stored.1, "1.128.90.1030");
+    }
+
+    #[test]
     fn manual_inspection_uses_unknown_provider_for_neutral_path() {
         let game = create_game_root();
         fs::write(
