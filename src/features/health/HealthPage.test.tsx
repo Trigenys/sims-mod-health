@@ -24,6 +24,44 @@ const snapshot: OverviewSnapshot = {
     conflicts: 2,
     unknown: 1
   },
+  conflictAggregation: {
+    exactDuplicateGroupCount: 1,
+    potentialConflictGroupCount: 1,
+    attentionGroupCount: 1,
+    rawOverlapPairCount: 4,
+    suppressedDuplicateOverlapPairCount: 1,
+    potentialConflictGroups: [
+      {
+        classification: "potentialConflictGroup",
+        confidence: "low",
+        countsTowardAttention: false,
+        fileIds: [10, 11, 12],
+        relativePaths: [
+          "CreatorA/eyes.package",
+          "CreatorB/eyes-overlay.package",
+          "CreatorC/eyes-default.package"
+        ],
+        overlapPairCount: 3,
+        sharedResourceCount: 7,
+        sampleResourceKeys: [
+          { resourceType: 3451, group: 0, instance: 42 }
+        ],
+        sampleOverlapPairs: [
+          {
+            classification: "potentialConflict",
+            leftFileId: 10,
+            leftRelativePath: "CreatorA/eyes.package",
+            rightFileId: 11,
+            rightRelativePath: "CreatorB/eyes-overlay.package",
+            sharedResourceCount: 3,
+            sampleResourceKeys: [
+              { resourceType: 3451, group: 0, instance: 42 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
   attentionCount: 3,
   attention: [
     {
@@ -135,6 +173,31 @@ describe("HealthPage", () => {
 
     fireEvent.click(within(drawer).getByRole("button", { name: "Open EA app to update" }));
     expect(content.startProviderUpdate).toHaveBeenCalledWith("pack", "EP17");
+  });
+
+  it("groups possible file interactions and exposes sampled evidence without adding them to Needs attention", async () => {
+    render(
+      <HealthPage
+        gateway={gateway}
+        contentGateway={contentGateway()}
+        initialTab="conflicts"
+      />
+    );
+
+    expect(await screen.findByText("Possible interaction across 3 files")).toBeVisible();
+    expect(screen.getByText("Needs more evidence")).toBeVisible();
+    expect(screen.getByText("Low confidence")).toBeVisible();
+
+    const possible = screen.getByText("Possible interaction across 3 files");
+    const card = possible.closest("article");
+    expect(card).not.toBeNull();
+    fireEvent.click(within(card as HTMLElement).getByRole("button", { name: "Review evidence" }));
+
+    const drawer = screen.getByRole("dialog", { name: "Possible interaction evidence" });
+    expect(within(drawer).getByText("File-pair observations")).toBeVisible();
+    expect(within(drawer).getAllByText("CreatorA/eyes.package")[0]).toBeVisible();
+    expect(within(drawer).getAllByText("CreatorB/eyes-overlay.package")[0]).toBeVisible();
+    expect(within(drawer).getByText("3 shared game resources")).toBeVisible();
   });
 
   it("treats recovery as a Health subview rather than primary navigation", async () => {
