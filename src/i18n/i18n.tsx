@@ -370,7 +370,6 @@ const fr = {
   "No installation detected": "Aucune installation détectée",
   "Mods folder available": "Dossier Mods disponible",
   "Not available": "Indisponible",
-  "Sims 4 user folder": "Dossier utilisateur Sims 4",
   "Run detection in the desktop application": "Lancer la détection dans l’application desktop",
   "Mods folder": "Dossier Mods",
   "No Mods directory detected": "Aucun dossier Mods détecté",
