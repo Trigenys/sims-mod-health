@@ -24,6 +24,44 @@ const snapshot: OverviewSnapshot = {
     conflicts: 2,
     unknown: 1
   },
+  conflictAggregation: {
+    exactDuplicateGroupCount: 1,
+    potentialConflictGroupCount: 1,
+    attentionGroupCount: 1,
+    rawOverlapPairCount: 4,
+    suppressedDuplicateOverlapPairCount: 1,
+    potentialConflictGroups: [
+      {
+        classification: "potentialConflictGroup",
+        confidence: "low",
+        countsTowardAttention: false,
+        fileIds: [10, 11, 12],
+        relativePaths: [
+          "CreatorA/eyes.package",
+          "CreatorB/eyes-overlay.package",
+          "CreatorC/eyes-default.package"
+        ],
+        overlapPairCount: 3,
+        sharedResourceCount: 7,
+        sampleResourceKeys: [
+          { resourceType: 3451, group: 0, instance: 42 }
+        ],
+        sampleOverlapPairs: [
+          {
+            classification: "potentialConflict",
+            leftFileId: 10,
+            leftRelativePath: "CreatorA/eyes.package",
+            rightFileId: 11,
+            rightRelativePath: "CreatorB/eyes-overlay.package",
+            sharedResourceCount: 3,
+            sampleResourceKeys: [
+              { resourceType: 3451, group: 0, instance: 42 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
   attentionCount: 3,
   attention: [
     {
