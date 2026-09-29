@@ -223,11 +223,7 @@ mod tests {
             let base = cluster * 50;
             for edge in 0..100_i64 {
                 let left = base + (edge % 50) + 1;
-                let right = if edge % 50 == 49 {
-                    base + 1
-                } else {
-                    left + 1
-                };
+                let right = if edge % 50 == 49 { base + 1 } else { left + 1 };
                 raw.push(overlap(left, right, 1));
             }
         }
@@ -255,11 +251,7 @@ mod tests {
             let base = cluster * 50;
             for edge in 0..100_i64 {
                 let left = base + (edge % 50) + 1;
-                let right = if edge % 50 == 49 {
-                    base + 1
-                } else {
-                    left + 1
-                };
+                let right = if edge % 50 == 49 { base + 1 } else { left + 1 };
                 raw.push(overlap(left, right, 1));
             }
         }
