@@ -84,10 +84,10 @@ export function DiagnosticsPage({
       {!embedded && (
         <section className="diagnostics-heading" aria-labelledby="diagnostics-title">
           <div>
-            <p className="eyebrow">{t("DIAGNOSTIC EVIDENCE")}</p>
+            <p className="eyebrow">{t("GAME REPORTS")}</p>
             <h1 id="diagnostics-title">{t("Diagnostics")}</h1>
             <p className="lede">
-              {t("Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.")}
+              {t("We read supported exception reports and point to mods that may be involved. A match is a clue, not proof.")}
             </p>
           </div>
           <Button variant="primary" onClick={analyze} disabled={loading}>
@@ -100,7 +100,7 @@ export function DiagnosticsPage({
         <div className="health-embedded-actions">
           <div>
             <span className="section-kicker">{t("DIAGNOSTIC EVIDENCE")}</span>
-            <strong>{t("Exception reports stay evidence-led.")}</strong>
+            <strong>{t("Reports show clues, not blame.")}</strong>
           </div>
           <Button variant="secondary" onClick={analyze} disabled={loading}>
             {loading ? t("Analyzing…") : t("Analyze reports")}
@@ -110,10 +110,10 @@ export function DiagnosticsPage({
 
       <section className="diagnostics-summary" aria-label={t("Diagnostics summary")}>
         <SummaryFact label={t("Reports")} value={snapshot.reports.length} />
-        <SummaryFact label={t("Implicated candidates")} value={candidateCount} />
+        <SummaryFact label={t("Possible mod matches")} value={candidateCount} />
         <SummaryFact
-          label={t("Registry")}
-          value={snapshot.registryState === "ready" ? t("Resolved") : tx(snapshot.registryState)}
+          label={t("Online identification")}
+          value={snapshot.registryState === "ready" ? t("Available") : tx(snapshot.registryState)}
         />
       </section>
 
@@ -143,11 +143,11 @@ export function DiagnosticsPage({
           <div>
             <strong>
               {snapshot.registryState === "offline"
-                ? t("Registry offline")
-                : t("Registry resolution is partial")}
+                ? t("Online identification unavailable")
+                : t("Some mods could not be identified online")}
             </strong>
             <p>
-              {t("Local module, filename and resource evidence remains available.")}{" "}
+              {t("File names and local report clues are still available.")}{" "}
               {tx(snapshot.registryDetail)}
             </p>
           </div>
@@ -215,16 +215,16 @@ function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
         </div>
       ) : (
         <div className="diagnostic-no-candidate">
-          <strong>{t("No installed mod candidate linked")}</strong>
+          <strong>{t("No installed mod matched this report")}</strong>
           <span>
-            {t("The report remains stored as normalized evidence even when no local artifact matches.")}
+            {t("We kept the report, but could not link it to an installed mod.")}
           </span>
         </div>
       )}
 
       {report.observations.length > 0 && (
         <details className="diagnostic-observations">
-          <summary>{t("{{count}} normalized observations", { count: report.observations.length })}</summary>
+          <summary>{t("{{count}} clues found", { count: report.observations.length })}</summary>
           <ul>
             {report.observations.map((observation, index) => (
               <li key={observation.kind + "-" + observation.value + "-" + index}>
@@ -246,10 +246,10 @@ function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
     <article className="diagnostic-candidate">
       <div className="diagnostic-candidate__top">
         <div>
-          <span className="section-kicker">{t("IMPLICATED CANDIDATE")}</span>
+          <span className="section-kicker">{t("POSSIBLE MATCH")}</span>
           <strong>{candidate.relativePath}</strong>
           <small>
-            {t("Correlated with report evidence · {{score}}% local match confidence", { score: candidate.confidenceScore })}
+            {t("{{score}}% match with this report", { score: candidate.confidenceScore })}
           </small>
         </div>
         <span className={"diagnostic-confidence diagnostic-confidence--" + candidate.confidence}>
@@ -273,11 +273,11 @@ function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
           <div>
             <strong>
               {candidate.canonical.deterministic
-                ? t("Canonical artifact resolved")
-                : t("Canonical candidate resolved")}
+                ? t("Exact mod identified")
+                : t("Likely mod identified")}
             </strong>
             <small>
-              {t("Registry confidence {{confidence}}", { confidence: candidate.canonical.confidence })}
+              {t("Identification confidence: {{confidence}}", { confidence: candidate.canonical.confidence })}
             </small>
           </div>
         </div>
