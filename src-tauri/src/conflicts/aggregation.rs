@@ -222,8 +222,8 @@ mod tests {
         for cluster in 0..100_i64 {
             let base = cluster * 50;
             for edge in 0..100_i64 {
-                let left = base + (edge % 49) + 1;
-                let right = if edge % 49 == 48 {
+                let left = base + (edge % 50) + 1;
+                let right = if edge % 50 == 49 {
                     base + 1
                 } else {
                     left + 1
@@ -254,8 +254,8 @@ mod tests {
         for cluster in 0..100_i64 {
             let base = cluster * 50;
             for edge in 0..100_i64 {
-                let left = base + (edge % 49) + 1;
-                let right = if edge % 49 == 48 {
+                let left = base + (edge % 50) + 1;
+                let right = if edge % 50 == 49 {
                     base + 1
                 } else {
                     left + 1
