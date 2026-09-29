@@ -34,7 +34,7 @@ type InstallationCandidate = {
 };
 
 const sections: { value: SettingsSection; label: string; icon: string }[] = [
-  { value: "paths", label: "Paths & Registry", icon: "⌂" },
+  { value: "paths", label: "Game & folders", icon: "⌂" },
   { value: "privacy", label: "Checks & Privacy", icon: "✓" },
   { value: "scan", label: "Scan Behavior", icon: "↻" },
   { value: "recovery", label: "Recovery & Data", icon: "◫" },
@@ -114,17 +114,17 @@ export function SettingsPage() {
 
       <section className="settings-hero" aria-labelledby="settings-title">
         <div>
-          <p className="eyebrow">{t("PREFERENCES & ENGINE CONFIGURATION")}</p>
-          <h1 id="settings-title">{t("System Settings")}</h1>
+          <p className="eyebrow">{t("APP SETTINGS")}</p>
+          <h1 id="settings-title">{t("Settings")}</h1>
           <p className="lede">
-            {t("Configure installation paths, privacy boundaries, scanning behavior and recovery storage.")}
+            {t("Choose where your Sims files are, how scans behave and what the app may send.")}
           </p>
         </div>
         <div className="settings-engine-state">
           <span className="status-dot" aria-hidden="true" />
           <div>
-            <span>{t("Engine mode")}</span>
-            <strong>{t("Local-first")}</strong>
+            <span>{t("How the app works")}</span>
+            <strong>{t("Files stay on this computer")}</strong>
           </div>
         </div>
       </section>
@@ -144,14 +144,14 @@ export function SettingsPage() {
               onClick={() => setSection(item.value)}
             >
               <span aria-hidden="true">{item.icon}</span>
-              {t(item.label as "Paths & Registry" | "Checks & Privacy" | "Scan Behavior" | "Recovery & Data" | "Appearance")}
+              {t(item.label as "Game & folders" | "Checks & Privacy" | "Scan Behavior" | "Recovery & Data" | "Appearance")}
             </button>
           ))}
 
           <div className="settings-nav__note">
-            <span className="section-kicker">{t("BETA POLICY")}</span>
+            <span className="section-kicker">{t("WHEN ONLINE CHECKS ARE DOWN")}</span>
             <p>
-              {t("Local evidence remains usable when Registry-backed features are unavailable.")}
+              {t("Your local library, duplicate checks and reports still work even when online details are unavailable.")}
             </p>
           </div>
         </nav>
@@ -208,10 +208,10 @@ function PathsSettings({
     <>
       <div className="settings-section-heading">
         <div>
-          <span className="section-kicker">{t("LOCAL INSTALLATION")}</span>
-          <h2>{t("Sims 4 & Mods paths")}</h2>
+          <span className="section-kicker">{t("YOUR SIMS 4 FOLDERS")}</span>
+          <h2>{t("Game and Mods locations")}</h2>
           <p>
-            {t("Paths are detected locally. The scanner reads the selected Mods directory without uploading raw files.")}
+            {t("These folders are detected on your computer. Your raw mod files are not uploaded.")}
           </p>
         </div>
         <Button variant="secondary" onClick={() => void onDetect()} disabled={detecting}>
@@ -222,7 +222,7 @@ function PathsSettings({
       <Panel className="settings-card settings-card--featured">
         <div className="settings-card__header">
           <div>
-            <span className="section-kicker">{t("ACTIVE SIMS 4 ROOT")}</span>
+            <span className="section-kicker">{t("CURRENT SIMS 4 FOLDER")}</span>
             <h3>{active ? tx(sourceLabel(active.source)) : t("No installation detected")}</h3>
           </div>
           <span className={active?.modsAvailable ? "settings-ok" : "settings-muted"}>
@@ -262,7 +262,7 @@ function PathsSettings({
 
       {installations.length > 1 && (
         <Panel className="settings-card">
-          <span className="section-kicker">{t("OTHER DETECTED ROOTS")}</span>
+          <span className="section-kicker">{t("OTHER SIMS 4 FOLDERS FOUND")}</span>
           <div className="settings-installations">
             {installations.slice(1).map((item) => (
               <div key={item.root}>
@@ -275,21 +275,21 @@ function PathsSettings({
       )}
 
       <Panel className="settings-card">
-        <span className="section-kicker">{t("UPDATE PROVIDER")}</span>
-        <h3>{t("Official provider handoff only")}</h3>
+        <span className="section-kicker">{t("GAME UPDATES")}</span>
+        <h3>{t("Game updates stay with EA app or Steam")}</h3>
         <p>
           {providerCapability
             ? providerCapabilityDetail(providerCapability.provider, providerCapability.supported, t)
             : t("Provider capability is resolved locally when a game installation is available.")}
-          {" "}{t("After an EA app or Steam update, Sims Mod Health rescans local game and pack evidence before declaring success.")}
+          {" "}{t("After you update the game, Sims Mod Health checks the local version and packs again before marking the update complete.")}
         </p>
       </Panel>
 
       <Panel className="settings-card">
-        <span className="section-kicker">{t("REGISTRY BEHAVIOR")}</span>
-        <h3>{t("Local scan remains the baseline")}</h3>
+        <span className="section-kicker">{t("ONLINE DETAILS")}</span>
+        <h3>{t("Your local scan still works offline")}</h3>
         <p>
-          {t("Registry identity, compatibility, relationships and Discover enrich local evidence. If the Registry is unreachable, the app keeps local inventory, duplicate and diagnostic evidence visible.")}
+          {t("Online data adds mod names, compatibility, relationships and recommendations. If it is unavailable, your local library, duplicate checks and reports remain visible.")}
         </p>
       </Panel>
     </>
@@ -322,9 +322,9 @@ function PrivacySettings({
 
       <Panel className="settings-card settings-toggle-card">
         <div>
-          <h3>{t("Redacted diagnostic telemetry")}</h3>
+          <h3>{t("Share anonymous diagnostic summaries")}</h3>
           <p>
-            {t("When enabled, only redacted summary metadata is eligible for telemetry. Invalid consent state fails closed.")}
+            {t("If you turn this on, only a cleaned-up summary can be sent. Raw reports and mod files stay on your computer.")}
           </p>
           {error && <small className="settings-error">{error}</small>}
         </div>
@@ -341,16 +341,16 @@ function PrivacySettings({
 
       <div className="settings-grid">
         <PolicyCard
-          title={t("Local parsing")}
-          detail={t("DBPF, TS4Script and supported diagnostic reports are parsed on-device with bounded readers.")}
+          title={t("Checked on this computer")}
+          detail={t("Packages, script mods and supported reports are read on this computer.")}
         />
         <PolicyCard
-          title={t("Registry requests")}
-          detail={t("Canonical identity uses constrained artifact metadata and supported fingerprints rather than raw file uploads.")}
+          title={t("Online identification")}
+          detail={t("We use file fingerprints and basic metadata to identify mods without uploading the raw files.")}
         />
         <PolicyCard
-          title={t("Evidence language")}
-          detail={t("Correlation and potential conflicts remain distinct from deterministic breakage.")}
+          title={t("No guessing")}
+          detail={t("Possible problems stay labelled as possible until we can confirm them.")}
         />
       </div>
     </>
@@ -366,22 +366,22 @@ function ScanSettings() {
           <span className="section-kicker">{t("SCANNER")}</span>
           <h2>{t("Scan behavior")}</h2>
           <p>
-            {t("The production scanner defaults to incremental work so unchanged files can be skipped safely.")}
+            {t("After the first scan, unchanged files can be skipped so later scans finish faster.")}
           </p>
         </div>
       </div>
       <div className="settings-grid">
         <PolicyCard
-          title={t("Incremental by default")}
-          detail={t("Known unchanged artifacts reuse persisted evidence; changed files are hashed and re-inspected.")}
+          title={t("Faster repeat scans")}
+          detail={t("Files that have not changed reuse the previous result. Changed files are checked again.")}
         />
         <PolicyCard
-          title={t("Bounded inspection")}
-          detail={t("Archive, package, script and diagnostic parsing use explicit limits rather than unbounded recursive work.")}
+          title={t("Safe file reading")}
+          detail={t("The scanner uses limits when reading packages, scripts and reports so a bad file cannot make it run forever.")}
         />
         <PolicyCard
           title={t("No automatic destructive cleanup")}
-          detail={t("Health findings are reviewable evidence. Unknown files are not silently removed.")}
+          detail={t("The app never deletes an unknown file just because it could not identify it.")}
         />
       </div>
     </>
