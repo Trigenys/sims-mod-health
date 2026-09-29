@@ -156,8 +156,7 @@ pub(crate) async fn load(database_path: &Path) -> DiscoverySnapshot {
                     "Your setup is ready, but no safe recommendation currently passes compatibility and known-conflict filters."
                         .to_string()
                 } else {
-                    "Recommendations are ready for the current game and installed mods."
-                        .to_string()
+                    "Recommendations are ready for the current game and installed mods.".to_string()
                 },
                 blocker: None,
                 prerequisites,
