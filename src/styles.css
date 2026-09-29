@@ -3922,3 +3922,128 @@ body {
     width: fit-content;
   }
 }
+
+
+.discover-readiness {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.discover-readiness__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.discover-readiness__header h2 {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+
+.discover-readiness__state {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: var(--radius-pill);
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.discover-readiness__state--ready {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.discover-prerequisite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+}
+
+.discover-prerequisite {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  background: #fff7ed;
+}
+
+.discover-prerequisite--ready {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.discover-prerequisite__icon {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffedd5;
+  color: #c2410c;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.discover-prerequisite--ready .discover-prerequisite__icon {
+  background: #dcfce7;
+  color: #047857;
+}
+
+.discover-prerequisite strong,
+.discover-prerequisite span,
+.discover-prerequisite small {
+  display: block;
+}
+
+.discover-prerequisite strong {
+  font-size: 0.65rem;
+}
+
+.discover-prerequisite div > span {
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 0.59rem;
+  line-height: 1.35;
+}
+
+.discover-prerequisite small {
+  margin-top: 4px;
+  color: var(--color-faint);
+  font-size: 0.54rem;
+}
+
+.discover-state {
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+}
+
+@media (max-width: 680px) {
+  .discover-readiness__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .discover-readiness__state {
+    width: fit-content;
+  }
+
+  .discover-state {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .discover-state > .button {
+    grid-column: 2;
+    width: fit-content;
+  }
+}
