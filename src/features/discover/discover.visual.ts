@@ -3,8 +3,18 @@ import type { DiscoverySnapshot } from "./discover.types";
 export const discoverVisualFixture: DiscoverySnapshot = {
   patchVersion: "1.128.90",
   state: "ready",
-  detail:
-    "Recommendations are filtered for current-patch compatibility before deterministic ranking.",
+  detail: "Recommendations are ready for the current game and installed mods.",
+  blocker: null,
+  prerequisites: {
+    gameDetected: true,
+    patchKnown: true,
+    packsKnown: true,
+    installedPackCount: 17,
+    modsScanned: true,
+    installedModFiles: 324,
+    identifiedMods: 28,
+    registryAvailable: true
+  },
   recommendations: [
     {
       modId: "visual-growing-together",
@@ -75,4 +85,23 @@ export const discoverVisualFixture: DiscoverySnapshot = {
       }
     }
   ]
+};
+
+
+export const discoverBlockedVisualFixture: DiscoverySnapshot = {
+  patchVersion: null,
+  state: "blocked",
+  detail: "The Sims 4 program installation has not been detected yet.",
+  blocker: "game",
+  prerequisites: {
+    gameDetected: false,
+    patchKnown: false,
+    packsKnown: false,
+    installedPackCount: null,
+    modsScanned: true,
+    installedModFiles: 2407,
+    identifiedMods: null,
+    registryAvailable: null
+  },
+  recommendations: []
 };
