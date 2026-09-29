@@ -435,7 +435,64 @@ function Stat({
   );
 }
 
-function overviewHeadline(data: OverviewSnapshot) {
+function MeasurementNotice({
+  reason,
+  onOpenSettings
+}: {
+  reason: GameContentMeasurementReason | null;
+  onOpenSettings?: () => void;
+}) {
+  const { t } = useI18n();
+  const localIssue = reason === "game_missing" || reason === "version_missing";
+
+  return (
+    <Panel className="measurement-notice" as="section">
+      <div className="measurement-notice__icon" aria-hidden="true">!</div>
+      <div>
+        <span className="section-kicker">{t("SCORE PAUSED")}</span>
+        <h2>{measurementTitle(reason, t)}</h2>
+        <p>{measurementExplanation(reason, t)}</p>
+      </div>
+      {localIssue && onOpenSettings && (
+        <Button variant="secondary" onClick={onOpenSettings}>
+          {t("Review game folders")}
+        </Button>
+      )}
+    </Panel>
+  );
+}
+
+function measurementTitle(
+  reason: GameContentMeasurementReason | null,
+  t: ReturnType<typeof useI18n>["t"]
+) {
+  if (reason === "game_missing") return t("We still need your game installation");
+  if (reason === "version_missing") return t("We still need your game version");
+  if (reason === "manifest_missing") return t("Compatibility checks are unavailable right now");
+  if (reason === "manifest_stale") return t("Compatibility information may be out of date");
+  return t("Game compatibility could not be confirmed");
+}
+
+function measurementExplanation(
+  reason: GameContentMeasurementReason | null,
+  t: ReturnType<typeof useI18n>["t"]
+) {
+  if (reason === "game_missing") {
+    return t("Your Mods scan is available, but the game installation has not been confirmed. We will not turn missing game data into zeroes or a health score.");
+  }
+  if (reason === "version_missing") {
+    return t("We found the game, but could not read its version. Your local Mods facts remain visible, but the overall score stays hidden until the version is known.");
+  }
+  if (reason === "manifest_missing") {
+    return t("Your game and local files are available, but online compatibility data is not. Local facts remain visible; the overall score and game attention stay unmeasured.");
+  }
+  if (reason === "manifest_stale") {
+    return t("We have cached compatibility information, but it may be old. We keep the local facts visible and pause the overall score until fresh checks are available.");
+  }
+  return t("We do not have enough reliable game compatibility information to calculate an overall score. Local scan facts remain available.");
+}
+
+function overviewHeadline(data: OverviewSnapshot, overallHealthScore: number | null) {
   if (data.registryState === "offline") {
     return "Your local scan is ready. Some online checks are temporarily unavailable.";
   }
