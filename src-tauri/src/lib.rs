@@ -491,6 +491,7 @@ fn analyze_local_conflicts(
         return Ok(LocalConflictAnalysis {
             exact_duplicates: Vec::new(),
             resource_overlaps: Vec::new(),
+            aggregation: conflicts::ConflictAggregation::default(),
             parse_failures: Vec::new(),
             overlap_pairs_truncated: false,
         });
