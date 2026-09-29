@@ -151,3 +151,20 @@ mod tests {
         assert_eq!(pack, "EP01");
     }
 }
+
+
+pub(crate) fn latest_game_content_version(
+    connection: &Connection,
+) -> rusqlite::Result<Option<String>> {
+    connection
+        .query_row(
+            "SELECT game_version
+             FROM game_content_installations
+             WHERE game_version IS NOT NULL
+             ORDER BY last_seen_at DESC, id DESC
+             LIMIT 1",
+            [],
+            |row| row.get::<_, String>(0),
+        )
+        .optional()
+}
