@@ -2735,6 +2735,11 @@ body {
   cursor: pointer;
 }
 
+.conflict-evidence-drawer__header button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-wash), 0 0 0 1px var(--color-accent);
+}
+
 .conflict-evidence-drawer__intro,
 .conflict-evidence-drawer__footnote,
 .conflict-evidence-section > p {
