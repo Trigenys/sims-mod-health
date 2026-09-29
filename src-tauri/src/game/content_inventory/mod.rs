@@ -381,7 +381,10 @@ mod tests {
         let temp = TempDir::new().expect("custom provider temp");
         let cases = [
             (
-                temp.path().join("Custom").join("EA Games").join("The Sims 4"),
+                temp.path()
+                    .join("Custom")
+                    .join("EA Games")
+                    .join("The Sims 4"),
                 GameProvider::EaApp,
             ),
             (
