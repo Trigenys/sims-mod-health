@@ -78,7 +78,7 @@ type UnifiedFinding =
     };
 
 const tabs: { value: HealthTab; label: string }[] = [
-  { value: "all", label: "All findings" },
+  { value: "all", label: "Everything to review" },
   { value: "updates", label: "Updates" },
   { value: "conflicts", label: "Conflicts" },
   { value: "diagnostics", label: "Diagnostics" },
@@ -253,7 +253,7 @@ export function HealthPage({
               className={active ? "health-tab health-tab--active" : "health-tab"}
               onClick={() => setTab(item.value)}
             >
-              {t(item.label as "All findings" | "Updates" | "Conflicts" | "Diagnostics" | "Recovery")}
+              {t(item.label as "Everything to review" | "Updates" | "Conflicts" | "Diagnostics" | "Recovery")}
               {item.value === "updates" && updateCount > 0 && <span>{updateCount}</span>}
               {item.value === "conflicts" && snapshot.healthCounts.conflicts > 0 && (
                 <span>{snapshot.healthCounts.conflicts}</span>
@@ -430,8 +430,8 @@ function FindingCard({
         <div className="health-finding-card__footer">
           <span>
             {finding.kind === "mod"
-              ? t("Current local scan / registry mod evidence")
-              : t("Local installation / Game & DLC manifest evidence")}
+              ? t("Checked from your Mods folder and available online mod information")
+              : t("Checked from your installed game and pack information")}
           </span>
           <button type="button" onClick={onReview}>
             {finding.kind === "mod" ? t("Review in Library") : t("Review details")}
@@ -469,8 +469,8 @@ function buildUnifiedFindings(
       label: finding.kind === "game" ? "Game" : "Pack",
       name: finding.kind === "game" ? "The Sims 4" : finding.targetId,
       creator: finding.disputed
-        ? t("Conflicting compatibility evidence")
-        : t("Game & DLC health"),
+        ? t("Compatibility sources disagree")
+        : t("Game and pack check"),
       detail: localizedGameContentReason(finding, t),
       badge: gameContentBadge(finding.state),
       tone: gameContentTone(finding.state),
@@ -555,33 +555,33 @@ function RecoveryPanel() {
     <div className="health-recovery-grid">
       <Panel className="recovery-card recovery-card--primary">
         <span className="section-kicker">{t("Recovery").toUpperCase()}</span>
-        <h2>{t("Restore points belong to actions, not a separate backup product.")}</h2>
+        <h2>{t("Restore points are created only when needed.")}</h2>
         <p>
-          {t("Sims Mod Health keeps app-controlled restore points for supported mod update operations. Game and DLC updates remain owned by the official provider and are verified after rescan.")}
+          {t("Before supported mod updates, Sims Mod Health keeps a verified copy. Game and pack updates happen in EA app or Steam and are checked again when you return.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">{t("BEFORE MOD MUTATION")}</span>
-        <h3>{t("Verified snapshot")}</h3>
+        <span className="section-kicker">{t("BEFORE A MOD CHANGE")}</span>
+        <h3>{t("Verified restore copy")}</h3>
         <p>
-          {t("The original artifact is copied to app data and its SHA-256 must match before mutation proceeds.")}
+          {t("The original file is copied and verified before any supported mod update changes it.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">{t("PROVIDER UPDATE")}</span>
+        <span className="section-kicker">{t("GAME UPDATE")}</span>
         <h3>{t("Verify after return")}</h3>
         <p>
-          {t("Opening EA app or Steam never counts as success until the local game and pack state is rescanned.")}
+          {t("Opening EA app or Steam is not enough. We check the installed game and packs again when you return.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">{t("ROLLBACK")}</span>
-        <h3>{t("Safe overwrite policy")}</h3>
+        <span className="section-kicker">{t("UNDO")}</span>
+        <h3>{t("Do not overwrite newer changes")}</h3>
         <p>
-          {t("Mod rollback refuses to overwrite a target that changed independently after the update.")}
+          {t("Undo stops if the target file changed after the update, so newer changes are not overwritten.")}
         </p>
       </Panel>
     </div>
@@ -610,7 +610,7 @@ function tabLabel(tab: HealthTab) {
   if (tab === "conflicts") return "Conflicts";
   if (tab === "diagnostics") return "Diagnostics";
   if (tab === "recovery") return "Recovery";
-  return "All findings";
+  return "Everything to review";
 }
 
 function healthHeading(tab: HealthTab) {
