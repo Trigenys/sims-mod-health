@@ -585,6 +585,9 @@ function isUnifiedUpdate(finding: UnifiedFinding) {
   if (finding.kind === "mod") {
     return finding.tone === "update" || finding.badge.toLocaleLowerCase().includes("update");
   }
+  if (finding.kind === "conflictGroup") {
+    return false;
+  }
   return isUpdateGameContent(finding.content);
 }
 
