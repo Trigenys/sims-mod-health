@@ -511,7 +511,7 @@ const fr = {
   "Outdated": "Obsolète",
   "This is a real file from the scanned Mods folder. Sims Mod Health has not resolved a canonical mod identity for it yet.": "Ceci est un vrai fichier du dossier Mods analysé. Sims Mod Health n’a pas encore résolu son identité canonique.",
   "Scanned local file": "Fichier local analysé",
-  "The desktop scanner indexed this file from your selected Mods folder. Parse state: {{state}}.": "Le scanner desktop a indexé ce fichier depuis le dossier Mods sélectionné. État d’analyse : {{state}}."
+  "The desktop scanner indexed this file from your selected Mods folder. Parse state: {{state}}.": "Le scanner desktop a indexé ce fichier depuis le dossier Mods sélectionné. État d’analyse : {{state}}.",
   "A newer version ({{target}}) is available. Your installed version currently looks {{state}}.": "Une version plus récente ({{target}}) est disponible. Votre version installée semble actuellement {{state}}.",
   "APP SETTINGS": "PARAMÈTRES DE L’APPLICATION",
   "About this mod": "À propos de ce mod",
