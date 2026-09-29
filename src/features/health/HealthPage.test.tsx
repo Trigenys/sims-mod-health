@@ -193,8 +193,8 @@ describe("HealthPage", () => {
 
     const drawer = screen.getByRole("dialog", { name: "Potential interaction evidence" });
     expect(within(drawer).getByText("Raw pair observations")).toBeVisible();
-    expect(within(drawer).getByText("CreatorA/eyes.package")).toBeVisible();
-    expect(within(drawer).getByText("CreatorB/eyes-overlay.package")).toBeVisible();
+    expect(within(drawer).getAllByText("CreatorA/eyes.package")[0]).toBeVisible();
+    expect(within(drawer).getAllByText("CreatorB/eyes-overlay.package")[0]).toBeVisible();
     expect(within(drawer).getByText("3 shared resource references")).toBeVisible();
   });
 
