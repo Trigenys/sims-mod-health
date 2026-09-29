@@ -58,7 +58,7 @@ export function GameContentDrawer({
       <div className="game-content-drawer__header">
         <div>
           <span className="section-kicker">
-            {finding.kind === "game" ? t("GAME DETAIL") : t("PACK DETAIL")}
+            {finding.kind === "game" ? t("GAME STATUS") : t("PACK STATUS")}
           </span>
           <h2 id="game-content-detail-title">
             {finding.kind === "game" ? "The Sims 4" : finding.targetId}
@@ -91,15 +91,15 @@ export function GameContentDrawer({
           <dd>{finding.requiredVersion ?? t("Not declared")}</dd>
         </div>
         <div>
-          <dt>{t("Evidence")}</dt>
-          <dd>{finding.disputed ? t("Disputed") : finding.manifestStale ? t("Cached / stale") : t("Current")}</dd>
+          <dt>{t("Check status")}</dt>
+          <dd>{finding.disputed ? t("Sources disagree") : finding.manifestStale ? t("Info may be outdated") : t("Current")}</dd>
         </div>
       </dl>
 
       <section className="game-content-evidence" aria-label={t("Compatibility evidence")}>
-        <span className="section-kicker">{t("WHY THIS STATE")}</span>
+        <span className="section-kicker">{t("WHY YOU ARE SEEING THIS")}</span>
         {finding.evidence.length === 0 ? (
-          <p>{t("No trusted compatibility evidence is currently attached.")}</p>
+          <p>{t("We do not have enough reliable compatibility information for this yet.")}</p>
         ) : (
           <ul>
             {finding.evidence.map((item, index) => (
@@ -114,9 +114,9 @@ export function GameContentDrawer({
 
       {updateEligible && (
         <section className="game-content-provider-action">
-          <span className="section-kicker">{t("OFFICIAL UPDATE PROVIDER")}</span>
+          <span className="section-kicker">{t("UPDATE WITH")}</span>
           <strong>{formatProvider(capability?.provider ?? "unknown")}</strong>
-          <p>{capability ? providerCapabilityDetail(capability.provider, capability.supported, t) : t("Provider capability is being resolved.")}</p>
+          <p>{capability ? providerCapabilityDetail(capability.provider, capability.supported, t) : t("Checking which app should handle the update…")}</p>
 
           {sessionWaiting ? (
             <Button onClick={onVerify} disabled={busy}>
@@ -127,7 +127,7 @@ export function GameContentDrawer({
               onClick={onUpdate}
               disabled={busy || capability === null || !capability.supported}
             >
-              {busy ? t("Opening…") : capability ? providerActionLabel(capability.provider, t) : t("Resolve provider")}
+              {busy ? t("Opening…") : capability ? providerActionLabel(capability.provider, t) : t("Find update app")}
             </Button>
           )}
 
