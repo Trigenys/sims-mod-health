@@ -49,7 +49,8 @@
         "src-tauri/src/fingerprint/**",
         "src-tauri/src/storage/**",
         "src-tauri/migrations/**",
-        "src-tauri/Cargo.toml"
+        "src-tauri/Cargo.toml",
+        "src-tauri/src/conflicts/**"
       ],
       "gates": [
         "scanner-benchmark"
