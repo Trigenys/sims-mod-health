@@ -90,7 +90,13 @@ function App() {
           onOpenLibrary={() => setSurface("Library")}
         />
       )}
-      {surface === "Discover" && <DiscoverPage />}
+      {surface === "Discover" && (
+        <DiscoverPage
+          onOpenOverview={() => setSurface("Overview")}
+          onOpenLibrary={() => setSurface("Library")}
+          onOpenSettings={() => setSurface("Settings")}
+        />
+      )}
       {surface === "Settings" && <SettingsPage />}
       {surface === "Library" && (
         <LibraryPage
