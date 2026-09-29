@@ -28,7 +28,7 @@ export function gameContentMeasurement(
 ): GameContentMeasurement {
   if (!snapshot?.game) {
     return {
-      version: fallbackVersion,
+      version: null,
       packCount: null,
       attentionCount: null,
       compatibilityReady: false,
