@@ -152,7 +152,6 @@ mod tests {
     }
 }
 
-
 pub(crate) fn latest_game_content_version(
     connection: &Connection,
 ) -> rusqlite::Result<Option<String>> {
