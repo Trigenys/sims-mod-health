@@ -267,7 +267,16 @@ export function OverviewPage({
                   <dd>{data.installation.unidentified ?? "—"}</dd>
                 </div>
                 <div><dt>{t("Exact duplicate groups")}</dt><dd>{data.installation.exactDuplicates}</dd></div>
+                <div>
+                  <dt>{t("Potential interaction groups")}</dt>
+                  <dd>{data.conflictAggregation.potentialConflictGroupCount}</dd>
+                </div>
               </dl>
+              {data.conflictAggregation.potentialConflictGroupCount > 0 && (
+                <p className="scan-evidence-note">
+                  {t("Potential interactions are low-confidence local evidence and do not increase Needs attention.")}
+                </p>
+              )}
               <Button onClick={runScan} disabled={scanning}>
                 {scanning ? t("Scanning…") : t("Run incremental scan")}
               </Button>
