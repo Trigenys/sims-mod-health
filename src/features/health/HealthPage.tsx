@@ -26,7 +26,8 @@ import type {
 import { overviewGateway, type OverviewGateway } from "../overview/overview.gateway";
 import type {
   OverviewAttentionItem,
-  OverviewSnapshot
+  OverviewSnapshot,
+  PotentialConflictGroup
 } from "../overview/overview.types";
 import {
   localizeAttentionBadge,
@@ -75,6 +76,18 @@ type UnifiedFinding =
       tone: StatusTone;
       priority: number;
       content: GameContentHealthFinding;
+    }
+  | {
+      id: string;
+      kind: "conflictGroup";
+      label: "Potential interaction";
+      name: string;
+      creator: string;
+      detail: string;
+      badge: string;
+      tone: StatusTone;
+      priority: number;
+      conflict: PotentialConflictGroup;
     };
 
 const tabs: { value: HealthTab; label: string }[] = [
@@ -96,6 +109,7 @@ export function HealthPage({
   const [contentHealth, setContentHealth] = useState<GameContentHealthSnapshot | null>(null);
   const [capability, setCapability] = useState<ProviderUpdateCapability | null>(null);
   const [selectedContent, setSelectedContent] = useState<GameContentHealthFinding | null>(null);
+  const [selectedConflict, setSelectedConflict] = useState<PotentialConflictGroup | null>(null);
   const [providerSession, setProviderSession] = useState<ProviderUpdateSession | null>(null);
   const [providerBusy, setProviderBusy] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
@@ -136,9 +150,14 @@ export function HealthPage({
     [snapshot, contentHealth, t]
   );
 
+  const potentialConflicts = useMemo(
+    () => buildPotentialConflictFindings(snapshot?.conflictAggregation.potentialConflictGroups ?? [], t),
+    [snapshot, t]
+  );
+
   const findings = useMemo(
-    () => filterFindings(allFindings, tab, updateScope),
-    [allFindings, tab, updateScope]
+    () => filterFindings(allFindings, tab, updateScope, potentialConflicts),
+    [allFindings, tab, updateScope, potentialConflicts]
   );
 
   if (!snapshot) {
@@ -152,6 +171,8 @@ export function HealthPage({
   const packs = packHealthSummary(contentHealth);
   const updateCount = allFindings.filter(isUnifiedUpdate).length;
   const combinedAttention = allFindings.length;
+  const groupedConflictCount =
+    snapshot.healthCounts.conflicts + snapshot.conflictAggregation.potentialConflictGroupCount;
 
   const startProviderUpdate = async (finding: GameContentHealthFinding) => {
     setProviderBusy(true);
@@ -233,7 +254,7 @@ export function HealthPage({
       <section className="health-metrics" aria-label={t("Game / pack / mod health")}>
         <Metric label={t("Needs attention")} value={combinedAttention} tone="danger" />
         <Metric label={t("Updates")} value={updateCount} tone="update" />
-        <Metric label={t("Conflicts")} value={snapshot.healthCounts.conflicts} tone="warning" />
+        <Metric label={t("Actionable conflicts")} value={snapshot.healthCounts.conflicts} tone="warning" />
         <Metric label={t("Unknown")} value={countUnknown(allFindings)} tone="muted" />
         <Metric
           label={t("Healthy packs")}
@@ -255,8 +276,8 @@ export function HealthPage({
             >
               {t(item.label as "All findings" | "Updates" | "Conflicts" | "Diagnostics" | "Recovery")}
               {item.value === "updates" && updateCount > 0 && <span>{updateCount}</span>}
-              {item.value === "conflicts" && snapshot.healthCounts.conflicts > 0 && (
-                <span>{snapshot.healthCounts.conflicts}</span>
+              {item.value === "conflicts" && groupedConflictCount > 0 && (
+                <span>{groupedConflictCount}</span>
               )}
             </button>
           );
@@ -305,7 +326,7 @@ export function HealthPage({
             </div>
           )}
 
-          <div className={selectedContent ? "health-layout health-layout--drawer" : "health-layout"}>
+          <div className={selectedContent || selectedConflict ? "health-layout health-layout--drawer" : "health-layout"}>
             <section className="health-findings" aria-label={tx(tabLabel(tab))}>
               <div className="health-section-heading">
                 <div>
@@ -334,6 +355,12 @@ export function HealthPage({
                           onOpenLibrary?.();
                           return;
                         }
+                        if (finding.kind === "conflictGroup") {
+                          setSelectedContent(null);
+                          setSelectedConflict(finding.conflict);
+                          return;
+                        }
+                        setSelectedConflict(null);
                         setSelectedContent(finding.content);
                         setProviderError(null);
                       }}
@@ -353,6 +380,11 @@ export function HealthPage({
                 onClose={() => setSelectedContent(null)}
                 onUpdate={() => void startProviderUpdate(selectedContent)}
                 onVerify={() => void verifyProviderUpdate()}
+              />
+            ) : selectedConflict ? (
+              <ConflictEvidenceDrawer
+                group={selectedConflict}
+                onClose={() => setSelectedConflict(null)}
               />
             ) : (
               <aside className="health-guardrails">
@@ -431,10 +463,16 @@ function FindingCard({
           <span>
             {finding.kind === "mod"
               ? t("Current local scan / registry mod evidence")
-              : t("Local installation / Game & DLC manifest evidence")}
+              : finding.kind === "conflictGroup"
+                ? t("Grouped local DBPF evidence")
+                : t("Local installation / Game & DLC manifest evidence")}
           </span>
           <button type="button" onClick={onReview}>
-            {finding.kind === "mod" ? t("Review in Library") : t("Review details")}
+            {finding.kind === "mod"
+              ? t("Review in Library")
+              : finding.kind === "conflictGroup"
+                ? t("Review evidence")
+                : t("Review details")}
           </button>
         </div>
       </div>
@@ -483,10 +521,35 @@ function buildUnifiedFindings(
   );
 }
 
+function buildPotentialConflictFindings(
+  groups: PotentialConflictGroup[],
+  t: ReturnType<typeof useI18n>["t"]
+): UnifiedFinding[] {
+  return groups.map((group, index) => ({
+    id: "conflict-group-" + index,
+    kind: "conflictGroup" as const,
+    label: "Potential interaction" as const,
+    name: t("Potential interaction across {{count}} files", {
+      count: group.relativePaths.length
+    }),
+    creator: t("Low-confidence local evidence"),
+    detail: t("{{files}} files share {{resources}} DBPF resource references across {{pairs}} raw pair observations.", {
+      files: group.relativePaths.length,
+      resources: group.sharedResourceCount,
+      pairs: group.overlapPairCount
+    }),
+    badge: t("Low confidence"),
+    tone: "muted" as StatusTone,
+    priority: 20,
+    conflict: group
+  }));
+}
+
 function filterFindings(
   findings: UnifiedFinding[],
   tab: HealthTab,
-  scope: UpdateScope
+  scope: UpdateScope,
+  potentialConflicts: UnifiedFinding[]
 ): UnifiedFinding[] {
   if (tab === "updates") {
     return findings.filter((finding) => {
@@ -498,7 +561,7 @@ function filterFindings(
   }
 
   if (tab === "conflicts") {
-    return findings.filter((finding) => {
+    const actionable = findings.filter((finding) => {
       if (finding.kind !== "mod") return false;
       const badge = finding.badge.toLocaleLowerCase();
       const detail = finding.detail.toLocaleLowerCase();
@@ -512,6 +575,7 @@ function filterFindings(
         || detail.includes("duplicate")
       );
     });
+    return [...actionable, ...potentialConflicts];
   }
 
   return findings;
@@ -547,6 +611,89 @@ function countUnknown(findings: UnifiedFinding[]) {
       || finding.badge.toLocaleLowerCase().includes("unknown")
       || finding.badge.toLocaleLowerCase().includes("stale")
   ).length;
+}
+
+function ConflictEvidenceDrawer({
+  group,
+  onClose
+}: {
+  group: PotentialConflictGroup;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const visibleFiles = group.relativePaths.slice(0, 8);
+  const remainingFiles = Math.max(0, group.relativePaths.length - visibleFiles.length);
+
+  return (
+    <Panel
+      as="aside"
+      className="conflict-evidence-drawer"
+      role="dialog"
+      aria-label={t("Potential interaction evidence")}
+    >
+      <div className="conflict-evidence-drawer__header">
+        <div>
+          <span className="section-kicker">{t("LOCAL RESOURCE EVIDENCE")}</span>
+          <h2>{t("Potential interaction across {{count}} files", { count: group.relativePaths.length })}</h2>
+        </div>
+        <button type="button" onClick={onClose} aria-label={t("Close evidence")}>×</button>
+      </div>
+
+      <StatusBadge tone="muted">{t("Low confidence")}</StatusBadge>
+      <p className="conflict-evidence-drawer__intro">
+        {t("These files reference some of the same DBPF resources. That can be intentional, so this group does not increase Needs attention until stronger evidence exists.")}
+      </p>
+
+      <dl className="conflict-evidence-facts">
+        <div>
+          <dt>{t("Files in group")}</dt>
+          <dd>{group.relativePaths.length}</dd>
+        </div>
+        <div>
+          <dt>{t("Raw pair observations")}</dt>
+          <dd>{group.overlapPairCount}</dd>
+        </div>
+        <div>
+          <dt>{t("Shared resource references")}</dt>
+          <dd>{group.sharedResourceCount}</dd>
+        </div>
+      </dl>
+
+      <section className="conflict-evidence-section">
+        <h3>{t("Files")}</h3>
+        <ul>
+          {visibleFiles.map((path) => <li key={path}>{path}</li>)}
+        </ul>
+        {remainingFiles > 0 && (
+          <p>{t("+{{count}} more files in this group", { count: remainingFiles })}</p>
+        )}
+      </section>
+
+      <section className="conflict-evidence-section">
+        <h3>{t("Sample raw evidence")}</h3>
+        {group.sampleOverlapPairs.length === 0 ? (
+          <p>{t("No pair sample is available in this preview.")}</p>
+        ) : (
+          <ul>
+            {group.sampleOverlapPairs.map((pair, index) => (
+              <li key={pair.leftFileId + "-" + pair.rightFileId + "-" + index}>
+                <strong>{pair.leftRelativePath}</strong>
+                <span>↔</span>
+                <strong>{pair.rightRelativePath}</strong>
+                <small>
+                  {t("{{count}} shared resource references", { count: pair.sharedResourceCount })}
+                </small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <p className="conflict-evidence-drawer__footnote">
+        {t("The local analyzer keeps the underlying pair evidence; this view groups it so thousands of pairwise observations do not look like thousands of broken mods.")}
+      </p>
+    </Panel>
+  );
 }
 
 function RecoveryPanel() {
