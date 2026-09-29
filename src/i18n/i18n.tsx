@@ -726,6 +726,20 @@ const fr = {
   "Your last scan is over 24 hours old. Scan again for current results.": "Votre dernière analyse date de plus de 24 heures. Relancez-la pour obtenir des résultats à jour.",
   "Your local scan and online checks are up to date.": "Votre analyse locale et les vérifications en ligne sont à jour.",
   "Your mods were scanned, but we could not read the game version. Check the game folder in Settings.": "Vos mods ont été analysés, mais nous n’avons pas pu lire la version du jeu. Vérifiez le dossier du jeu dans les Paramètres.",
+  "Not detected": "Non détecté",
+  "Not checked": "Non vérifié",
+  "SCORE PAUSED": "SCORE EN PAUSE",
+  "Review game folders": "Vérifier les dossiers du jeu",
+  "We still need your game installation": "Nous avons encore besoin de votre installation du jeu",
+  "We still need your game version": "Nous avons encore besoin de la version du jeu",
+  "Compatibility checks are unavailable right now": "Les vérifications de compatibilité sont indisponibles pour le moment",
+  "Compatibility information may be out of date": "Les informations de compatibilité peuvent être anciennes",
+  "Game compatibility could not be confirmed": "La compatibilité du jeu n’a pas pu être confirmée",
+  "Your Mods scan is available, but the game installation has not been confirmed. We will not turn missing game data into zeroes or a health score.": "L’analyse de vos Mods est disponible, mais l’installation du jeu n’a pas encore été confirmée. Les données manquantes ne seront pas transformées en zéros ni en score de santé.",
+  "We found the game, but could not read its version. Your local Mods facts remain visible, but the overall score stays hidden until the version is known.": "Nous avons trouvé le jeu, mais sa version n’a pas pu être lue. Les informations locales sur vos Mods restent visibles, mais le score global reste masqué tant que la version n’est pas connue.",
+  "Your game and local files are available, but online compatibility data is not. Local facts remain visible; the overall score and game attention stay unmeasured.": "Votre jeu et vos fichiers locaux sont disponibles, mais pas les données de compatibilité en ligne. Les informations locales restent visibles ; le score global et les alertes Jeu/Packs restent non mesurés.",
+  "We have cached compatibility information, but it may be old. We keep the local facts visible and pause the overall score until fresh checks are available.": "Nous avons des informations de compatibilité en cache, mais elles peuvent être anciennes. Les informations locales restent visibles et le score global est mis en pause jusqu’au retour de données fraîches.",
+  "We do not have enough reliable game compatibility information to calculate an overall score. Local scan facts remain available.": "Nous n’avons pas assez d’informations fiables sur la compatibilité du jeu pour calculer un score global. Les informations issues de l’analyse locale restent disponibles.",
 } as const;
 
 export type TranslationKey = keyof typeof fr;
