@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { discoverVisualFixture } from "./discover.visual";
+import { discoverBlockedVisualFixture, discoverVisualFixture } from "./discover.visual";
 import type { DiscoverySnapshot } from "./discover.types";
 
 export type DiscoverGateway = {
@@ -7,7 +7,7 @@ export type DiscoverGateway = {
 };
 
 function isVisualHarness() {
-  return new URLSearchParams(window.location.search).get("visual") === "discover";
+  return new URLSearchParams(window.location.search).get("visual")?.startsWith("discover") === true;
 }
 
 function browserSnapshot(): DiscoverySnapshot {
@@ -15,7 +15,18 @@ function browserSnapshot(): DiscoverySnapshot {
     patchVersion: null,
     state: "offline",
     detail:
-      "Recommendations require the desktop scanner and Registry resolution. Browser preview does not invent recommendation data.",
+      "Recommendations require the desktop scanner and online compatibility data.",
+    blocker: "registry",
+    prerequisites: {
+      gameDetected: false,
+      patchKnown: false,
+      packsKnown: false,
+      installedPackCount: null,
+      modsScanned: false,
+      installedModFiles: null,
+      identifiedMods: null,
+      registryAvailable: false
+    },
     recommendations: []
   };
 }
@@ -23,7 +34,10 @@ function browserSnapshot(): DiscoverySnapshot {
 export const discoverGateway: DiscoverGateway = {
   async load() {
     if (isVisualHarness()) {
-      return discoverVisualFixture;
+      const visual = new URLSearchParams(window.location.search).get("visual");
+      return visual === "discover-blocked"
+        ? discoverBlockedVisualFixture
+        : discoverVisualFixture;
     }
 
     try {
