@@ -16,7 +16,9 @@ use crate::storage;
 use super::GameVersion;
 use packs::LocalPackProbe;
 use providers::{infer_provider_from_path, is_game_install_root, EaAppProbe, SteamProbe};
-pub(crate) use repository::{GameContentRepository, SqliteGameContentRepository};
+pub(crate) use repository::{
+    latest_game_content_version, GameContentRepository, SqliteGameContentRepository,
+};
 use version::LocalVersionProbe;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
