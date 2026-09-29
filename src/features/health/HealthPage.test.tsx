@@ -175,6 +175,29 @@ describe("HealthPage", () => {
     expect(content.startProviderUpdate).toHaveBeenCalledWith("pack", "EP17");
   });
 
+  it("groups low-confidence DBPF interactions separately and exposes sampled evidence", async () => {
+    render(
+      <HealthPage
+        gateway={gateway}
+        contentGateway={contentGateway()}
+        initialTab="conflicts"
+      />
+    );
+
+    const potential = await screen.findByText("Potential interaction across 3 files");
+    const card = potential.closest("article");
+    expect(card).not.toBeNull();
+    expect(within(card as HTMLElement).getByText("Low confidence")).toBeVisible();
+
+    fireEvent.click(within(card as HTMLElement).getByRole("button", { name: "Review evidence" }));
+
+    const drawer = screen.getByRole("dialog", { name: "Potential interaction evidence" });
+    expect(within(drawer).getByText("Raw pair observations")).toBeVisible();
+    expect(within(drawer).getByText("CreatorA/eyes.package")).toBeVisible();
+    expect(within(drawer).getByText("CreatorB/eyes-overlay.package")).toBeVisible();
+    expect(within(drawer).getByText("3 shared resource references")).toBeVisible();
+  });
+
   it("treats recovery as a Health subview rather than primary navigation", async () => {
     render(
       <HealthPage
