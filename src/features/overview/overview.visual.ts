@@ -11,8 +11,62 @@ export const overviewVisualFixture: OverviewSnapshot = {
   healthCounts: {
     healthy: 267,
     updates: 21,
-    conflicts: 7,
+    conflicts: 18,
     unknown: 25
+  },
+  conflictAggregation: {
+    exactDuplicateGroupCount: 18,
+    potentialConflictGroupCount: 2,
+    attentionGroupCount: 18,
+    rawOverlapPairCount: 47,
+    suppressedDuplicateOverlapPairCount: 6,
+    potentialConflictGroups: [
+      {
+        classification: "potentialConflictGroup",
+        confidence: "low",
+        countsTowardAttention: false,
+        fileIds: [101, 102, 103],
+        relativePaths: [
+          "CreatorA/CAS-eyes.package",
+          "CreatorB/CAS-eyes-overlay.package",
+          "CreatorC/CAS-eyes-default.package"
+        ],
+        overlapPairCount: 3,
+        sharedResourceCount: 12,
+        sampleResourceKeys: [
+          { resourceType: 3451, group: 0, instance: 101 }
+        ],
+        sampleOverlapPairs: [
+          {
+            classification: "potentialConflict",
+            leftFileId: 101,
+            leftRelativePath: "CreatorA/CAS-eyes.package",
+            rightFileId: 102,
+            rightRelativePath: "CreatorB/CAS-eyes-overlay.package",
+            sharedResourceCount: 5,
+            sampleResourceKeys: [
+              { resourceType: 3451, group: 0, instance: 101 }
+            ]
+          }
+        ]
+      },
+      {
+        classification: "potentialConflictGroup",
+        confidence: "low",
+        countsTowardAttention: false,
+        fileIds: [201, 202],
+        relativePaths: [
+          "BuildBuy/window.package",
+          "BuildBuy/window-recolor.package"
+        ],
+        overlapPairCount: 1,
+        sharedResourceCount: 4,
+        sampleResourceKeys: [
+          { resourceType: 319, group: 0, instance: 202 }
+        ],
+        sampleOverlapPairs: []
+      }
+    ]
   },
   attentionCount: 28,
   attention: [

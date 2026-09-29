@@ -72,6 +72,7 @@ pub(crate) struct OverviewSnapshot {
     pub(crate) health_score: Option<u8>,
     pub(crate) health_score_explanation: String,
     pub(crate) health_counts: OverviewHealthCounts,
+    pub(crate) conflict_aggregation: conflicts::ConflictAggregation,
     pub(crate) attention_count: u64,
     pub(crate) attention: Vec<OverviewAttentionItem>,
     pub(crate) installation: OverviewInstallationCounts,
@@ -106,7 +107,7 @@ pub(crate) struct LocalOverviewContext {
     scan: OverviewScanState,
     probes: Vec<ProbeBinding>,
     exact_duplicates: Vec<crate::fingerprint::ExactDuplicateGroup>,
-    resource_overlaps: Vec<conflicts::ResourceOverlapFinding>,
+    conflict_aggregation: conflicts::ConflictAggregation,
     local_analysis_partial: bool,
     registry_base_url: String,
 }
@@ -171,7 +172,7 @@ pub(crate) fn load_local_context(
             scan: empty_scan(),
             probes: Vec::new(),
             exact_duplicates: Vec::new(),
-            resource_overlaps: Vec::new(),
+            conflict_aggregation: conflicts::ConflictAggregation::default(),
             local_analysis_partial: false,
             registry_base_url,
         });
@@ -182,20 +183,21 @@ pub(crate) fn load_local_context(
         local_file_counts(&connection, installation.id)?;
     let probes = load_registry_probes(&connection, installation.id)?;
 
-    let (exact_duplicates, resource_overlaps, analysis_partial) =
+    let (exact_duplicates, conflict_aggregation, analysis_partial) =
         match conflicts::analyze_installation(&connection, installation.id, &installation.mods_root)
         {
             Ok(analysis) => (
                 analysis.exact_duplicates,
-                analysis.resource_overlaps,
+                analysis.aggregation,
                 !analysis.parse_failures.is_empty() || analysis.overlap_pairs_truncated,
             ),
-            Err(_) => (
-                crate::fingerprint::exact_duplicate_groups(&connection, installation.id)
-                    .unwrap_or_default(),
-                Vec::new(),
-                true,
-            ),
+            Err(_) => {
+                let exact_duplicates =
+                    crate::fingerprint::exact_duplicate_groups(&connection, installation.id)
+                        .unwrap_or_default();
+                let conflict_aggregation = conflicts::aggregate_findings(&exact_duplicates, &[]);
+                (exact_duplicates, conflict_aggregation, true)
+            }
         };
 
     Ok(LocalOverviewContext {
@@ -207,7 +209,7 @@ pub(crate) fn load_local_context(
         scan,
         probes,
         exact_duplicates,
-        resource_overlaps,
+        conflict_aggregation,
         local_analysis_partial: analysis_partial,
         registry_base_url,
     })
@@ -273,7 +275,7 @@ pub(crate) async fn build_snapshot(local: LocalOverviewContext) -> OverviewSnaps
     let mut health_counts = OverviewHealthCounts {
         healthy: 0,
         updates: 0,
-        conflicts: (local.exact_duplicates.len() + local.resource_overlaps.len()) as u64,
+        conflicts: local.conflict_aggregation.attention_group_count,
         unknown: 0,
     };
 
@@ -951,21 +953,6 @@ fn local_attention(local: &LocalOverviewContext) -> Vec<RankedAttention> {
         ));
     }
 
-    for overlap in &local.resource_overlaps {
-        attention.push(RankedAttention::new(
-            4,
-            &display_name(&overlap.left_relative_path),
-            "Local scan",
-            &format!(
-                "Potential conflict with {} across {} shared DBPF resource keys.",
-                display_name(&overlap.right_relative_path),
-                overlap.shared_resource_count
-            ),
-            "Potential conflict",
-            "warning",
-        ));
-    }
-
     if local.scan.stale {
         attention.push(RankedAttention::new(
             3,
@@ -1059,6 +1046,7 @@ fn finalize_snapshot(
             "Overall health is the percentage of current canonical releases with verified compatible patch evidence. Update-available releases still count as compatible when their installed release is compatible; unresolved files remain in the denominator."
                 .to_string(),
         health_counts,
+        conflict_aggregation: local.conflict_aggregation.clone(),
         attention_count,
         attention,
         installation: installation_counts,
@@ -1087,6 +1075,7 @@ fn empty_snapshot(scan: OverviewScanState) -> OverviewSnapshot {
             conflicts: 0,
             unknown: 0,
         },
+        conflict_aggregation: conflicts::ConflictAggregation::default(),
         attention_count: 0,
         attention: Vec::new(),
         installation: OverviewInstallationCounts {

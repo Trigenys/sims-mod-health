@@ -33,6 +33,14 @@ function browserEmptySnapshot(): OverviewSnapshot {
       conflicts: 0,
       unknown: 0
     },
+    conflictAggregation: {
+      exactDuplicateGroupCount: 0,
+      potentialConflictGroupCount: 0,
+      attentionGroupCount: 0,
+      rawOverlapPairCount: 0,
+      suppressedDuplicateOverlapPairCount: 0,
+      potentialConflictGroups: []
+    },
     attentionCount: 0,
     attention: [],
     installation: {

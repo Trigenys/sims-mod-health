@@ -740,6 +740,28 @@ const fr = {
   "Your game and local files are available, but online compatibility data is not. Local facts remain visible; the overall score and game attention stay unmeasured.": "Votre jeu et vos fichiers locaux sont disponibles, mais pas les données de compatibilité en ligne. Les informations locales restent visibles ; le score global et les alertes Jeu/Packs restent non mesurés.",
   "We have cached compatibility information, but it may be old. We keep the local facts visible and pause the overall score until fresh checks are available.": "Nous avons des informations de compatibilité en cache, mais elles peuvent être anciennes. Les informations locales restent visibles et le score global est mis en pause jusqu’au retour de données fraîches.",
   "We do not have enough reliable game compatibility information to calculate an overall score. Local scan facts remain available.": "Nous n’avons pas assez d’informations fiables sur la compatibilité du jeu pour calculer un score global. Les informations issues de l’analyse locale restent disponibles.",
+  "Possible interaction groups": "Groupes d’interactions possibles",
+  "These possible interactions are not counted as problems until we have stronger evidence.": "Ces interactions possibles ne sont pas comptées comme des problèmes tant que nous n’avons pas d’indices plus solides.",
+  "Possible interaction": "Interaction possible",
+  "Grouped from files that may change the same game content": "Regroupé à partir de fichiers qui peuvent modifier les mêmes éléments du jeu",
+  "Review evidence": "Voir les indices",
+  "Possible interaction across {{count}} files": "Interaction possible entre {{count}} fichiers",
+  "Needs more evidence": "Demande plus d’indices",
+  "{{files}} files may affect some of the same game content. We grouped {{pairs}} file-pair observations into one item instead of showing each pair separately.": "{{files}} fichiers peuvent agir sur certains des mêmes éléments du jeu. Nous avons regroupé {{pairs}} observations entre paires de fichiers en un seul élément au lieu d’afficher chaque paire séparément.",
+  "Low confidence": "Faible confiance",
+  "Possible interaction evidence": "Indices d’interaction possible",
+  "WHY THESE FILES WERE GROUPED": "POURQUOI CES FICHIERS SONT REGROUPÉS",
+  "Close evidence": "Fermer les indices",
+  "These files may change some of the same game content. That can be intentional, so this group does not increase Needs attention unless stronger evidence appears.": "Ces fichiers peuvent modifier certains des mêmes éléments du jeu. Cela peut être volontaire ; ce groupe n’augmente donc pas le compteur À vérifier tant que des indices plus solides n’apparaissent pas.",
+  "Files in group": "Fichiers du groupe",
+  "File-pair observations": "Observations entre paires de fichiers",
+  "Shared game resources": "Éléments du jeu partagés",
+  "Files": "Fichiers",
+  "+{{count}} more files in this group": "+{{count}} autres fichiers dans ce groupe",
+  "Sample evidence": "Exemple d’indices",
+  "No file-pair sample is available in this preview.": "Aucun exemple de paire de fichiers n’est disponible dans cet aperçu.",
+  "{{count}} shared game resources": "{{count}} éléments du jeu partagés",
+  "The app keeps the underlying file-pair evidence, but this view groups it so one cluster does not look like dozens or thousands of separate broken mods.": "L’application conserve les indices entre paires de fichiers, mais cette vue les regroupe afin qu’un seul ensemble ne ressemble pas à des dizaines ou des milliers de mods cassés distincts."
 } as const;
 
 export type TranslationKey = keyof typeof fr;
