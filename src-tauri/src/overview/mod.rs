@@ -116,6 +116,7 @@ pub(crate) struct DiscoverySeed {
     pub(crate) patch_version: String,
     pub(crate) registry_base_url: String,
     pub(crate) installed_release_ids: Vec<String>,
+    pub(crate) registry_checked: bool,
 }
 
 #[derive(Debug)]
@@ -234,6 +235,7 @@ pub(crate) async fn discovery_seed(database_path: &Path) -> Result<Option<Discov
             patch_version,
             registry_base_url: local.registry_base_url,
             installed_release_ids: Vec::new(),
+            registry_checked: false,
         }));
     }
 
@@ -261,6 +263,7 @@ pub(crate) async fn discovery_seed(database_path: &Path) -> Result<Option<Discov
         patch_version,
         registry_base_url: local.registry_base_url,
         installed_release_ids,
+        registry_checked: true,
     }))
 }
 
