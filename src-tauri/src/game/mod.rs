@@ -4,7 +4,8 @@ mod provider_update;
 
 pub(crate) use content_health::{evaluate_game_content_health, GameContentHealthSnapshot};
 pub(crate) use content_inventory::{
-    discover_game_content, inspect_game_content_path, refresh_and_persist_game_content,
+    discover_game_content, inspect_game_content_path, persist_game_content_path,
+    refresh_and_persist_game_content,
     GameContentInstallation, GameContentRepository, GameContentSnapshot,
     SqliteGameContentRepository,
 };
