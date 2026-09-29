@@ -64,21 +64,21 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
   return (
     <>
       <Topbar
-        gameVersion={snapshot.patchVersion ? t("Patch {{version}}", { version: snapshot.patchVersion }) : t("Patch unknown")}
+        gameVersion={snapshot.patchVersion ? t("Patch {{version}}", { version: snapshot.patchVersion }) : t("Game version not detected yet")}
         platform="Windows"
         indexedCount={snapshot.recommendations.length}
       />
 
       <section className="discover-hero" aria-labelledby="discover-title">
         <div>
-          <p className="eyebrow">{t("SAFE ADDITIONS FOR YOUR GAME")}</p>
-          <h1 id="discover-title">{t("Curated & safe additions")}</h1>
+          <p className="eyebrow">{t("RECOMMENDATIONS")}</p>
+          <h1 id="discover-title">{t("Mods you can consider")}</h1>
           <p className="lede">
-            {t("Recommendations are filtered for compatibility and known conflicts before deterministic ranking.")}
+            {t("We only show suggestions that fit your current game version and do not conflict with what we already know.")}
           </p>
         </div>
         <div className="discover-count">
-          <span>{t("Safe candidates")}</span>
+          <span>{t("Suggestions")}</span>
           <strong>{snapshot.recommendations.length}</strong>
         </div>
       </section>
@@ -120,12 +120,18 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
           <div>
             <strong>
               {snapshot.state === "offline"
-                ? t("Registry recommendations unavailable")
+                ? t("Recommendations are temporarily unavailable")
                 : snapshot.state === "empty"
-                  ? t("No recommendation set yet")
-                  : t("Recommendation evidence is partial")}
+                  ? t("We need a little more information before recommending mods")
+                  : t("Some recommendation checks are unavailable")}
             </strong>
-            <p>{tx(snapshot.detail)}</p>
+            <p>
+              {snapshot.state === "offline"
+                ? t("Your local library is still available. We need online compatibility data before we can recommend mods safely.")
+                : snapshot.state === "empty"
+                  ? t("Finish scanning your game and mods so we can build recommendations for your setup.")
+                  : t("Some compatibility checks could not be completed, so recommendations may be limited for now.")}
+            </p>
           </div>
         </section>
       )}
@@ -136,16 +142,16 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
           <div>
             <h2>
               {snapshot.recommendations.length === 0
-                ? t("No safe recommendation currently passes the filters")
+                ? t("No recommendations yet")
                 : t("No recommendation matches these filters")}
             </h2>
             <p>
-              {t("Discover never fills empty space with unsafe or invented suggestions. Current-patch compatibility and known-conflict filters run before ranking.")}
+              {t("We only recommend mods when we have enough information about your game and installed mods.")}
             </p>
           </div>
         </Panel>
       ) : (
-        <section className="discover-grid" aria-label={t("Safe recommendations")}>
+        <section className="discover-grid" aria-label={t("Recommendations")}>
           {visible.map((item) => (
             <RecommendationCard item={item} key={item.releaseId} />
           ))}
@@ -155,10 +161,10 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
       <Panel className="discover-principle">
         <div className="discover-principle__icon" aria-hidden="true">♡</div>
         <div>
-          <span className="section-kicker">{t("SIM MOD HEALTH SAFETY ASSURANCE")}</span>
-          <h2>{t("Recommendations never outrank health evidence.")}</h2>
+          <span className="section-kicker">{t("HOW RECOMMENDATIONS WORK")}</span>
+          <h2>{t("We will not recommend something that may break your setup.")}</h2>
           <p>
-            {t("Already-installed mods, explicitly incompatible releases and candidates without current-patch compatibility evidence are filtered out before ranking.")}
+            {t("We leave out mods you already have and anything we cannot verify as compatible with your setup.")}
           </p>
         </div>
       </Panel>
@@ -198,9 +204,9 @@ function RecommendationCard({ item }: { item: DiscoveryRecommendation }) {
       </div>
 
       <div className="recommendation-card__footer">
-        <span>{t("Deterministic score {{score}}", { score: item.score })}</span>
+        <span>{t("Match score {{score}}", { score: item.score })}</span>
         <button type="button">
-          {t("Review recommendation")}
+          {t("See why this was suggested")}
           <span aria-hidden="true">→</span>
         </button>
       </div>
