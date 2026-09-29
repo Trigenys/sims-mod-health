@@ -8,6 +8,7 @@ import type {
   DiagnosticReport,
   DiagnosticsSnapshot
 } from "./diagnostics.types";
+import { useI18n } from "../../i18n/i18n";
 
 type DiagnosticsPageProps = {
   gateway?: DiagnosticsGateway;
@@ -18,6 +19,7 @@ export function DiagnosticsPage({
   gateway = diagnosticsGateway,
   embedded = false
 }: DiagnosticsPageProps) {
+  const { t, tx } = useI18n();
   const [snapshot, setSnapshot] = useState<DiagnosticsSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [telemetryEnabled, setTelemetryEnabled] = useState(false);
@@ -72,7 +74,7 @@ export function DiagnosticsPage({
   if (!snapshot) {
     return (
       <section className="diagnostics-loading" role="status">
-        Reading local diagnostic reports…
+        {t("Reading local diagnostic reports…")}
       </section>
     );
   }
@@ -82,14 +84,14 @@ export function DiagnosticsPage({
       {!embedded && (
         <section className="diagnostics-heading" aria-labelledby="diagnostics-title">
           <div>
-            <p className="eyebrow">DIAGNOSTIC EVIDENCE</p>
-            <h1 id="diagnostics-title">Diagnostics</h1>
+            <p className="eyebrow">{t("DIAGNOSTIC EVIDENCE")}</p>
+            <h1 id="diagnostics-title">{t("Diagnostics")}</h1>
             <p className="lede">
-              Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.
+              {t("Translate exception reports into evidence-linked candidates without turning correlation into a causality claim.")}
             </p>
           </div>
           <Button variant="primary" onClick={analyze} disabled={loading}>
-            {loading ? "Analyzing…" : "Analyze reports"}
+            {loading ? t("Analyzing…") : t("Analyze reports")}
           </Button>
         </section>
       )}
@@ -97,32 +99,32 @@ export function DiagnosticsPage({
       {embedded && (
         <div className="health-embedded-actions">
           <div>
-            <span className="section-kicker">DIAGNOSTIC EVIDENCE</span>
-            <strong>Exception reports stay evidence-led.</strong>
+            <span className="section-kicker">{t("DIAGNOSTIC EVIDENCE")}</span>
+            <strong>{t("Exception reports stay evidence-led.")}</strong>
           </div>
           <Button variant="secondary" onClick={analyze} disabled={loading}>
-            {loading ? "Analyzing…" : "Analyze reports"}
+            {loading ? t("Analyzing…") : t("Analyze reports")}
           </Button>
         </div>
       )}
 
-      <section className="diagnostics-summary" aria-label="Diagnostics summary">
-        <SummaryFact label="Reports" value={snapshot.reports.length} />
-        <SummaryFact label="Implicated candidates" value={candidateCount} />
+      <section className="diagnostics-summary" aria-label={t("Diagnostics summary")}>
+        <SummaryFact label={t("Reports")} value={snapshot.reports.length} />
+        <SummaryFact label={t("Implicated candidates")} value={candidateCount} />
         <SummaryFact
-          label="Registry"
-          value={snapshot.registryState === "ready" ? "Resolved" : snapshot.registryState}
+          label={t("Registry")}
+          value={snapshot.registryState === "ready" ? t("Resolved") : tx(snapshot.registryState)}
         />
       </section>
 
-      <section className="diagnostics-privacy" aria-label="Diagnostic privacy">
+      <section className="diagnostics-privacy" aria-label={t("Diagnostic privacy")}>
         <div>
-          <span className="section-kicker">PRIVACY</span>
-          <strong>Diagnostic telemetry is {telemetryEnabled ? "on" : "off"}</strong>
+          <span className="section-kicker">{t("PRIVACY")}</span>
+          <strong>{t("Diagnostic telemetry is {{state}}", { state: telemetryEnabled ? t("on") : t("off") })}</strong>
           <p>
-            Off by default. Only redacted diagnostic summaries may be eligible for telemetry after explicit consent; raw reports are never uploaded automatically.
+            {t("Off by default. Only redacted diagnostic summaries may be eligible for telemetry after explicit consent; raw reports are never uploaded automatically.")}
           </p>
-          {privacyError && <small role="status">{privacyError}</small>}
+          {privacyError && <small role="status">{tx(privacyError)}</small>}
         </div>
         <label className="privacy-toggle">
           <input
@@ -131,7 +133,7 @@ export function DiagnosticsPage({
             disabled={privacyBusy}
             onChange={(event) => void updateTelemetryConsent(event.target.checked)}
           />
-          <span>Allow redacted diagnostic telemetry</span>
+          <span>{t("Allow redacted diagnostic telemetry")}</span>
         </label>
       </section>
 
@@ -141,12 +143,12 @@ export function DiagnosticsPage({
           <div>
             <strong>
               {snapshot.registryState === "offline"
-                ? "Registry offline"
-                : "Registry resolution is partial"}
+                ? t("Registry offline")
+                : t("Registry resolution is partial")}
             </strong>
             <p>
-              Local module, filename and resource evidence remains available.{" "}
-              {snapshot.registryDetail}
+              {t("Local module, filename and resource evidence remains available.")}{" "}
+              {tx(snapshot.registryDetail)}
             </p>
           </div>
         </section>
@@ -156,14 +158,14 @@ export function DiagnosticsPage({
         <Panel className="diagnostics-empty">
           <div className="diagnostics-empty__icon" aria-hidden="true">⌁</div>
           <div>
-            <h2>No supported diagnostic report found</h2>
+            <h2>{t("No supported diagnostic report found")}</h2>
             <p>
-              The parser checks recent lastException, lastUIException, MCCC and Better Exceptions reports in the current Sims user folder.
+              {t("The parser checks recent lastException, lastUIException, MCCC and Better Exceptions reports in the current Sims user folder.")}
             </p>
           </div>
         </Panel>
       ) : (
-        <section className="diagnostics-list" aria-label="Parsed diagnostic reports">
+        <section className="diagnostics-list" aria-label={t("Parsed diagnostic reports")}>
           {snapshot.reports.map((report) => (
             <DiagnosticReportCard
               key={
@@ -180,6 +182,7 @@ export function DiagnosticsPage({
 }
 
 function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
+  const { t, tx } = useI18n();
   const tone = parseTone(report.parseStatus);
 
   return (
@@ -189,15 +192,15 @@ function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
           <span className="section-kicker">{sourceLabel(report.sourceKind)}</span>
           <h2>{report.reportName}</h2>
         </div>
-        <StatusBadge tone={tone}>{statusLabel(report.parseStatus)}</StatusBadge>
+        <StatusBadge tone={tone}>{tx(statusLabel(report.parseStatus))}</StatusBadge>
       </div>
 
-      <p className="diagnostic-note">{report.note}</p>
+      <p className="diagnostic-note">{tx(report.note)}</p>
 
       {report.telemetryPreview.redactionsApplied > 0 && (
         <div className="privacy-chip">
           <span aria-hidden="true">✓</span>
-          {report.telemetryPreview.redactionsApplied} personal/path values redacted from telemetry preview
+          {t("{{count}} personal/path values redacted from telemetry preview", { count: report.telemetryPreview.redactionsApplied })}
         </div>
       )}
 
@@ -212,16 +215,16 @@ function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
         </div>
       ) : (
         <div className="diagnostic-no-candidate">
-          <strong>No installed mod candidate linked</strong>
+          <strong>{t("No installed mod candidate linked")}</strong>
           <span>
-            The report remains stored as normalized evidence even when no local artifact matches.
+            {t("The report remains stored as normalized evidence even when no local artifact matches.")}
           </span>
         </div>
       )}
 
       {report.observations.length > 0 && (
         <details className="diagnostic-observations">
-          <summary>{report.observations.length} normalized observations</summary>
+          <summary>{t("{{count}} normalized observations", { count: report.observations.length })}</summary>
           <ul>
             {report.observations.map((observation, index) => (
               <li key={observation.kind + "-" + observation.value + "-" + index}>
@@ -238,18 +241,19 @@ function DiagnosticReportCard({ report }: { report: DiagnosticReport }) {
 }
 
 function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
+  const { t, tx } = useI18n();
   return (
     <article className="diagnostic-candidate">
       <div className="diagnostic-candidate__top">
         <div>
-          <span className="section-kicker">IMPLICATED CANDIDATE</span>
+          <span className="section-kicker">{t("IMPLICATED CANDIDATE")}</span>
           <strong>{candidate.relativePath}</strong>
           <small>
-            Correlated with report evidence · {candidate.confidenceScore}% local match confidence
+            {t("Correlated with report evidence · {{score}}% local match confidence", { score: candidate.confidenceScore })}
           </small>
         </div>
         <span className={"diagnostic-confidence diagnostic-confidence--" + candidate.confidence}>
-          {candidate.confidence}
+          {tx(candidate.confidence)}
         </span>
       </div>
 
@@ -258,7 +262,7 @@ function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
           <div key={evidence.kind + "-" + evidence.reference}>
             <span>{evidence.kind}</span>
             <code>{evidence.reference}</code>
-            <p>{evidence.explanation}</p>
+            <p>{tx(evidence.explanation)}</p>
           </div>
         ))}
       </div>
@@ -269,11 +273,11 @@ function CandidateCard({ candidate }: { candidate: DiagnosticCandidate }) {
           <div>
             <strong>
               {candidate.canonical.deterministic
-                ? "Canonical artifact resolved"
-                : "Canonical candidate resolved"}
+                ? t("Canonical artifact resolved")
+                : t("Canonical candidate resolved")}
             </strong>
             <small>
-              Registry confidence {candidate.canonical.confidence}
+              {t("Registry confidence {{confidence}}", { confidence: candidate.canonical.confidence })}
             </small>
           </div>
         </div>

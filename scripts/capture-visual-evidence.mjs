@@ -5,8 +5,10 @@ const baseUrl = process.env.VISUAL_BASE_URL ?? "http://127.0.0.1:4173";
 const outputDir = process.env.VISUAL_OUTPUT_DIR ?? "visual-evidence";
 
 const cases = [
-  { name: "overview-1024x700", width: 1024, height: 700, path: "/?visual=overview", active: "Overview" },
-  { name: "overview-1440x900", width: 1440, height: 900, path: "/?visual=overview", active: "Overview" },
+  { name: "overview-1024x700", width: 1024, height: 700, path: "/?visual=overview", active: "Overview", locale: "en" },
+  { name: "overview-1440x900", width: 1440, height: 900, path: "/?visual=overview", active: "Overview", locale: "en" },
+  { name: "overview-fr-1024x700", width: 1024, height: 700, path: "/?visual=overview", active: "Vue d’ensemble", locale: "fr" },
+  { name: "overview-fr-1440x900", width: 1440, height: 900, path: "/?visual=overview", active: "Vue d’ensemble", locale: "fr" },
   { name: "library-1024x700", width: 1024, height: 700, path: "/?surface=library&visual=library", active: "Library" },
   { name: "library-1440x900", width: 1440, height: 900, path: "/?surface=library&visual=library", active: "Library" },
   { name: "detail-1024x700", width: 1024, height: 700, path: "/?surface=detail&mod=rpo&visual=detail", active: "Library" },
@@ -84,6 +86,11 @@ const page = await browser.newPage();
 try {
   for (const testCase of cases) {
     await page.setViewportSize({ width: testCase.width, height: testCase.height });
+    await page.goto(new URL("/", baseUrl).toString(), { waitUntil: "domcontentloaded" });
+    await page.evaluate(
+      ({ locale }) => localStorage.setItem("sims-mod-health.locale", locale),
+      { locale: testCase.locale ?? "en" }
+    );
     await page.goto(new URL(testCase.path, baseUrl).toString(), { waitUntil: "networkidle" });
 
     if (testCase.path.includes("visual=overview")) {
@@ -104,6 +111,13 @@ try {
       documentWidth: document.documentElement.scrollWidth,
       activeNavigation: document.querySelector('[aria-current="page"]')?.textContent?.trim()
     }));
+
+    if ((testCase.locale ?? "en") === "fr") {
+      const frenchToggle = page.getByRole("button", { name: "Français" });
+      if ((await frenchToggle.getAttribute("aria-pressed")) !== "true") {
+        throw new Error(testCase.name + " did not persist the French locale");
+      }
+    }
 
     if (layout.documentWidth > layout.viewportWidth) {
       throw new Error(

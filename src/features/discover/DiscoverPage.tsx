@@ -3,12 +3,14 @@ import { Topbar } from "../../components/layout/Topbar";
 import { Panel } from "../../components/ui/Panel";
 import { discoverGateway, type DiscoverGateway } from "./discover.gateway";
 import type { DiscoveryRecommendation, DiscoverySnapshot } from "./discover.types";
+import { useI18n } from "../../i18n/i18n";
 
 type DiscoverPageProps = {
   gateway?: DiscoverGateway;
 };
 
 export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
+  const { t, tx } = useI18n();
   const [snapshot, setSnapshot] = useState<DiscoverySnapshot | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
@@ -54,7 +56,7 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
   if (!snapshot) {
     return (
       <section className="discover-loading" role="status">
-        Building safe recommendations…
+        {t("Building safe recommendations…")}
       </section>
     );
   }
@@ -62,38 +64,38 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
   return (
     <>
       <Topbar
-        gameVersion={snapshot.patchVersion ? "Patch " + snapshot.patchVersion : "Patch unknown"}
+        gameVersion={snapshot.patchVersion ? t("Patch {{version}}", { version: snapshot.patchVersion }) : t("Patch unknown")}
         platform="Windows"
         indexedCount={snapshot.recommendations.length}
       />
 
       <section className="discover-hero" aria-labelledby="discover-title">
         <div>
-          <p className="eyebrow">SAFE ADDITIONS FOR YOUR GAME</p>
-          <h1 id="discover-title">Curated & safe additions</h1>
+          <p className="eyebrow">{t("SAFE ADDITIONS FOR YOUR GAME")}</p>
+          <h1 id="discover-title">{t("Curated & safe additions")}</h1>
           <p className="lede">
-            Recommendations are filtered for compatibility and known conflicts before deterministic ranking.
+            {t("Recommendations are filtered for compatibility and known conflicts before deterministic ranking.")}
           </p>
         </div>
         <div className="discover-count">
-          <span>Safe candidates</span>
+          <span>{t("Safe candidates")}</span>
           <strong>{snapshot.recommendations.length}</strong>
         </div>
       </section>
 
-      <section className="discover-toolbar" aria-label="Discover filters">
+      <section className="discover-toolbar" aria-label={t("Discover filters")}>
         <label className="discover-search">
           <span aria-hidden="true">⌕</span>
-          <span className="sr-only">Search recommendations</span>
+          <span className="sr-only">{t("Search recommendations")}</span>
           <input
-            aria-label="Search recommendations"
-            placeholder="Search curated recommendations…"
+            aria-label={t("Search recommendations")}
+            placeholder={t("Search curated recommendations…")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
 
-        <div className="discover-categories" aria-label="Recommendation categories">
+        <div className="discover-categories" aria-label={t("Recommendation categories")}>
           {categories.map((value) => (
             <button
               key={value}
@@ -106,7 +108,7 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
               }
               onClick={() => setCategory(value)}
             >
-              {humanize(value)}
+              {value === "All" ? t("All") : tx(humanize(value))}
             </button>
           ))}
         </div>
@@ -118,12 +120,12 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
           <div>
             <strong>
               {snapshot.state === "offline"
-                ? "Registry recommendations unavailable"
+                ? t("Registry recommendations unavailable")
                 : snapshot.state === "empty"
-                  ? "No recommendation set yet"
-                  : "Recommendation evidence is partial"}
+                  ? t("No recommendation set yet")
+                  : t("Recommendation evidence is partial")}
             </strong>
-            <p>{snapshot.detail}</p>
+            <p>{tx(snapshot.detail)}</p>
           </div>
         </section>
       )}
@@ -134,17 +136,16 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
           <div>
             <h2>
               {snapshot.recommendations.length === 0
-                ? "No safe recommendation currently passes the filters"
-                : "No recommendation matches these filters"}
+                ? t("No safe recommendation currently passes the filters")
+                : t("No recommendation matches these filters")}
             </h2>
             <p>
-              Discover never fills empty space with unsafe or invented suggestions.
-              Current-patch compatibility and known-conflict filters run before ranking.
+              {t("Discover never fills empty space with unsafe or invented suggestions. Current-patch compatibility and known-conflict filters run before ranking.")}
             </p>
           </div>
         </Panel>
       ) : (
-        <section className="discover-grid" aria-label="Safe recommendations">
+        <section className="discover-grid" aria-label={t("Safe recommendations")}>
           {visible.map((item) => (
             <RecommendationCard item={item} key={item.releaseId} />
           ))}
@@ -154,10 +155,10 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
       <Panel className="discover-principle">
         <div className="discover-principle__icon" aria-hidden="true">♡</div>
         <div>
-          <span className="section-kicker">SIM MOD HEALTH SAFETY ASSURANCE</span>
-          <h2>Recommendations never outrank health evidence.</h2>
+          <span className="section-kicker">{t("SIM MOD HEALTH SAFETY ASSURANCE")}</span>
+          <h2>{t("Recommendations never outrank health evidence.")}</h2>
           <p>
-            Already-installed mods, explicitly incompatible releases and candidates without current-patch compatibility evidence are filtered out before ranking.
+            {t("Already-installed mods, explicitly incompatible releases and candidates without current-patch compatibility evidence are filtered out before ranking.")}
           </p>
         </div>
       </Panel>
@@ -166,6 +167,7 @@ export function DiscoverPage({ gateway = discoverGateway }: DiscoverPageProps) {
 }
 
 function RecommendationCard({ item }: { item: DiscoveryRecommendation }) {
+  const { t, tx } = useI18n();
   return (
     <Panel as="article" className="recommendation-card">
       <div className="recommendation-card__top">
@@ -176,14 +178,14 @@ function RecommendationCard({ item }: { item: DiscoveryRecommendation }) {
           <strong>{item.name}</strong>
           <span>{item.creatorName}</span>
         </div>
-        <span className="recommendation-safe">Compatible</span>
+        <span className="recommendation-safe">{t("Compatible")}</span>
       </div>
 
-      <p className="recommendation-reason">{item.reason.explanation}</p>
+      <p className="recommendation-reason">{tx(item.reason.explanation)}</p>
 
       <div className="recommendation-tags">
         {item.categories.map((tag) => (
-          <span key={"category-" + tag}>{humanize(tag)}</span>
+          <span key={"category-" + tag}>{tx(humanize(tag))}</span>
         ))}
         {item.features.slice(0, 2).map((tag) => (
           <span key={"feature-" + tag}>{humanize(tag)}</span>
@@ -191,14 +193,14 @@ function RecommendationCard({ item }: { item: DiscoveryRecommendation }) {
       </div>
 
       <div className="recommendation-card__evidence">
-        <span>Because you use</span>
+        <span>{t("Because you use")}</span>
         <strong>{item.reason.becauseModName}</strong>
       </div>
 
       <div className="recommendation-card__footer">
-        <span>Deterministic score {item.score}</span>
+        <span>{t("Deterministic score {{score}}", { score: item.score })}</span>
         <button type="button">
-          Review recommendation
+          {t("Review recommendation")}
           <span aria-hidden="true">→</span>
         </button>
       </div>

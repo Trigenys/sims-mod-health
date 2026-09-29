@@ -5,13 +5,18 @@ import {
   formatProvider,
   gameContentBadge,
   gameContentTone,
-  isUpdateGameContent
+  isUpdateGameContent,
+  localizedEvidenceDetail,
+  localizedGameContentReason,
+  providerActionLabel,
+  providerCapabilityDetail
 } from "./gameContent.presenter";
 import type {
   GameContentHealthFinding,
   ProviderUpdateCapability,
   ProviderUpdateSession
 } from "./gameContent.types";
+import { useI18n } from "../../i18n/i18n";
 
 export function GameContentDrawer({
   finding,
@@ -32,6 +37,7 @@ export function GameContentDrawer({
   onUpdate: () => void;
   onVerify: () => void;
 }) {
+  const { t, tx } = useI18n();
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -52,7 +58,7 @@ export function GameContentDrawer({
       <div className="game-content-drawer__header">
         <div>
           <span className="section-kicker">
-            {finding.kind === "game" ? "GAME DETAIL" : "PACK DETAIL"}
+            {finding.kind === "game" ? t("GAME DETAIL") : t("PACK DETAIL")}
           </span>
           <h2 id="game-content-detail-title">
             {finding.kind === "game" ? "The Sims 4" : finding.targetId}
@@ -62,7 +68,7 @@ export function GameContentDrawer({
           ref={closeRef}
           type="button"
           className="game-content-drawer__close"
-          aria-label="Close game content details"
+          aria-label={t("Close game content details")}
           onClick={onClose}
         >
           ×
@@ -70,36 +76,36 @@ export function GameContentDrawer({
       </div>
 
       <StatusBadge tone={gameContentTone(finding.state)}>
-        {gameContentBadge(finding.state)}
+        {tx(gameContentBadge(finding.state))}
       </StatusBadge>
 
-      <p className="game-content-drawer__reason">{finding.reason}</p>
+      <p className="game-content-drawer__reason">{localizedGameContentReason(finding, t)}</p>
 
       <dl className="game-content-drawer__facts">
         <div>
-          <dt>Installed build</dt>
-          <dd>{finding.currentVersion ?? "Unknown"}</dd>
+          <dt>{t("Installed build")}</dt>
+          <dd>{finding.currentVersion ?? t("Unknown")}</dd>
         </div>
         <div>
-          <dt>{finding.kind === "game" ? "Latest known build" : "Minimum game build"}</dt>
-          <dd>{finding.requiredVersion ?? "Not declared"}</dd>
+          <dt>{finding.kind === "game" ? t("Latest known build") : t("Minimum game build")}</dt>
+          <dd>{finding.requiredVersion ?? t("Not declared")}</dd>
         </div>
         <div>
-          <dt>Evidence</dt>
-          <dd>{finding.disputed ? "Disputed" : finding.manifestStale ? "Cached / stale" : "Current"}</dd>
+          <dt>{t("Evidence")}</dt>
+          <dd>{finding.disputed ? t("Disputed") : finding.manifestStale ? t("Cached / stale") : t("Current")}</dd>
         </div>
       </dl>
 
-      <section className="game-content-evidence" aria-label="Compatibility evidence">
-        <span className="section-kicker">WHY THIS STATE</span>
+      <section className="game-content-evidence" aria-label={t("Compatibility evidence")}>
+        <span className="section-kicker">{t("WHY THIS STATE")}</span>
         {finding.evidence.length === 0 ? (
-          <p>No trusted compatibility evidence is currently attached.</p>
+          <p>{t("No trusted compatibility evidence is currently attached.")}</p>
         ) : (
           <ul>
             {finding.evidence.map((item, index) => (
               <li key={item.source + "-" + index}>
                 <strong>{item.source}</strong>
-                <span>{item.detail}</span>
+                <span>{localizedEvidenceDetail(item.detail, t)}</span>
               </li>
             ))}
           </ul>
@@ -108,25 +114,25 @@ export function GameContentDrawer({
 
       {updateEligible && (
         <section className="game-content-provider-action">
-          <span className="section-kicker">OFFICIAL UPDATE PROVIDER</span>
+          <span className="section-kicker">{t("OFFICIAL UPDATE PROVIDER")}</span>
           <strong>{formatProvider(capability?.provider ?? "unknown")}</strong>
-          <p>{capability?.detail ?? "Provider capability is being resolved."}</p>
+          <p>{capability ? providerCapabilityDetail(capability.provider, capability.supported, t) : t("Provider capability is being resolved.")}</p>
 
           {sessionWaiting ? (
             <Button onClick={onVerify} disabled={busy}>
-              {busy ? "Verifying…" : "I updated it — verify now"}
+              {busy ? t("Verifying…") : t("I updated it — verify now")}
             </Button>
           ) : (
             <Button
               onClick={onUpdate}
               disabled={busy || capability === null || !capability.supported}
             >
-              {busy ? "Opening…" : capability?.actionLabel ?? "Resolve provider"}
+              {busy ? t("Opening…") : capability ? providerActionLabel(capability.provider, t) : t("Resolve provider")}
             </Button>
           )}
 
           {session && session.targetId === finding.targetId && (
-            <small role="status">{session.detail}</small>
+            <small role="status">{tx(session.detail)}</small>
           )}
           {error && <small className="game-content-provider-action__error">{error}</small>}
         </section>

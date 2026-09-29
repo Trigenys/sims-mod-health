@@ -1,3 +1,4 @@
+import { useI18n } from "../../i18n/i18n";
 export type LibraryRegistryState = "ready" | "offline" | "partial" | "failure";
 
 type LibraryStateNoticeProps = {
@@ -20,6 +21,7 @@ const copy: Record<Exclude<LibraryRegistryState, "ready">, { title: string; deta
 };
 
 export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
+  const { t, tx } = useI18n();
   if (state === "ready") {
     return null;
   }
@@ -32,10 +34,10 @@ export function LibraryStateNotice({ state }: LibraryStateNoticeProps) {
         {state === "failure" ? "×" : "!"}
       </span>
       <div>
-        <strong>{message.title}</strong>
-        <p>{message.detail}</p>
+        <strong>{tx(message.title)}</strong>
+        <p>{tx(message.detail)}</p>
       </div>
-      {state === "failure" && <button className="button button--secondary">Retry</button>}
+      {state === "failure" && <button className="button button--secondary">{t("Retry")}</button>}
     </section>
   );
 }

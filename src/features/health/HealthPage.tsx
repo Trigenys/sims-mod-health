@@ -12,6 +12,7 @@ import {
 import {
   gameContentBadge,
   gameContentTone,
+  localizedGameContentReason,
   isActionableGameContent,
   isUpdateGameContent,
   packHealthSummary
@@ -27,6 +28,12 @@ import type {
   OverviewAttentionItem,
   OverviewSnapshot
 } from "../overview/overview.types";
+import {
+  localizeAttentionBadge,
+  localizeAttentionCreator,
+  localizeOverviewDetail
+} from "../overview/overview.i18n";
+import { useI18n } from "../../i18n/i18n";
 
 export type HealthTab =
   | "all"
@@ -84,6 +91,7 @@ export function HealthPage({
   initialTab = "all",
   onOpenLibrary
 }: HealthPageProps) {
+  const { t, tx } = useI18n();
   const [snapshot, setSnapshot] = useState<OverviewSnapshot | null>(null);
   const [contentHealth, setContentHealth] = useState<GameContentHealthSnapshot | null>(null);
   const [capability, setCapability] = useState<ProviderUpdateCapability | null>(null);
@@ -124,8 +132,8 @@ export function HealthPage({
   }, [gateway, contentGateway]);
 
   const allFindings = useMemo(
-    () => buildUnifiedFindings(snapshot?.attention ?? [], contentHealth),
-    [snapshot, contentHealth]
+    () => buildUnifiedFindings(snapshot?.attention ?? [], contentHealth, t),
+    [snapshot, contentHealth, t]
   );
 
   const findings = useMemo(
@@ -136,7 +144,7 @@ export function HealthPage({
   if (!snapshot) {
     return (
       <section className="health-loading" role="status">
-        Loading current health evidence…
+        {t("Loading current health evidence…")}
       </section>
     );
   }
@@ -193,10 +201,10 @@ export function HealthPage({
       <Topbar
         gameVersion={
           contentHealth?.game?.currentVersion
-            ? "Patch " + contentHealth.game.currentVersion
+            ? t("Patch {{version}}", { version: contentHealth.game.currentVersion })
             : snapshot.gameVersion
-              ? "Patch " + snapshot.gameVersion
-              : "Patch unknown"
+              ? t("Patch {{version}}", { version: snapshot.gameVersion })
+              : t("Patch unknown")
         }
         platform={formatPlatform(snapshot.platform)}
         indexedCount={snapshot.indexedCount}
@@ -204,37 +212,37 @@ export function HealthPage({
 
       <section className="health-hero" aria-labelledby="health-title">
         <div>
-          <p className="eyebrow">HEALTH & ACTION CENTER</p>
-          <h1 id="health-title">Review what needs attention.</h1>
+          <p className="eyebrow">{t("HEALTH & ACTION CENTER")}</p>
+          <h1 id="health-title">{t("Review what needs attention.")}</h1>
           <p className="lede">
-            Game, packs and mods share one evidence-first action queue. Healthy content stays compact.
+            {t("Game, packs and mods share one evidence-first action queue. Healthy content stays compact.")}
           </p>
         </div>
 
         <div className="health-hero__actions">
           <div className="health-snapshot">
-            <span>Needs attention</span>
+            <span>{t("Needs attention")}</span>
             <strong>{combinedAttention}</strong>
           </div>
           <Button variant="primary" onClick={() => setTab("updates")}>
-            Review updates
+            {t("Review updates")}
           </Button>
         </div>
       </section>
 
-      <section className="health-metrics" aria-label="Health summary">
-        <Metric label="Needs attention" value={combinedAttention} tone="danger" />
-        <Metric label="Updates" value={updateCount} tone="update" />
-        <Metric label="Conflicts" value={snapshot.healthCounts.conflicts} tone="warning" />
-        <Metric label="Unknown" value={countUnknown(allFindings)} tone="muted" />
+      <section className="health-metrics" aria-label={t("Game / pack / mod health")}>
+        <Metric label={t("Needs attention")} value={combinedAttention} tone="danger" />
+        <Metric label={t("Updates")} value={updateCount} tone="update" />
+        <Metric label={t("Conflicts")} value={snapshot.healthCounts.conflicts} tone="warning" />
+        <Metric label={t("Unknown")} value={countUnknown(allFindings)} tone="muted" />
         <Metric
-          label="Healthy packs"
+          label={t("Healthy packs")}
           value={packs.current}
           tone="healthy"
         />
       </section>
 
-      <nav className="health-tabs" aria-label="Health views">
+      <nav className="health-tabs" aria-label={t("Health views")}>
         {tabs.map((item) => {
           const active = tab === item.value;
           return (
@@ -245,7 +253,7 @@ export function HealthPage({
               className={active ? "health-tab health-tab--active" : "health-tab"}
               onClick={() => setTab(item.value)}
             >
-              {item.label}
+              {t(item.label as "All findings" | "Updates" | "Conflicts" | "Diagnostics" | "Recovery")}
               {item.value === "updates" && updateCount > 0 && <span>{updateCount}</span>}
               {item.value === "conflicts" && snapshot.healthCounts.conflicts > 0 && (
                 <span>{snapshot.healthCounts.conflicts}</span>
@@ -256,7 +264,7 @@ export function HealthPage({
       </nav>
 
       {tab === "diagnostics" ? (
-        <section className="health-diagnostics" aria-label="Diagnostic evidence">
+        <section className="health-diagnostics" aria-label={t("DIAGNOSTIC EVIDENCE")}>
           <DiagnosticsPage embedded />
         </section>
       ) : tab === "recovery" ? (
@@ -265,11 +273,11 @@ export function HealthPage({
         <>
           {tab === "updates" && (
             <div className="health-update-toolbar">
-              <div className="health-update-scopes" aria-label="Update types">
+              <div className="health-update-scopes" aria-label={t("Update types")}>
                 {([
-                  ["all", "All"],
-                  ["game", "Game & packs"],
-                  ["mods", "Mods"]
+                  ["all", t("All")],
+                  ["game", t("Game & packs")],
+                  ["mods", t("Mods")]
                 ] as const).map(([value, label]) => (
                   <button
                     key={value}
@@ -290,29 +298,29 @@ export function HealthPage({
               {packs.total > 0 && (
                 <div className="healthy-pack-summary" role="status">
                   <span aria-hidden="true">✓</span>
-                  <strong>{packs.current} packs current</strong>
-                  {packs.attention > 0 && <span>{packs.attention} need review</span>}
+                  <strong>{t("{{count}} packs current", { count: packs.current })}</strong>
+                  {packs.attention > 0 && <span>{t("{{count}} need review", { count: packs.attention })}</span>}
                 </div>
               )}
             </div>
           )}
 
           <div className={selectedContent ? "health-layout health-layout--drawer" : "health-layout"}>
-            <section className="health-findings" aria-label={tabLabel(tab)}>
+            <section className="health-findings" aria-label={tx(tabLabel(tab))}>
               <div className="health-section-heading">
                 <div>
-                  <span className="section-kicker">{tabLabel(tab).toUpperCase()}</span>
-                  <h2>{healthHeading(tab)}</h2>
+                  <span className="section-kicker">{tx(tabLabel(tab)).toUpperCase()}</span>
+                  <h2>{tx(healthHeading(tab))}</h2>
                 </div>
-                <span>{findings.length} shown from current evidence</span>
+                <span>{t("{{count}} shown from current evidence", { count: findings.length })}</span>
               </div>
 
               {findings.length === 0 ? (
                 <Panel className="health-empty">
                   <div className="health-empty__icon" aria-hidden="true">✓</div>
                   <div>
-                    <h3>{emptyTitle(tab)}</h3>
-                    <p>{emptyCopy(tab, snapshot)}</p>
+                    <h3>{tx(emptyTitle(tab))}</h3>
+                    <p>{tx(emptyCopy(tab, snapshot))}</p>
                   </div>
                 </Panel>
               ) : (
@@ -349,32 +357,32 @@ export function HealthPage({
             ) : (
               <aside className="health-guardrails">
                 <Panel>
-                  <span className="section-kicker">RECOVERY GUARANTEES</span>
-                  <h2>Actions stay reversible.</h2>
+                  <span className="section-kicker">{t("RECOVERY GUARANTEES")}</span>
+                  <h2>{t("Actions stay reversible.")}</h2>
                   <p>
-                    Mod mutations use verified restore points. Game and pack updates stay with the official provider.
+                    {t("Mod mutations use verified restore points. Game and pack updates stay with the official provider.")}
                   </p>
                   <ul>
-                    <li><span>✓</span> Restore point before supported mod updates</li>
-                    <li><span>✓</span> SHA-256 integrity checks</li>
-                    <li><span>✓</span> Provider updates require local verification</li>
-                    <li><span>✓</span> Unknown remains distinct from broken</li>
+                    <li><span>✓</span> {t("Restore point before supported mod updates")}</li>
+                    <li><span>✓</span> {t("SHA-256 integrity checks")}</li>
+                    <li><span>✓</span> {t("Provider updates require local verification")}</li>
+                    <li><span>✓</span> {t("Unknown remains distinct from broken")}</li>
                   </ul>
                   <button
                     type="button"
                     className="health-link"
                     onClick={() => setTab("recovery")}
                   >
-                    Open Recovery
+                    {t("Open Recovery")}
                     <span aria-hidden="true">→</span>
                   </button>
                 </Panel>
 
                 <Panel className="health-safety">
-                  <span className="section-kicker">EVIDENCE POLICY</span>
-                  <h2>Unknown is not broken.</h2>
+                  <span className="section-kicker">{t("EVIDENCE POLICY")}</span>
+                  <h2>{t("Unknown is not broken.")}</h2>
                   <p>
-                    Stale metadata, incomplete files and disputed evidence remain distinct states.
+                    {t("Stale metadata, incomplete files and disputed evidence remain distinct states.")}
                   </p>
                 </Panel>
               </aside>
@@ -393,6 +401,7 @@ function FindingCard({
   finding: UnifiedFinding;
   onReview: () => void;
 }) {
+  const { t, tx } = useI18n();
   return (
     <Panel as="article" className="health-finding-card">
       <div className="health-finding-card__icon" aria-hidden="true">
@@ -410,22 +419,22 @@ function FindingCard({
         <div className="health-finding-card__title">
           <div>
             <span className={"finding-kind finding-kind--" + finding.kind}>
-              {finding.label}
+              {tx(finding.label)}
             </span>
             <strong>{finding.name}</strong>
-            <span>{finding.creator}</span>
+            <span>{tx(finding.creator)}</span>
           </div>
-          <StatusBadge tone={finding.tone}>{finding.badge}</StatusBadge>
+          <StatusBadge tone={finding.tone}>{tx(finding.badge)}</StatusBadge>
         </div>
-        <p>{finding.detail}</p>
+        <p>{tx(finding.detail)}</p>
         <div className="health-finding-card__footer">
           <span>
             {finding.kind === "mod"
-              ? "Current local scan / registry mod evidence"
-              : "Local installation / Game & DLC manifest evidence"}
+              ? t("Current local scan / registry mod evidence")
+              : t("Local installation / Game & DLC manifest evidence")}
           </span>
           <button type="button" onClick={onReview}>
-            {finding.kind === "mod" ? "Review in Library" : "Review details"}
+            {finding.kind === "mod" ? t("Review in Library") : t("Review details")}
           </button>
         </div>
       </div>
@@ -435,16 +444,17 @@ function FindingCard({
 
 function buildUnifiedFindings(
   modFindings: OverviewAttentionItem[],
-  content: GameContentHealthSnapshot | null
+  content: GameContentHealthSnapshot | null,
+  t: ReturnType<typeof useI18n>["t"]
 ): UnifiedFinding[] {
   const mods: UnifiedFinding[] = modFindings.map((finding, index) => ({
     id: "mod-" + finding.name + "-" + index,
     kind: "mod",
     label: "Mod",
     name: finding.name,
-    creator: finding.creator,
-    detail: finding.detail,
-    badge: finding.badge,
+    creator: localizeAttentionCreator(finding.creator, t),
+    detail: localizeOverviewDetail(finding.detail, t),
+    badge: localizeAttentionBadge(finding.badge, t),
     tone: finding.tone,
     priority: modPriority(finding),
     mod: finding
@@ -459,9 +469,9 @@ function buildUnifiedFindings(
       label: finding.kind === "game" ? "Game" : "Pack",
       name: finding.kind === "game" ? "The Sims 4" : finding.targetId,
       creator: finding.disputed
-        ? "Conflicting compatibility evidence"
-        : "Game & DLC health",
-      detail: finding.reason,
+        ? t("Conflicting compatibility evidence")
+        : t("Game & DLC health"),
+      detail: localizedGameContentReason(finding, t),
       badge: gameContentBadge(finding.state),
       tone: gameContentTone(finding.state),
       priority: contentPriority(finding),
@@ -540,38 +550,38 @@ function countUnknown(findings: UnifiedFinding[]) {
 }
 
 function RecoveryPanel() {
+  const { t } = useI18n();
   return (
     <div className="health-recovery-grid">
       <Panel className="recovery-card recovery-card--primary">
-        <span className="section-kicker">RECOVERY</span>
-        <h2>Restore points belong to actions, not a separate backup product.</h2>
+        <span className="section-kicker">{t("Recovery").toUpperCase()}</span>
+        <h2>{t("Restore points belong to actions, not a separate backup product.")}</h2>
         <p>
-          Sims Mod Health keeps app-controlled restore points for supported mod update operations.
-          Game and DLC updates remain owned by the official provider and are verified after rescan.
+          {t("Sims Mod Health keeps app-controlled restore points for supported mod update operations. Game and DLC updates remain owned by the official provider and are verified after rescan.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">BEFORE MOD MUTATION</span>
-        <h3>Verified snapshot</h3>
+        <span className="section-kicker">{t("BEFORE MOD MUTATION")}</span>
+        <h3>{t("Verified snapshot")}</h3>
         <p>
-          The original artifact is copied to app data and its SHA-256 must match before mutation proceeds.
+          {t("The original artifact is copied to app data and its SHA-256 must match before mutation proceeds.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">PROVIDER UPDATE</span>
-        <h3>Verify after return</h3>
+        <span className="section-kicker">{t("PROVIDER UPDATE")}</span>
+        <h3>{t("Verify after return")}</h3>
         <p>
-          Opening EA app or Steam never counts as success until the local game and pack state is rescanned.
+          {t("Opening EA app or Steam never counts as success until the local game and pack state is rescanned.")}
         </p>
       </Panel>
 
       <Panel className="recovery-card">
-        <span className="section-kicker">ROLLBACK</span>
-        <h3>Safe overwrite policy</h3>
+        <span className="section-kicker">{t("ROLLBACK")}</span>
+        <h3>{t("Safe overwrite policy")}</h3>
         <p>
-          Mod rollback refuses to overwrite a target that changed independently after the update.
+          {t("Mod rollback refuses to overwrite a target that changed independently after the update.")}
         </p>
       </Panel>
     </div>

@@ -3614,3 +3614,45 @@ body {
     gap: 4px;
   }
 }
+
+
+.language-switcher {
+  display: grid;
+  gap: 7px;
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.language-switcher > span {
+  color: var(--color-faint);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.language-switcher > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  padding: 3px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-control);
+}
+
+.language-switcher button {
+  min-height: 28px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.language-switcher button[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: #fff;
+}

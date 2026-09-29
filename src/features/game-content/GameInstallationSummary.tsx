@@ -1,5 +1,6 @@
 import type { GameContentHealthSnapshot } from "./gameContent.types";
 import { gameContentAttentionCount, packHealthSummary } from "./gameContent.presenter";
+import { useI18n } from "../../i18n/i18n";
 
 export function GameInstallationSummary({
   health,
@@ -10,17 +11,18 @@ export function GameInstallationSummary({
   modCount: number;
   fallbackVersion: string | null;
 }) {
+  const { t } = useI18n();
   const packs = packHealthSummary(health);
   const attention = gameContentAttentionCount(health);
   const version = health?.game?.currentVersion ?? fallbackVersion;
 
   return (
-    <section className="game-installation-summary" aria-label="Sims 4 installation summary">
-      <SummaryFact label="Game build" value={version ?? "Unknown"} />
-      <SummaryFact label="Installed packs" value={String(packs.total)} />
-      <SummaryFact label="Mods & CC" value={String(modCount)} />
+    <section className="game-installation-summary" aria-label={t("Sims 4 installation summary")}>
+      <SummaryFact label={t("Game build")} value={version ?? t("Unknown")} />
+      <SummaryFact label={t("Installed packs")} value={String(packs.total)} />
+      <SummaryFact label={t("Mods & CC")} value={String(modCount)} />
       <SummaryFact
-        label="Game / pack attention"
+        label={t("Game / pack attention")}
         value={String(attention)}
         emphasized={attention > 0}
       />
