@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { OverviewPage } from "./OverviewPage";
 import type { GameContentGateway } from "../game-content/gameContent.gateway";
 import {
+  gameContentPartialVisualHealth,
   gameContentVisualHealth,
   gameContentVisualInventory,
   providerVisualCapability,
@@ -113,6 +114,72 @@ describe("OverviewPage", () => {
     expect(screen.getByText("12 items indexed")).toBeVisible();
     expect(screen.getByText("Exact duplicate groups")).toBeVisible();
     expect(screen.getByLabelText("Overall health unavailable")).toBeVisible();
+  });
+
+
+  it("hides the global score and unavailable Game/DLC zeroes when prerequisites are missing", async () => {
+    const partial: OverviewSnapshot = {
+      ...snapshot,
+      gameVersion: null,
+      indexedCount: 2407,
+      healthScore: 84,
+      registryState: "partial",
+      registryDetail: "some online checks unavailable",
+      healthCounts: {
+        healthy: 0,
+        updates: 0,
+        conflicts: 12,
+        unknown: 0
+      },
+      installation: {
+        scriptMods: 63,
+        packageFiles: 2344,
+        unidentified: null,
+        exactDuplicates: 152
+      }
+    };
+
+    const partialContent: GameContentGateway = {
+      ...contentGateway,
+      loadHealth: vi.fn().mockResolvedValue(gameContentPartialVisualHealth)
+    };
+    const openSettings = vi.fn();
+
+    render(
+      <OverviewPage
+        gateway={gateway(partial)}
+        contentGateway={partialContent}
+        onOpenSettings={openSettings}
+      />
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "We need a little more information before rating your setup."
+      })
+    ).toBeVisible();
+
+    const score = screen.getByLabelText("Overall health unavailable");
+    expect(within(score).getByText("—")).toBeVisible();
+    expect(within(score).queryByText("84")).not.toBeInTheDocument();
+
+    const gameSummary = screen.getByLabelText("Sims 4 installation summary");
+    const packs = within(gameSummary).getByText("Installed packs").parentElement;
+    const attention = within(gameSummary).getByText("Game / pack attention").parentElement;
+    expect(packs).not.toBeNull();
+    expect(attention).not.toBeNull();
+    expect(within(packs as HTMLElement).getByText("Not detected")).toBeVisible();
+    expect(within(attention as HTMLElement).getByText("Not checked")).toBeVisible();
+    expect(within(gameSummary).getByText("2407")).toBeVisible();
+
+    const healthy = screen.getByText("Healthy").closest("article");
+    const updates = screen.getByText("Updates").closest("article");
+    expect(within(healthy as HTMLElement).getByText("Not checked")).toBeVisible();
+    expect(within(updates as HTMLElement).getByText("Not checked")).toBeVisible();
+    expect(screen.getByText("12")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Review game folders" }));
+    expect(openSettings).toHaveBeenCalledTimes(1);
   });
 
   it("runs an incremental scan and refreshes the snapshot", async () => {
