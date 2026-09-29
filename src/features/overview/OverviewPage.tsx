@@ -19,6 +19,7 @@ import {
   localizeOverviewExplanation
 } from "./overview.i18n";
 import { useI18n } from "../../i18n/i18n";
+import { SimsSetupPanel } from "../setup/SimsSetupPanel";
 
 type OverviewPageProps = {
   gateway?: OverviewGateway;
@@ -129,27 +130,15 @@ export function OverviewPage({
         gameVersion={data.gameVersion ? t("Patch {{version}}", { version: data.gameVersion }) : t("Patch unknown")}
         platform={formatPlatform(data.platform)}
         indexedCount={data.indexedCount}
-        onScan={runScan}
+        onScan={data.hasInstallation ? runScan : undefined}
         scanning={scanning}
-        scanDisabled={false}
+        scanDisabled={!data.hasInstallation}
       />
 
       <OverviewStateBanner data={data} scanning={scanning} scanError={scanError} />
 
       {!data.hasInstallation ? (
-        <Panel className="overview-empty" aria-labelledby="overview-empty-title">
-          <div className="overview-empty__icon" aria-hidden="true">⌁</div>
-          <div>
-            <span className="section-kicker">{t("No local scan yet")}</span>
-            <h1 id="overview-empty-title">{t("Scan a Sims 4 installation to build the health view.")}</h1>
-            <p>
-              {t("The Overview does not invent health numbers. Choose your real Mods folder and the desktop scanner will index it locally.")}
-            </p>
-            <Button onClick={runScan} disabled={scanning}>
-              {scanning ? t("Scanning…") : t("Choose Mods folder and scan")}
-            </Button>
-          </div>
-        </Panel>
+        <SimsSetupPanel onScanComplete={refresh} />
       ) : (
         <>
           <section className="page-heading" aria-labelledby="overview-title">
