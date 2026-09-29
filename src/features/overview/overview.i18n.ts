@@ -2,10 +2,10 @@ import type { TranslationFn } from "../../i18n/i18n";
 
 export function localizeOverviewExplanation(value: string, t: TranslationFn) {
   if (value === "Overall health is the percentage of current canonical releases with verified compatible patch evidence. Update-available releases still count as compatible when their installed release is compatible; unresolved files remain in the denominator.") {
-    return t("Overall health is the percentage of current canonical releases with verified compatible patch evidence. Update-available releases still count as compatible when their installed release is compatible; unresolved files remain in the denominator.");
+    return t("This score uses the mods we could identify and check against your current game version. Files we cannot identify yet lower the score instead of being guessed.");
   }
   if (value === "Health becomes available after an installation has been scanned and resolved against the registry.") {
-    return t("Health becomes available after an installation has been scanned and resolved against the registry.");
+    return t("Run a complete scan first. We need your game version and Mods folder before we can rate the setup.");
   }
   return value;
 }
@@ -16,17 +16,17 @@ export function localizeOverviewDetail(value: string, t: TranslationFn) {
 
   let match = value.match(/^Artifact identity resolved, but health evaluation is incomplete: (.+)$/);
   if (match) {
-    return t("Artifact identity resolved, but health evaluation is incomplete: {{error}}", { error: match[1] });
+    return t("We identified the mod, but could not finish checking its compatibility. Try again later.");
   }
 
   match = value.match(/^Compatibility is current, but dependency\/conflict data is partial: (.+)$/);
   if (match) {
-    return t("Compatibility is current, but dependency/conflict data is partial: {{error}}", { error: match[1] });
+    return t("This mod looks compatible, but some dependency or conflict checks could not be completed.");
   }
 
   match = value.match(/^Update available to (.+); installed compatibility is (.+)\.$/);
   if (match) {
-    return t("Update available to {{target}}; installed compatibility is {{state}}.", {
+    return t("A newer version ({{target}}) is available. Your installed version currently looks {{state}}.", {
       target: match[1],
       state: localizeCompatibility(match[2], t)
     });
@@ -34,19 +34,18 @@ export function localizeOverviewDetail(value: string, t: TranslationFn) {
 
   match = value.match(/^Known incompatibility with (.+) is active for the installed versions\.$/);
   if (match) {
-    return t("Known incompatibility with {{name}} is active for the installed versions.", { name: match[1] });
+    return t("This version is known to conflict with {{name}}.", { name: match[1] });
   }
 
   match = value.match(/^(\d+) exact copies share the same SHA-256 fingerprint\.$/);
   if (match) {
-    return t("{{count}} exact copies share the same SHA-256 fingerprint.", { count: match[1] });
+    return t("{{count}} identical copies of this file were found.", { count: match[1] });
   }
 
   match = value.match(/^Potential conflict with (.+) across (\d+) shared DBPF resource keys\.$/);
   if (match) {
-    return t("Potential conflict with {{name}} across {{count}} shared DBPF resource keys.", {
-      name: match[1],
-      count: match[2]
+    return t("This file may overlap with {{name}}. Review both mods before removing anything.", {
+      name: match[1]
     });
   }
 
@@ -56,14 +55,14 @@ export function localizeOverviewDetail(value: string, t: TranslationFn) {
 export function localizeAttentionCreator(value: string, t: TranslationFn) {
   if (value === "Local scan") return t("Local scan");
   if (value === "Local library") return t("Local library");
-  if (value === "Registry health") return t("Registry health");
-  if (value === "Dependency graph") return t("Dependency graph");
+  if (value === "Registry health") return t("Online compatibility check");
+  if (value === "Dependency graph") return t("Required mods check");
   return value;
 }
 
 export function localizeAttentionBadge(value: string, t: TranslationFn) {
   const known = new Set([
-    "Patch unknown",
+    "Game version not detected yet",
     "Ambiguous",
     "Unknown",
     "Update",
