@@ -17,9 +17,9 @@ export function gameContentBadge(state: GameContentHealthState) {
   if (state === "current") return "Current";
   if (state === "update_available") return "Update";
   if (state === "game_update_required") return "Game update required";
-  if (state === "metadata_stale") return "Metadata stale";
-  if (state === "local_integrity_uncertain") return "Integrity uncertain";
-  return "Unknown";
+  if (state === "metadata_stale") return "Info may be outdated";
+  if (state === "local_integrity_uncertain") return "Files need checking";
+  return "Not enough information";
 }
 
 export function isActionableGameContent(finding: GameContentHealthFinding) {
@@ -49,7 +49,7 @@ export function gameContentAttentionCount(snapshot: GameContentHealthSnapshot | 
 export function formatProvider(provider: string) {
   if (provider === "ea_app") return "EA app";
   if (provider === "steam") return "Steam";
-  return "Manual provider";
+  return "Your game launcher";
 }
 
 
@@ -62,7 +62,7 @@ export function localizedGameContentReason(
 
   if (finding.kind === "game") {
     if (finding.disputed) {
-      return t("Game-build evidence conflicts, so no update conclusion is safe.");
+      return t("We found conflicting version information, so we will not guess whether you need an update.");
     }
     if (finding.state === "update_available") {
       return finding.manifestStale
@@ -71,45 +71,45 @@ export function localizedGameContentReason(
     }
     if (finding.state === "metadata_stale") {
       if (finding.currentVersion && finding.requiredVersion && finding.currentVersion !== finding.requiredVersion) {
-        return t("Installed build {{current}} is newer than manifest latest {{required}}; metadata needs refresh.", { current, required });
+        return t("Your installed version {{current}} is newer than the version we know about ({{required}}). Our online information needs refreshing.", { current, required });
       }
-      return t("Installed game matches the cached latest build, but Registry metadata is stale.");
+      return t("Your game looks up to date, but our online version information may be old.");
     }
     if (finding.state === "current") {
-      return t("Installed game matches the latest known build.");
+      return t("Your game matches the latest version we know about.");
     }
     if (!finding.currentVersion) {
-      return t("Installed game build could not be resolved from trusted local evidence.");
+      return t("We could not read your installed game version.");
     }
-    return t("Game versions could not be compared safely.");
+    return t("We do not have enough reliable information to compare game versions.");
   }
 
   if (finding.state === "local_integrity_uncertain") {
-    return t("Pack files are incomplete or could not be inspected reliably.");
+    return t("Some files for this pack are missing or could not be checked.");
   }
   if (finding.disputed) {
-    return t("Trusted metadata sources disagree about this pack's compatibility requirements.");
+    return t("Our compatibility sources disagree about this pack, so we will not guess.");
   }
   if (finding.state === "game_update_required") {
-    return t("{{code}} requires game build {{required}} or newer; installed build is {{current}}.", {
+    return t("{{code}} needs game version {{required}} or newer. You currently have {{current}}.", {
       code: finding.targetId,
       required,
       current
     });
   }
   if (finding.state === "metadata_stale") {
-    return t("Cached metadata does not show a compatibility problem, but it is stale.");
+    return t("We do not see a compatibility problem, but our online information may be out of date.");
   }
   if (finding.state === "current") {
-    return t("Installed game satisfies the pack's known compatibility requirement.");
+    return t("Your current game version meets this pack's known requirement.");
   }
   if (finding.requiredVersion && !finding.currentVersion) {
-    return t("Pack has a minimum game build, but the installed game build is unknown.");
+    return t("This pack needs a minimum game version, but we could not read your installed game version.");
   }
   if (!finding.requiredVersion) {
-    return t("Pack is installed, but the manifest has no compatibility metadata for it.");
+    return t("The pack is installed, but we do not have enough compatibility information for it yet.");
   }
-  return t("Pack minimum version could not be compared safely.");
+  return t("We do not have enough reliable information to compare this pack with your game version.");
 }
 
 export function localizedEvidenceDetail(
@@ -164,5 +164,5 @@ export function providerCapabilityDetail(
       ? t("Steam is available. Sims Mod Health will open the official client and wait for local verification.")
       : t("Steam was detected for the game, but steam.exe could not be located. Open Steam manually, update The Sims 4, then return to verify.");
   }
-  return t("The update provider could not be identified. Update The Sims 4 in the client you normally use, then return to verify.");
+  return t("We could not identify your game launcher. Update The Sims 4 in the app you normally use, then come back and verify.");
 }
