@@ -4,9 +4,9 @@ mod provider_update;
 
 pub(crate) use content_health::{evaluate_game_content_health, GameContentHealthSnapshot};
 pub(crate) use content_inventory::{
-    discover_game_content, inspect_game_content_path, refresh_and_persist_game_content,
-    GameContentInstallation, GameContentRepository, GameContentSnapshot,
-    SqliteGameContentRepository,
+    discover_game_content, inspect_game_content_path, latest_game_content_version,
+    persist_game_content_path, refresh_and_persist_game_content, GameContentInstallation,
+    GameContentRepository, GameContentSnapshot, SqliteGameContentRepository,
 };
 pub(crate) use provider_update::{
     begin_verification as begin_provider_update_verification,

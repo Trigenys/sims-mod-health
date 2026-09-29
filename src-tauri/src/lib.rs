@@ -75,6 +75,21 @@ fn inspect_game_content_installation(path: String) -> Result<GameContentInstalla
 }
 
 #[tauri::command]
+async fn select_game_content_installation(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<GameContentInstallation, String> {
+    let database_path = state.database_path.clone();
+    let selected_path = PathBuf::from(path);
+
+    tauri::async_runtime::spawn_blocking(move || {
+        game::persist_game_content_path(&database_path, &selected_path)
+    })
+    .await
+    .map_err(|error| format!("game content selection worker failed: {error}"))?
+}
+
+#[tauri::command]
 async fn get_game_content_health(
     state: State<'_, AppState>,
 ) -> Result<GameContentHealthSnapshot, String> {
@@ -241,9 +256,10 @@ async fn scan_sims_mods(
     let scanner = Arc::clone(&state.scanner);
     let selected_path = PathBuf::from(path);
 
-    tauri::async_runtime::spawn_blocking(move || {
+    let scan_database_path = database_path.clone();
+    let summary = tauri::async_runtime::spawn_blocking(move || {
         scanner::scan_path(
-            &database_path,
+            &scan_database_path,
             &selected_path,
             mode,
             scanner.as_ref(),
@@ -254,7 +270,22 @@ async fn scan_sims_mods(
         .map_err(|error| error.to_string())
     })
     .await
-    .map_err(|error| format!("scanner worker failed: {error}"))?
+    .map_err(|error| format!("scanner worker failed: {error}"))??;
+
+    let sync_database_path = database_path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let connection = storage::open(&sync_database_path).map_err(|error| error.to_string())?;
+        if let Some(program_version) =
+            game::latest_game_content_version(&connection).map_err(|error| error.to_string())?
+        {
+            game::sync_latest_mod_game_version(&connection, &program_version)?;
+        }
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|error| format!("game-version synchronization worker failed: {error}"))??;
+
+    Ok(summary)
 }
 
 #[tauri::command]
@@ -354,10 +385,11 @@ async fn scan_current_sims_mods(
 
     let database_path = state.database_path.clone();
     let scanner = Arc::clone(&state.scanner);
+    let scan_database_path = database_path.clone();
 
-    tauri::async_runtime::spawn_blocking(move || {
+    let summary = tauri::async_runtime::spawn_blocking(move || {
         scanner::scan_path(
-            &database_path,
+            &scan_database_path,
             &selected_path,
             mode,
             scanner.as_ref(),
@@ -368,7 +400,21 @@ async fn scan_current_sims_mods(
         .map_err(|error| error.to_string())
     })
     .await
-    .map_err(|error| format!("scanner worker failed: {error}"))?
+    .map_err(|error| format!("scanner worker failed: {error}"))??;
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let connection = storage::open(&database_path).map_err(|error| error.to_string())?;
+        if let Some(program_version) =
+            game::latest_game_content_version(&connection).map_err(|error| error.to_string())?
+        {
+            game::sync_latest_mod_game_version(&connection, &program_version)?;
+        }
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|error| format!("game-version synchronization worker failed: {error}"))??;
+
+    Ok(summary)
 }
 
 #[tauri::command]
@@ -476,6 +522,7 @@ pub fn run() {
             inspect_sims_installation,
             refresh_game_content_inventory,
             inspect_game_content_installation,
+            select_game_content_installation,
             get_game_content_health,
             get_provider_update_capability,
             start_game_content_provider_update,

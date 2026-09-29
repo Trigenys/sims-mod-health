@@ -134,7 +134,7 @@ describe("OverviewPage", () => {
     await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
   });
 
-  it("opens folder selection for the first real scan instead of disabling scanning", async () => {
+  it("shows the complete Sims setup and keeps topbar scanning disabled before first scan", async () => {
     const empty: OverviewSnapshot = {
       ...snapshot,
       hasInstallation: false,
@@ -163,24 +163,18 @@ describe("OverviewPage", () => {
         partial: false
       }
     };
-    const scanSelected = vi.fn().mockResolvedValue(true);
-    const load = vi.fn().mockResolvedValue(empty);
     const fakeGateway: OverviewGateway = {
-      load,
+      load: vi.fn().mockResolvedValue(empty),
       scanCurrent: vi.fn().mockResolvedValue(undefined),
-      scanSelected,
+      scanSelected: vi.fn().mockResolvedValue(false),
       subscribeProgress: vi.fn().mockResolvedValue(() => undefined)
     };
 
     render(<OverviewPage gateway={fakeGateway} contentGateway={contentGateway} />);
 
-    const button = await screen.findByRole("button", {
-      name: "Choose Mods folder and scan"
-    });
-    fireEvent.click(button);
-
-    await waitFor(() => expect(scanSelected).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("button", { name: "Scan now" })).toBeEnabled();
+    expect(await screen.findByRole("heading", { name: "Connect your Sims 4 installation" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Scan now" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Choose Mods folder and scan" })).not.toBeInTheDocument();
   });
 
 });
