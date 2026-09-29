@@ -253,6 +253,21 @@ pub(crate) fn discover_game_content() -> GameContentSnapshot {
     }
 }
 
+pub(crate) fn persist_game_content_path(
+    database_path: &Path,
+    path: &Path,
+) -> Result<GameContentInstallation, String> {
+    let installation = inspect_game_content_path(path)?;
+    let snapshot = GameContentSnapshot {
+        installations: vec![installation.clone()],
+    };
+    let connection = storage::open(database_path).map_err(|error| error.to_string())?;
+    SqliteGameContentRepository::new(&connection)
+        .persist_snapshot(&snapshot)
+        .map_err(|error| error.to_string())?;
+    Ok(installation)
+}
+
 pub(crate) fn inspect_game_content_path(path: &Path) -> Result<GameContentInstallation, String> {
     if !is_game_install_root(path) {
         return Err(
