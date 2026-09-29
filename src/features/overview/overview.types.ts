@@ -10,6 +10,43 @@ export type OverviewAttentionItem = {
   tone: StatusTone;
 };
 
+export type ConflictResourceKey = {
+  resourceType: number;
+  group: number;
+  instance: number;
+};
+
+export type ResourceOverlapSample = {
+  classification: string;
+  leftFileId: number;
+  leftRelativePath: string;
+  rightFileId: number;
+  rightRelativePath: string;
+  sharedResourceCount: number;
+  sampleResourceKeys: ConflictResourceKey[];
+};
+
+export type PotentialConflictGroup = {
+  classification: string;
+  confidence: "low" | string;
+  countsTowardAttention: boolean;
+  fileIds: number[];
+  relativePaths: string[];
+  overlapPairCount: number;
+  sharedResourceCount: number;
+  sampleResourceKeys: ConflictResourceKey[];
+  sampleOverlapPairs: ResourceOverlapSample[];
+};
+
+export type ConflictAggregation = {
+  exactDuplicateGroupCount: number;
+  potentialConflictGroupCount: number;
+  attentionGroupCount: number;
+  rawOverlapPairCount: number;
+  suppressedDuplicateOverlapPairCount: number;
+  potentialConflictGroups: PotentialConflictGroup[];
+};
+
 export type OverviewSnapshot = {
   hasInstallation: boolean;
   gameVersion: string | null;
@@ -23,6 +60,7 @@ export type OverviewSnapshot = {
     conflicts: number;
     unknown: number;
   };
+  conflictAggregation: ConflictAggregation;
   attentionCount: number;
   attention: OverviewAttentionItem[];
   installation: {
