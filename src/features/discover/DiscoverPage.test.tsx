@@ -33,11 +33,11 @@ const gateway: DiscoverGateway = {
 };
 
 describe("DiscoverPage", () => {
-  it("renders explainable Registry recommendations", async () => {
+  it("renders explainable recommendations", async () => {
     render(<DiscoverPage gateway={gateway} />);
 
     expect(await screen.findByText("Candidate Mod")).toBeVisible();
     expect(screen.getByText("Because you use Installed Mod: Candidate Mod shares relationship-management.")).toBeVisible();
-    expect(screen.getByText("Deterministic score 14")).toBeVisible();
+    expect(screen.getByText("Match score 14")).toBeVisible();
   });
 });
