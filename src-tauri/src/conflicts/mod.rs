@@ -356,8 +356,10 @@ mod tests {
         assert_eq!(analysis.exact_duplicates[0].files.len(), 2);
         assert_eq!(analysis.resource_overlaps.len(), 3);
 
-        let aggregation =
-            aggregation::aggregate_findings(&analysis.exact_duplicates, &analysis.resource_overlaps);
+        let aggregation = aggregation::aggregate_findings(
+            &analysis.exact_duplicates,
+            &analysis.resource_overlaps,
+        );
         assert_eq!(aggregation.exact_duplicate_group_count, 1);
         assert_eq!(aggregation.raw_overlap_pair_count, 3);
         assert_eq!(aggregation.suppressed_duplicate_overlap_pair_count, 1);
