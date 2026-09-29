@@ -127,6 +127,8 @@ describe("OverviewPage", () => {
     expect(within(gameSummary).getByText("2")).toBeVisible();
     expect(screen.getByText("3")).toBeVisible();
     expect(screen.getByText("9")).toBeVisible();
+    expect(screen.getByText("Potential interaction groups")).toBeVisible();
+    expect(screen.getByText("Potential interactions are low-confidence local evidence and do not increase Needs attention.")).toBeVisible();
     expect(screen.getByText("Verified compatible releases divided by resolved releases plus unresolved files.")).not.toBeVisible();
 
     fireEvent.click(screen.getByText("How this score is calculated"));
