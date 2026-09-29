@@ -1,5 +1,7 @@
 mod aggregation;
 
+pub(crate) use aggregation::{aggregate_findings, ConflictAggregation, ResourceOverlapGroup};
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     error::Error,
@@ -57,6 +59,7 @@ pub(crate) struct PackageParseFailure {
 pub(crate) struct LocalConflictAnalysis {
     pub(crate) exact_duplicates: Vec<ExactDuplicateGroup>,
     pub(crate) resource_overlaps: Vec<ResourceOverlapFinding>,
+    pub(crate) aggregation: ConflictAggregation,
     pub(crate) parse_failures: Vec<PackageParseFailure>,
     pub(crate) overlap_pairs_truncated: bool,
 }
@@ -193,9 +196,12 @@ pub(crate) fn analyze_installation(
         (&left.relative_path, left.local_file_id).cmp(&(&right.relative_path, right.local_file_id))
     });
 
+    let aggregation = aggregate_findings(&exact_duplicates, &resource_overlaps);
+
     Ok(LocalConflictAnalysis {
         exact_duplicates,
         resource_overlaps,
+        aggregation,
         parse_failures,
         overlap_pairs_truncated,
     })
