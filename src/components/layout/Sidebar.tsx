@@ -1,3 +1,4 @@
+import brandLogo from "../../assets/brand-logo.svg";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useI18n } from "../../i18n/i18n";
 
@@ -29,7 +30,7 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark" aria-hidden="true">SMH</div>
+        <img className="brand-logo" src={brandLogo} alt="" aria-hidden="true" />
         <div className="brand-copy">
           <strong>Sims Mod Health</strong>
           <span>{t("Offline desktop engine")}</span>
