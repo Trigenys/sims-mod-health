@@ -7,16 +7,16 @@ type LibraryStateNoticeProps = {
 
 const copy: Record<Exclude<LibraryRegistryState, "ready">, { title: string; detail: string }> = {
   offline: {
-    title: "Registry offline",
-    detail: "Local files, duplicates and cached identities are still available. Online provenance may be stale."
+    title: "Online details are temporarily unavailable",
+    detail: "Your local files and duplicate checks still work. Mod names, compatibility and update information may be incomplete for now."
   },
   partial: {
-    title: "Partial registry results",
-    detail: "Some source adapters are unavailable. Existing local evidence remains visible while missing source data is marked."
+    title: "Some online details could not be loaded",
+    detail: "Your local files are still available. A few mod names, compatibility checks or update details may be missing."
   },
   failure: {
-    title: "Registry request failed",
-    detail: "The local library is intact. Retry the registry lookup when connectivity or the upstream source recovers."
+    title: "Online details could not be loaded",
+    detail: "Your local library is safe. Try again later to refresh mod names, compatibility and update information."
   }
 };
 
