@@ -83,7 +83,7 @@ function App() {
 
   return (
     <AppShell activeItem={activeItem} onNavigate={navigate}>
-      {surface === "Overview" && <OverviewPage />}
+      {surface === "Overview" && <OverviewPage onOpenSettings={() => setSurface("Settings")} />}
       {surface === "Health" && (
         <HealthPage
           initialTab={initialHealthTab()}
