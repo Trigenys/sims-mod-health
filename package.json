@@ -13,7 +13,8 @@
     "security:config": "node scripts/security/audit-tauri-config.mjs",
     "i18n:check": "node scripts/i18n/check-desktop-copy.mjs",
     "brand:icons": "tauri icon apps/landing/logo.svg --output src-tauri/icons",
-    "brand:check": "node scripts/brand/check-brand.mjs"
+    "brand:check": "node scripts/brand/check-brand.mjs",
+    "ux:copy-check": "node scripts/ux/check-player-copy.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

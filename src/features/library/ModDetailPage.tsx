@@ -12,8 +12,8 @@ type ModDetailPageProps = {
 };
 
 const evidenceLabel = {
-  fact: "Verified fact",
-  inference: "Inferred identification",
+  fact: "Confirmed",
+  inference: "Best match",
   community: "Community report"
 } as const;
 
@@ -23,13 +23,13 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
     item.confidence === "exact"
       ? t("Exact fingerprint")
       : item.confidence === "unresolved"
-        ? t("Unresolved")
+        ? t("Not identified yet")
         : tx(item.confidence.charAt(0).toUpperCase() + item.confidence.slice(1) + " confidence");
 
   return (
     <>
       <Topbar
-        gameVersion={item.gameVersion ? t("Patch {{version}}", { version: item.gameVersion }) : t("Patch unknown")}
+        gameVersion={item.gameVersion ? t("Patch {{version}}", { version: item.gameVersion }) : t("Game version not detected yet")}
         platform="Windows"
         indexedCount={item.libraryCount ?? 0}
       />
@@ -45,7 +45,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
             {item.canonicalName.slice(0, 2).toUpperCase()}
           </span>
           <div>
-            <p className="eyebrow">{item.identified ? t("RESOLVED MOD") : t("LOCAL FILE")}</p>
+            <p className="eyebrow">{item.identified ? t("IDENTIFIED MOD") : t("LOCAL FILE")}</p>
             <h1 id="mod-detail-title">{item.canonicalName}</h1>
             <p>
               {tx(item.creator)} <span>·</span> {tx(item.category)}
@@ -82,8 +82,8 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
           <Panel className="detail-section">
             <div className="panel-header">
               <div>
-                <span className="section-kicker">{t("Evidence")}</span>
-                <h2>{t("Why the app says this")}</h2>
+                <span className="section-kicker">{t("How we know")}</span>
+                <h2>{t("Why this status appears")}</h2>
               </div>
               <span className="evidence-count">{t("{{count}} signals", { count: item.evidence.length })}</span>
             </div>
@@ -109,8 +109,8 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
           </Panel>
 
           <Panel className="detail-section">
-            <span className="section-kicker">{t("Local files")}</span>
-            <h2>{t("Installed artifacts")}</h2>
+            <span className="section-kicker">{t("Files on this computer")}</span>
+            <h2>{t("Installed files")}</h2>
             <ul className="file-list">
               {item.localFiles.map((file) => (
                 <li key={file}>
@@ -125,11 +125,11 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
 
         <aside className="detail-side">
           <Panel className="detail-section">
-            <span className="section-kicker">{t("Dependencies")}</span>
+            <span className="section-kicker">{t("Required mods")}</span>
             <h2>
               {item.dependencies.length === 0
-                ? t("No required dependencies")
-                : t("{{count}} required", { count: item.dependencies.length })}
+                ? t("No extra mods required")
+                : t("{{count}} required mods", { count: item.dependencies.length })}
             </h2>
             {item.dependencies.length > 0 && (
               <ul className="dependency-list">
@@ -147,7 +147,7 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
           </Panel>
 
           <Panel className="detail-section">
-            <span className="section-kicker">{t("Source")}</span>
+            <span className="section-kicker">{t("About this mod")}</span>
             <h2>{tx(item.source)}</h2>
             <dl className="detail-source">
               <div><dt>{t("Creator")}</dt><dd>{tx(item.creator)}</dd></div>
@@ -159,9 +159,9 @@ export function ModDetailPage({ item, onBack }: ModDetailPageProps) {
 
           <Panel className="detail-section">
             <span className="section-kicker">{t("Related mods")}</span>
-            <h2>{t("Nearby in your library")}</h2>
+            <h2>{t("Related items in your library")}</h2>
             {item.relatedMods.length === 0 ? (
-              <p className="detail-muted">{t("No related canonical mods yet.")}</p>
+              <p className="detail-muted">{t("No related mods found yet.")}</p>
             ) : (
               <div className="related-list">
                 {item.relatedMods.map((name) => (

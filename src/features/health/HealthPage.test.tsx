@@ -102,7 +102,7 @@ describe("HealthPage", () => {
   it("combines Game, Pack and Mod findings and filters one update queue", async () => {
     render(<HealthPage gateway={gateway} contentGateway={contentGateway()} />);
 
-    expect(await screen.findByRole("heading", { name: "Review what needs attention." })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "See what needs your attention." })).toBeVisible();
     expect(screen.getByText("The Sims 4")).toBeVisible();
     expect(screen.getByText("EP17")).toBeVisible();
     expect(screen.getByText("A")).toBeVisible();
@@ -146,7 +146,7 @@ describe("HealthPage", () => {
       />
     );
 
-    expect(await screen.findByText("Restore points belong to actions, not a separate backup product.")).toBeVisible();
+    expect(await screen.findByText("Restore points are created only when needed.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Recovery" })).toHaveAttribute("aria-current", "page");
   });
 });

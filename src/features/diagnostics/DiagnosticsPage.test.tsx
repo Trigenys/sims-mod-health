@@ -79,8 +79,8 @@ describe("DiagnosticsPage", () => {
     render(<DiagnosticsPage gateway={gateway(snapshot)} />);
 
     expect(await screen.findByText("Creator/CoolMod.ts4script")).toBeVisible();
-    expect(screen.getByText(/Correlated with report evidence/)).toBeVisible();
-    expect(screen.getByText("Canonical artifact resolved")).toBeVisible();
+    expect(screen.getByText("90% match with this report")).toBeVisible();
+    expect(screen.getByText("Exact mod identified")).toBeVisible();
     expect(document.body.textContent?.toLowerCase()).not.toContain("caused by");
   });
 
@@ -93,7 +93,7 @@ describe("DiagnosticsPage", () => {
 
     render(<DiagnosticsPage gateway={gateway(offline)} />);
 
-    expect(await screen.findByText("Registry offline")).toBeVisible();
+    expect(await screen.findByText("Online identification unavailable")).toBeVisible();
     expect(screen.getByText("Creator/CoolMod.ts4script")).toBeVisible();
   });
 
@@ -136,7 +136,7 @@ describe("DiagnosticsPage", () => {
     render(<DiagnosticsPage gateway={gateway(malformed)} />);
 
     expect(await screen.findByText("Malformed")).toBeVisible();
-    expect(screen.getByText("No installed mod candidate linked")).toBeVisible();
+    expect(screen.getByText("No installed mod matched this report")).toBeVisible();
   });
 
   it("keeps diagnostic telemetry off by default and requires explicit consent", async () => {

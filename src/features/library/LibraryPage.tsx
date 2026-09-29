@@ -43,7 +43,7 @@ const confidenceLabel: Record<IdentificationConfidence, string> = {
   exact: "Exact",
   high: "High confidence",
   medium: "Medium confidence",
-  unresolved: "Unresolved"
+  unresolved: "Not identified yet"
 };
 
 export function LibraryPage({
@@ -135,7 +135,7 @@ export function LibraryPage({
 
   const patchLabel = snapshot?.gameVersion
     ? t("Patch {{version}}", { version: snapshot.gameVersion })
-    : t("Patch unknown");
+    : t("Game version not detected yet");
 
   return (
     <>
@@ -150,7 +150,7 @@ export function LibraryPage({
           <p className="eyebrow">{t("LOCAL INVENTORY")}</p>
           <h1 id="library-title">{t("Library")}</h1>
           <p className="lede">
-            {t("Files indexed from your selected Mods folder. Canonical identity stays unresolved until there is evidence for it.")}
+            {t("These are the files found in your Mods folder. If we cannot identify a mod yet, we say so instead of guessing.")}
           </p>
           {snapshot?.modsRoot && (
             <p className="detail-muted">

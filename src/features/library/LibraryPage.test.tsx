@@ -12,7 +12,7 @@ describe("LibraryPage", () => {
     fireEvent.change(search, { target: { value: "CAS_Lighting_Golden.package" } });
 
     expect(screen.getByRole("button", { name: "Open CAS Lighting Override" })).toBeVisible();
-    expect(screen.getByText("Unresolved")).toBeVisible();
+    expect(screen.getByText("Not identified yet")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Open MC Command Center" })).not.toBeInTheDocument();
   });
 
@@ -43,9 +43,9 @@ describe("LibraryPage", () => {
   });
 
   it.each([
-    ["offline", "Registry offline"],
-    ["partial", "Partial registry results"],
-    ["failure", "Registry request failed"]
+    ["offline", "Online details are temporarily unavailable"],
+    ["partial", "Some online details could not be loaded"],
+    ["failure", "Online details could not be loaded"]
   ] as const)("keeps the local library visible in %s state", async (state, message) => {
     render(<LibraryPage onOpenItem={vi.fn()} registryState={state} gateway={libraryVisualGateway} />);
 

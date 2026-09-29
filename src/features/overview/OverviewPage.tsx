@@ -121,13 +121,13 @@ export function OverviewPage({
   const unifiedAttention = data.attentionCount + gameContentAttentionCount(gameContent);
   const attentionCopy =
     unifiedAttention === 0
-      ? t("No actionable findings are present in the current evidence.")
-      : t("{{count}} findings need review across the game, packs and mods.", { count: unifiedAttention });
+      ? t("Nothing needs your attention right now.")
+      : t("{{count}} items need your attention.", { count: unifiedAttention });
 
   return (
     <>
       <Topbar
-        gameVersion={data.gameVersion ? t("Patch {{version}}", { version: data.gameVersion }) : t("Patch unknown")}
+        gameVersion={data.gameVersion ? t("Patch {{version}}", { version: data.gameVersion }) : t("Game version not detected yet")}
         platform={formatPlatform(data.platform)}
         indexedCount={data.indexedCount}
         onScan={data.hasInstallation ? runScan : undefined}
@@ -170,14 +170,14 @@ export function OverviewPage({
                 {data.healthScore !== null && <small>%</small>}
               </div>
               <div>
-                <strong>{t("Verified patch health")}</strong>
+                <strong>{t("Setup health")}</strong>
                 <span>{tx(scanLabel(data))}</span>
               </div>
             </div>
           </section>
 
           <details className="health-explanation">
-            <summary>{t("How this score is calculated")}</summary>
+            <summary>{t("How this score works")}</summary>
             <p>{localizeOverviewExplanation(data.healthScoreExplanation, t)}</p>
           </details>
 
@@ -191,7 +191,7 @@ export function OverviewPage({
             <Stat label={t("Healthy")} value={data.healthCounts.healthy} tone="healthy" />
             <Stat label={t("Updates")} value={data.healthCounts.updates} tone="update" />
             <Stat label={t("Conflicts")} value={data.healthCounts.conflicts} tone="warning" />
-            <Stat label={t("Unknown")} value={data.healthCounts.unknown} tone="muted" />
+            <Stat label={t("Not identified yet")} value={data.healthCounts.unknown} tone="muted" />
           </section>
 
           <section className="content-grid">
@@ -199,7 +199,7 @@ export function OverviewPage({
               <div className="panel-header">
                 <div>
                   <span className="section-kicker">{t("Needs attention")}</span>
-                  <h2>{t("Review the most actionable findings first")}</h2>
+                  <h2>{t("Start with the most important items")}</h2>
                 </div>
                 <Button variant="text">{t("View all")}</Button>
               </div>
@@ -208,8 +208,8 @@ export function OverviewPage({
                 <div className="attention-empty">
                   <span aria-hidden="true">✓</span>
                   <div>
-                    <strong>{t("No actionable findings")}</strong>
-                    <p>{t("Nothing in the current scan and health evidence needs immediate review.")}</p>
+                    <strong>{t("Nothing urgent found")}</strong>
+                    <p>{t("We did not find anything that needs immediate action.")}</p>
                   </div>
                 </div>
               ) : (
@@ -278,9 +278,9 @@ export function OverviewPage({
             <div className="recommendation-icon" aria-hidden="true">✦</div>
             <div>
               <span className="section-kicker">{t("Discover")}</span>
-              <h2 id="discover-title">{t("Recommendations stay separate from health evidence.")}</h2>
+              <h2 id="discover-title">{t("Find mods that fit your current setup.")}</h2>
               <p>
-                {t("Discover will use resolved library data only after compatibility and known-conflict filters are applied.")}
+                {t("Recommendations appear only when we have enough information about your game and installed mods.")}
               </p>
             </div>
             <Button>{t("Open Discover")}</Button>
@@ -317,42 +317,42 @@ function OverviewStateBanner({
     if (scanError) {
       result.push({
         tone: "danger",
-        title: "Scan could not complete",
-        detail: scanError
+        title: "Scan stopped before finishing",
+        detail: "Try again. If it keeps failing, check that your Sims 4 folders are still available."
       });
     }
 
     if (scanning || data.scan.status === "running") {
       result.push({
         tone: "update",
-        title: "Scan in progress",
-        detail: "Local counts are updating. Registry health refreshes after the scan completes."
+        title: "Scanning your mods",
+        detail: "We are checking your local files now. Compatibility and update checks refresh when the scan finishes."
       });
     } else if (data.scan.stale) {
       result.push({
         tone: "muted",
-        title: "Scan data is stale",
-        detail: "The latest completed scan is older than 24 hours. Local data remains visible until you rescan."
+        title: "Your scan is out of date",
+        detail: "Run Scan again to refresh the results before relying on them."
       });
     } else if (data.scan.partial) {
       result.push({
         tone: "warning",
-        title: "Partial local results",
-        detail: "The latest scan contains recoverable observations or did not complete cleanly."
+        title: "Some files could not be checked",
+        detail: "Your current results are still available, but scanning again may fill in the missing details."
       });
     }
 
     if (data.registryState === "offline") {
       result.push({
         tone: "muted",
-        title: "Registry offline",
-        detail: data.registryDetail
+        title: "Online checks are temporarily unavailable",
+        detail: "Your local scan still works. Mod names, compatibility and update information may be incomplete until online checks are available again."
       });
     } else if (data.registryState === "partial") {
       result.push({
         tone: "warning",
-        title: "Registry data is partial",
-        detail: data.registryDetail
+        title: "Some online checks are unavailable",
+        detail: "Your local scan is available, but some compatibility and update details could not be loaded."
       });
     }
 
@@ -395,18 +395,18 @@ function Stat({
 
 function overviewHeadline(data: OverviewSnapshot) {
   if (data.registryState === "offline") {
-    return "Local scan is available while the registry is offline.";
+    return "Your local scan is ready. Some online checks are temporarily unavailable.";
   }
   if (data.healthScore === null) {
-    return "Health evidence is incomplete.";
+    return "We need a little more information before rating your setup.";
   }
   if (data.healthScore >= 90) {
-    return "Most installed items have verified patch compatibility.";
+    return "Your setup looks good based on the checks we could complete.";
   }
   if (data.healthScore >= 70) {
-    return "Some installed items need review.";
+    return "A few things are worth checking.";
   }
-  return "Review compatibility findings before the next session.";
+  return "Start with the items that need attention.";
 }
 
 function scanLabel(data: OverviewSnapshot) {

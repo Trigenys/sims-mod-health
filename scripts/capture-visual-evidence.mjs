@@ -182,7 +182,7 @@ try {
     }
 
     if (testCase.path.includes("surface=settings")) {
-      const paths = page.getByRole("button", { name: "Paths & Registry" });
+      const paths = page.getByRole("button", { name: "Game & folders" });
       await paths.focus();
       const focus = await paths.evaluate((element) => ({
         active: document.activeElement === element,
