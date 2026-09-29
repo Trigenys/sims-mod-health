@@ -377,6 +377,53 @@ mod tests {
     }
 
     #[test]
+    fn custom_ea_and_steam_install_paths_keep_their_provider_identity() {
+        let temp = TempDir::new().expect("custom provider temp");
+        let cases = [
+            (
+                temp.path().join("Custom").join("EA Games").join("The Sims 4"),
+                GameProvider::EaApp,
+            ),
+            (
+                temp.path()
+                    .join("SteamLibrary")
+                    .join("steamapps")
+                    .join("common")
+                    .join("The Sims 4"),
+                GameProvider::Steam,
+            ),
+        ];
+
+        for (root, expected_provider) in cases {
+            fs::create_dir_all(root.join("Game").join("Bin")).expect("custom game bin");
+            fs::create_dir_all(root.join("Data").join("Client")).expect("custom client data");
+            fs::write(
+                root.join("Game").join("Bin").join("TS4_x64.exe"),
+                b"synthetic-fixture",
+            )
+            .expect("custom game marker");
+            fs::write(
+                root.join("Game").join("Bin").join("Default.ini"),
+                "[Version]\ngameversion = 1.128.90.1030\n",
+            )
+            .expect("custom version marker");
+
+            let inspected = inspect_game_content_path(&root).expect("inspect custom path");
+
+            assert_eq!(inspected.install_root, root);
+            assert_eq!(inspected.provider, expected_provider);
+            assert_eq!(
+                inspected
+                    .build
+                    .version
+                    .as_ref()
+                    .map(|version| version.normalized.as_str()),
+                Some("1.128.90.1030")
+            );
+        }
+    }
+
+    #[test]
     fn manual_inspection_uses_unknown_provider_for_neutral_path() {
         let game = create_game_root();
         fs::write(
