@@ -8,7 +8,7 @@ import {
   gameContentGateway,
   type GameContentGateway
 } from "../game-content/gameContent.gateway";
-import { gameContentAttentionCount } from "../game-content/gameContent.presenter";
+import { gameContentMeasurement, type GameContentMeasurementReason } from "../game-content/gameContent.presenter";
 import type { GameContentHealthSnapshot } from "../game-content/gameContent.types";
 import { overviewGateway, type OverviewGateway } from "./overview.gateway";
 import type { OverviewSnapshot, ScanProgress } from "./overview.types";
@@ -24,11 +24,13 @@ import { SimsSetupPanel } from "../setup/SimsSetupPanel";
 type OverviewPageProps = {
   gateway?: OverviewGateway;
   contentGateway?: GameContentGateway;
+  onOpenSettings?: () => void;
 };
 
 export function OverviewPage({
   gateway = overviewGateway,
-  contentGateway = gameContentGateway
+  contentGateway = gameContentGateway,
+  onOpenSettings
 }: OverviewPageProps) {
   const { t, tx } = useI18n();
   const [data, setData] = useState<OverviewSnapshot | null>(null);
@@ -117,8 +119,13 @@ export function OverviewPage({
       ? 100
       : 24;
 
-  const headline = tx(overviewHeadline(data));
-  const unifiedAttention = data.attentionCount + gameContentAttentionCount(gameContent);
+  const measurement = gameContentMeasurement(gameContent, data.gameVersion);
+  const overallHealthScore = measurement.compatibilityReady ? data.healthScore : null;
+  const scoreExplanation = measurement.compatibilityReady
+    ? localizeOverviewExplanation(data.healthScoreExplanation, t)
+    : measurementExplanation(measurement.reason, t);
+  const headline = tx(overviewHeadline(data, overallHealthScore));
+  const unifiedAttention = data.attentionCount + (measurement.attentionCount ?? 0);
   const attentionCopy =
     unifiedAttention === 0
       ? t("Nothing needs your attention right now.")
@@ -151,23 +158,23 @@ export function OverviewPage({
             <div
               className="health-score"
               aria-label={
-                data.healthScore === null
+                overallHealthScore === null
                   ? t("Overall health unavailable")
-                  : t("Overall health {{score}} percent", { score: data.healthScore })
+                  : t("Overall health {{score}} percent", { score: overallHealthScore })
               }
-              title={localizeOverviewExplanation(data.healthScoreExplanation, t)}
+              title={scoreExplanation}
             >
               <div
-                className={"score-ring" + (data.healthScore === null ? " score-ring--unknown" : "")}
+                className={"score-ring" + (overallHealthScore === null ? " score-ring--unknown" : "")}
                 aria-hidden="true"
                 style={
                   {
-                    "--health-score": data.healthScore === null ? "0%" : data.healthScore + "%"
+                    "--health-score": overallHealthScore === null ? "0%" : overallHealthScore + "%"
                   } as CSSProperties
                 }
               >
-                <span>{data.healthScore ?? "—"}</span>
-                {data.healthScore !== null && <small>%</small>}
+                <span>{overallHealthScore ?? "—"}</span>
+                {overallHealthScore !== null && <small>%</small>}
               </div>
               <div>
                 <strong>{t("Setup health")}</strong>
@@ -178,8 +185,15 @@ export function OverviewPage({
 
           <details className="health-explanation">
             <summary>{t("How this score works")}</summary>
-            <p>{localizeOverviewExplanation(data.healthScoreExplanation, t)}</p>
+            <p>{scoreExplanation}</p>
           </details>
+
+          {!measurement.compatibilityReady && (
+            <MeasurementNotice
+              reason={measurement.reason}
+              onOpenSettings={onOpenSettings}
+            />
+          )}
 
           <GameInstallationSummary
             health={gameContent}
@@ -188,10 +202,36 @@ export function OverviewPage({
           />
 
           <section className="stat-grid" aria-label={t("Mod health summary")}>
-            <Stat label={t("Healthy")} value={data.healthCounts.healthy} tone="healthy" />
-            <Stat label={t("Updates")} value={data.healthCounts.updates} tone="update" />
-            <Stat label={t("Conflicts")} value={data.healthCounts.conflicts} tone="warning" />
-            <Stat label={t("Not identified yet")} value={data.healthCounts.unknown} tone="muted" />
+            <Stat
+              label={t("Healthy")}
+              value={data.registryState === "ready" ? data.healthCounts.healthy : t("Not checked")}
+              tone="healthy"
+              unavailable={data.registryState !== "ready"}
+            />
+            <Stat
+              label={t("Updates")}
+              value={data.registryState === "ready" ? data.healthCounts.updates : t("Not checked")}
+              tone="update"
+              unavailable={data.registryState !== "ready"}
+            />
+            <Stat
+              label={t("Conflicts")}
+              value={
+                data.healthCounts.conflicts > 0
+                  ? data.healthCounts.conflicts
+                  : data.registryState === "ready"
+                    ? 0
+                    : t("Not checked")
+              }
+              tone="warning"
+              unavailable={data.healthCounts.conflicts === 0 && data.registryState !== "ready"}
+            />
+            <Stat
+              label={t("Not identified yet")}
+              value={data.installation.unidentified ?? t("Not checked")}
+              tone="muted"
+              unavailable={data.installation.unidentified === null}
+            />
           </section>
 
           <section className="content-grid">
@@ -379,14 +419,16 @@ function OverviewStateBanner({
 function Stat({
   label,
   value,
-  tone
+  tone,
+  unavailable = false
 }: {
   label: string;
-  value: number;
+  value: number | string;
   tone: "healthy" | "update" | "warning" | "muted";
+  unavailable?: boolean;
 }) {
   return (
-    <article className="stat-card">
+    <article className={unavailable ? "stat-card stat-card--unavailable" : "stat-card"}>
       <StatusBadge tone={tone}>{label}</StatusBadge>
       <strong className="stat-card__value">{value}</strong>
     </article>
@@ -397,13 +439,13 @@ function overviewHeadline(data: OverviewSnapshot) {
   if (data.registryState === "offline") {
     return "Your local scan is ready. Some online checks are temporarily unavailable.";
   }
-  if (data.healthScore === null) {
+  if (overallHealthScore === null) {
     return "We need a little more information before rating your setup.";
   }
-  if (data.healthScore >= 90) {
+  if (overallHealthScore >= 90) {
     return "Your setup looks good based on the checks we could complete.";
   }
-  if (data.healthScore >= 70) {
+  if (overallHealthScore >= 70) {
     return "A few things are worth checking.";
   }
   return "Start with the items that need attention.";
