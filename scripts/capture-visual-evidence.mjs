@@ -53,6 +53,20 @@ const cases = [
     active: "Health"
   },
   {
+    name: "health-conflicts-detail-1024x700",
+    width: 1024,
+    height: 700,
+    path: "/?surface=health&tab=conflicts&visual=health-conflicts",
+    active: "Health"
+  },
+  {
+    name: "health-conflicts-detail-1440x900",
+    width: 1440,
+    height: 900,
+    path: "/?surface=health&tab=conflicts&visual=health-conflicts",
+    active: "Health"
+  },
+  {
     name: "discover-1024x700",
     width: 1024,
     height: 700,
@@ -155,6 +169,11 @@ try {
 
     if (testCase.path.includes("visual=health-pack")) {
       await page.getByRole("dialog", { name: "EP17" }).waitFor();
+    }
+
+    if (testCase.path.includes("visual=health-conflicts")) {
+      await page.getByRole("button", { name: "Review evidence" }).first().click();
+      await page.getByRole("dialog", { name: "Potential interaction evidence" }).waitFor();
     }
 
     if (testCase.path.includes("surface=health")) {
