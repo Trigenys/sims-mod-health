@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
-import { overviewVisualFixture } from "./overview.visual";
+import { overviewPartialVisualFixture, overviewVisualFixture } from "./overview.visual";
 import type { OverviewSnapshot, ScanProgress } from "./overview.types";
 
 export type OverviewGateway = {
@@ -15,7 +15,7 @@ export type OverviewGateway = {
 
 function isVisualHarness() {
   const visual = new URLSearchParams(window.location.search).get("visual");
-  return visual === "overview" || visual?.startsWith("health") === true;
+  return visual?.startsWith("overview") === true || visual?.startsWith("health") === true;
 }
 
 function browserEmptySnapshot(): OverviewSnapshot {
@@ -62,7 +62,10 @@ function browserEmptySnapshot(): OverviewSnapshot {
 export const overviewGateway: OverviewGateway = {
   async load() {
     if (isVisualHarness()) {
-      return overviewVisualFixture;
+      const visual = new URLSearchParams(window.location.search).get("visual");
+      return visual === "overview-partial"
+        ? overviewPartialVisualFixture
+        : overviewVisualFixture;
     }
 
     try {

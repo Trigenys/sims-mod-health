@@ -133,3 +133,14 @@ export function providerVisualSession(
     lastError: null
   };
 }
+
+
+export const gameContentPartialVisualHealth: GameContentHealthSnapshot = {
+  manifestState: "missing",
+  manifestVersion: null,
+  sourceIdentity: null,
+  sourceUrl: null,
+  detail: "No local The Sims 4 program installation has been inventoried yet.",
+  game: null,
+  packs: []
+};

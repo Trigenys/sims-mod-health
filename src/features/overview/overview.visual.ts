@@ -59,3 +59,29 @@ export const overviewVisualFixture: OverviewSnapshot = {
     partial: false
   }
 };
+
+
+export const overviewPartialVisualFixture: OverviewSnapshot = {
+  ...overviewVisualFixture,
+  gameVersion: null,
+  indexedCount: 2407,
+  healthScore: 84,
+  healthScoreExplanation:
+    "This synthetic score must be hidden because Game/DLC prerequisites are missing.",
+  healthCounts: {
+    healthy: 0,
+    updates: 0,
+    conflicts: 12,
+    unknown: 0
+  },
+  attentionCount: 12,
+  attention: overviewVisualFixture.attention,
+  installation: {
+    scriptMods: 63,
+    packageFiles: 2344,
+    unidentified: null,
+    exactDuplicates: 152
+  },
+  registryState: "partial",
+  registryDetail: "Some online checks are unavailable."
+};

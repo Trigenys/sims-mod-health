@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import {
+  gameContentPartialVisualHealth,
   gameContentVisualHealth,
   gameContentVisualInventory,
   providerVisualCapability,
@@ -25,8 +26,8 @@ export type GameContentGateway = {
 };
 
 function isVisualHarness() {
-  return new URLSearchParams(window.location.search).get("visual")?.startsWith("health")
-    || new URLSearchParams(window.location.search).get("visual") === "overview";
+  const visual = new URLSearchParams(window.location.search).get("visual");
+  return visual?.startsWith("health") === true || visual?.startsWith("overview") === true;
 }
 
 function browserHealthFallback(): GameContentHealthSnapshot {
@@ -43,7 +44,12 @@ function browserHealthFallback(): GameContentHealthSnapshot {
 
 export const gameContentGateway: GameContentGateway = {
   async loadHealth() {
-    if (isVisualHarness()) return gameContentVisualHealth;
+    if (isVisualHarness()) {
+      const visual = new URLSearchParams(window.location.search).get("visual");
+      return visual === "overview-partial"
+        ? gameContentPartialVisualHealth
+        : gameContentVisualHealth;
+    }
     try {
       return await invoke<GameContentHealthSnapshot>("get_game_content_health");
     } catch {

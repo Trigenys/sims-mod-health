@@ -6,6 +6,86 @@ import type {
   GameContentHealthState
 } from "./gameContent.types";
 
+
+export type GameContentMeasurementReason =
+  | "game_missing"
+  | "version_missing"
+  | "manifest_missing"
+  | "manifest_stale"
+  | "compatibility_unknown";
+
+export type GameContentMeasurement = {
+  version: string | null;
+  packCount: number | null;
+  attentionCount: number | null;
+  compatibilityReady: boolean;
+  reason: GameContentMeasurementReason | null;
+};
+
+export function gameContentMeasurement(
+  snapshot: GameContentHealthSnapshot | null,
+  fallbackVersion: string | null
+): GameContentMeasurement {
+  if (!snapshot?.game) {
+    return {
+      version: null,
+      packCount: null,
+      attentionCount: null,
+      compatibilityReady: false,
+      reason: "game_missing"
+    };
+  }
+
+  const version = snapshot.game.currentVersion ?? fallbackVersion;
+  if (!version) {
+    return {
+      version: null,
+      packCount: snapshot.packs.length,
+      attentionCount: null,
+      compatibilityReady: false,
+      reason: "version_missing"
+    };
+  }
+
+  if (snapshot.manifestState === "missing") {
+    return {
+      version,
+      packCount: snapshot.packs.length,
+      attentionCount: null,
+      compatibilityReady: false,
+      reason: "manifest_missing"
+    };
+  }
+
+  if (snapshot.manifestState === "cached_stale") {
+    return {
+      version,
+      packCount: snapshot.packs.length,
+      attentionCount: null,
+      compatibilityReady: false,
+      reason: "manifest_stale"
+    };
+  }
+
+  if (snapshot.game.state === "unknown" || snapshot.game.disputed) {
+    return {
+      version,
+      packCount: snapshot.packs.length,
+      attentionCount: null,
+      compatibilityReady: false,
+      reason: "compatibility_unknown"
+    };
+  }
+
+  return {
+    version,
+    packCount: snapshot.packs.length,
+    attentionCount: gameContentAttentionCount(snapshot),
+    compatibilityReady: true,
+    reason: null
+  };
+}
+
 export function gameContentTone(state: GameContentHealthState): StatusTone {
   if (state === "current") return "healthy";
   if (state === "update_available" || state === "game_update_required") return "update";
