@@ -173,10 +173,18 @@ try {
 
     if (testCase.path.includes("visual=health-conflicts")) {
       await page.getByRole("button", { name: "Review evidence" }).first().click();
-      await page.getByRole("dialog", { name: "Potential interaction evidence" }).waitFor();
-    }
-
-    if (testCase.path.includes("surface=health")) {
+      const dialog = page.getByRole("dialog", { name: "Potential interaction evidence" });
+      await dialog.waitFor();
+      const closeEvidence = page.getByRole("button", { name: "Close evidence" });
+      await closeEvidence.focus();
+      const focus = await closeEvidence.evaluate((element) => ({
+        active: document.activeElement === element,
+        ring: getComputedStyle(element).boxShadow
+      }));
+      if (!focus.active || focus.ring === "none") {
+        throw new Error(testCase.name + " does not expose a visible conflict-evidence focus state");
+      }
+    } else if (testCase.path.includes("surface=health")) {
       const updates = page.getByRole("button", { name: /Updates/ }).first();
       await updates.focus();
       const focus = await updates.evaluate((element) => ({
