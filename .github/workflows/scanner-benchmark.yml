@@ -51,3 +51,26 @@ jobs:
           --manifest-path src-tauri/Cargo.toml
           fingerprint::duplicates::tests::benchmark_5000_file_duplicate_grouping
           -- --ignored --nocapture
+
+
+  conflicts:
+    name: 5k-file conflict aggregation
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Cache Rust dependencies and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Run 5k-file conflict aggregation benchmark
+        run: >
+          cargo test
+          --manifest-path src-tauri/Cargo.toml
+          conflicts::aggregation::tests::benchmark_5000_file_conflict_aggregation
+          -- --ignored --nocapture
