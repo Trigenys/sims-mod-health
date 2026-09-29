@@ -1,3 +1,24 @@
+export type DiscoveryBlocker =
+  | "game"
+  | "patch"
+  | "packs"
+  | "mods_scan"
+  | "identified_mods"
+  | "registry"
+  | "local_state"
+  | string;
+
+export type DiscoveryPrerequisites = {
+  gameDetected: boolean;
+  patchKnown: boolean;
+  packsKnown: boolean;
+  installedPackCount: number | null;
+  modsScanned: boolean;
+  installedModFiles: number | null;
+  identifiedMods: number | null;
+  registryAvailable: boolean | null;
+};
+
 export type DiscoveryRecommendation = {
   modId: string;
   releaseId: string;
@@ -17,7 +38,9 @@ export type DiscoveryRecommendation = {
 
 export type DiscoverySnapshot = {
   patchVersion: string | null;
-  state: "ready" | "empty" | "offline" | "partial" | string;
+  state: "ready" | "blocked" | "offline" | "partial" | string;
   detail: string;
+  blocker: DiscoveryBlocker | null;
+  prerequisites: DiscoveryPrerequisites;
   recommendations: DiscoveryRecommendation[];
 };
