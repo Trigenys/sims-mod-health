@@ -93,7 +93,7 @@ describe("SimsSetupPanel", () => {
     expect(scan).toBeDisabled();
     expect(screen.getByText("We could not find the installed game automatically.")).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "Choose game folder" }).first());
+    fireEvent.click(screen.getByRole("button", { name: "Choose game folder" }));
 
     await waitFor(() => expect(fake.chooseGameFolder).toHaveBeenCalledTimes(1));
     expect(screen.getByText("Version 1.128.90.1030 detected")).toBeVisible();
