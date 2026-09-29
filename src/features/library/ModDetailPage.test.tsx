@@ -12,11 +12,11 @@ describe("ModDetailPage", () => {
       />
     );
 
-    expect(screen.getByText("Verified fact")).toBeVisible();
-    expect(screen.getByText("Inferred identification")).toBeVisible();
+    expect(screen.getByText("Confirmed")).toBeVisible();
+    expect(screen.getByText("Best match")).toBeVisible();
     expect(screen.getAllByText("Community report")).toHaveLength(2);
     expect(screen.getByText("High confidence")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Why the app says this" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Why this status appears" })).toBeVisible();
   });
 
   it("shows installed/latest versions, dependencies, files and related mods", () => {
@@ -30,7 +30,7 @@ describe("ModDetailPage", () => {
     expect(screen.getByText("2026.4.0")).toBeVisible();
     expect(screen.getByText("2026.5.0")).toBeVisible();
     expect(screen.getByText("mc_cmd_center.package")).toBeVisible();
-    expect(screen.getByText("No required dependencies")).toBeVisible();
+    expect(screen.getByText("No extra mods required")).toBeVisible();
     expect(screen.getByText("UI Cheats Extension")).toBeVisible();
     expect(screen.getByRole("button", { name: "Review update" })).toBeVisible();
   });
