@@ -1245,6 +1245,48 @@ mod tests {
     }
 
     #[test]
+    fn dogfood_2407_file_library_scans_and_groups_exact_duplicates() {
+        let (_temp, sims_root, database_path) = fixture();
+        let mods_root = sims_root.join("Mods");
+
+        for index in 0..2_400 {
+            let relative = format!("Creator{:02}/item-{index:04}.package", index % 24);
+            write_mod(
+                &mods_root,
+                &relative,
+                format!("synthetic-dogfood-{index}").as_bytes(),
+            );
+        }
+
+        for index in 0..7 {
+            let relative = format!("DuplicateSet/copy-{index}.package");
+            write_mod(&mods_root, &relative, b"synthetic-exact-duplicate");
+        }
+
+        let control = ScannerControl::default();
+        let summary = scan_path(&database_path, &sims_root, ScanMode::Full, &control, |_| {})
+            .expect("large dogfood scan");
+
+        assert_eq!(summary.status, ScanStatus::Completed);
+        assert_eq!(summary.files_seen, 2_407);
+        assert_eq!(summary.files_hashed, 2_407);
+
+        let connection = storage::open(&database_path).expect("open dogfood database");
+        let installation_id: i64 = connection
+            .query_row("SELECT id FROM installations LIMIT 1", [], |row| row.get(0))
+            .expect("dogfood installation id");
+        let groups = fingerprint::exact_duplicate_groups(&connection, installation_id)
+            .expect("group dogfood duplicates");
+
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0].files.len(), 7);
+        assert!(groups[0]
+            .files
+            .iter()
+            .all(|file| file.relative_path.starts_with("DuplicateSet/")));
+    }
+
+    #[test]
     #[ignore = "large-library benchmark; run in dedicated scanner benchmark workflow"]
     fn benchmark_5000_file_full_and_incremental_scan() {
         let (_temp, sims_root, database_path) = fixture();
