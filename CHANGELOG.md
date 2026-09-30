@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.0-beta.6](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.5...v0.1.0-beta.6) (2026-09-30)
+
+
+### Features
+
+* finish actionable conflict groups on current main ([#115](https://github.com/Trigenys/sims-mod-health/issues/115)) ([fe6ef65](https://github.com/Trigenys/sims-mod-health/commit/fe6ef65674cbfe6cb40789d0cd86e7b8e071c3e9))
+* group conflict evidence into actionable clusters ([#110](https://github.com/Trigenys/sims-mod-health/issues/110)) ([0467381](https://github.com/Trigenys/sims-mod-health/commit/0467381cc09e59e07a52a32a2e3f57de72718507))
+* make desktop app bilingual FR/EN ([#98](https://github.com/Trigenys/sims-mod-health/issues/98)) ([e994fa5](https://github.com/Trigenys/sims-mod-health/commit/e994fa5c9cd6408e12265f2b0cb50a4341f6a3af))
+* make Discover explain prerequisites and useful recommendations ([#116](https://github.com/Trigenys/sims-mod-health/issues/116)) ([80461b6](https://github.com/Trigenys/sims-mod-health/commit/80461b61a4b555cc1eec31944f27ffd46295f370)), closes [#105](https://github.com/Trigenys/sims-mod-health/issues/105) [#99](https://github.com/Trigenys/sims-mod-health/issues/99)
+* replace Mods-only onboarding with complete Sims setup ([#111](https://github.com/Trigenys/sims-mod-health/issues/111)) ([8e0a809](https://github.com/Trigenys/sims-mod-health/commit/8e0a809667810e332eb9958def9b325873ecec81))
+
+
+### Bug Fixes
+
+* unify landing and desktop brand logo ([#109](https://github.com/Trigenys/sims-mod-health/issues/109)) ([d5643da](https://github.com/Trigenys/sims-mod-health/commit/d5643daed1f9b8945a36cb65be64fcb6572d7757))
+
 ## [0.1.0-beta.5](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.4...v0.1.0-beta.5) (2026-09-28)
 
 
