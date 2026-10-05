@@ -1,0 +1,94 @@
+name: AppFactory Infrastructure
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".appfactory/pages.json"
+      - ".github/workflows/appfactory-infrastructure.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: appfactory-infrastructure-pages
+  cancel-in-progress: false
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Request GitHub OIDC token
+        id: oidc
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --silent --show-error --fail \
+            --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=appfactory-api")"
+          token="$(jq -r '.value // empty' <<<"$response")"
+          if [[ -z "$token" ]]; then
+            echo "::error::GitHub did not return an OIDC token."
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Provision Cloudflare Pages through AppFactory
+        shell: bash
+        env:
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          jq -e '
+            type == "object" and
+            (.repository == "Trigenys/sims-mod-health") and
+            (.buildCommand | type == "string" and length > 0) and
+            (.outputDirectory | type == "string" and length > 0)
+          ' .appfactory/pages.json >/dev/null
+
+          response_file="$(mktemp)"
+          http_code="$(
+            curl --silent --show-error \
+              --output "$response_file" \
+              --write-out "%{http_code}" \
+              --request POST \
+              --header "Authorization: Bearer $OIDC_TOKEN" \
+              --header "Content-Type: application/json" \
+              --data-binary @.appfactory/pages.json \
+              https://appfactory-api.lawrynnjennifer.workers.dev/infrastructure/pages
+          )"
+
+          cat "$response_file" | jq .
+
+          if [[ "$http_code" != "200" ]]; then
+            echo "::error::AppFactory returned HTTP $http_code."
+            exit 1
+          fi
+
+          status="$(jq -r '.status // empty' "$response_file")"
+          if [[ "$status" != "PROVISIONED" ]]; then
+            echo "::error::AppFactory did not report PROVISIONED."
+            exit 1
+          fi
+
+          {
+            echo "## AppFactory Pages"
+            echo
+            jq -r '
+              .infrastructure as $i |
+              "- Project: `\($i.pages.project)`",
+              "- Pages URL: \($i.pages.url // "pending")",
+              "- Deployment: `\($i.pages.deploymentId)`",
+              "- Deployment reused: `\($i.pages.reusedDeployment)`",
+              "- Custom domain: \($i.customDomain.name // "not configured")",
+              "- Domain status: \($i.customDomain.status // "n/a")",
+              "- DNS target: \($i.dns.target // "n/a")"
+            ' "$response_file"
+          } >> "$GITHUB_STEP_SUMMARY"

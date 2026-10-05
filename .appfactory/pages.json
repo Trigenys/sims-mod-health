@@ -1,0 +1,9 @@
+{
+  "repository": "Trigenys/sims-mod-health",
+  "projectName": "sims-mod-health",
+  "productionBranch": "main",
+  "rootDirectory": "/",
+  "buildCommand": "node scripts/landing/build-stitch.mjs",
+  "outputDirectory": "_site",
+  "customDomain": "simsmodhealth.trigenys.com"
+}
