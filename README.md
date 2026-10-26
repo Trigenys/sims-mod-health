@@ -7,34 +7,34 @@
 
 **An offline-first Windows companion for The Sims 4 mods and custom content, focused on safe diagnostics and evidence-aware compatibility checks.**
 
-[![Maturity: beta](https://img.shields.io/badge/Maturity-beta-0969da)](#implementation-status)
-[![Principle: Local first](https://img.shields.io/badge/Principle-Local%20first-263238)](#implementation-status)
+[![Stage: beta](https://img.shields.io/badge/Stage-beta-0969da)](#current-boundaries)
+[![Engineering: Local first](https://img.shields.io/badge/Engineering-Local%20first-263238)](#current-boundaries)
 
-[**Summary**](#why-it-matters) · [**Status**](#implementation-status) · [**Scan**](#mod-scanning-journey) · [**Privacy**](#security-and-privacy) · [**Status**](#product-status) · [**Architecture**](#target-architecture) · [**Local**](#development)
+[**Purpose**](#what-it-does) · [**Status**](#current-boundaries) · [**Scan**](#mod-scanning-journey) · [**Architecture**](#target-architecture) · [**Security**](#security-and-privacy) · [**Status**](#product-status) · [**Run**](#development)
 
 </div>
 
 ---
 <!-- appfactory:hero:end -->
 
-## Why it matters
+## What it does
 
-A Windows user selects a Mods folder, scans local package/script metadata without running it and reviews a report that distinguishes identified, unverified and potentially conflicting files.
+The desktop utility inspects local Mods data without executing scripts and produces a diagnostic view of known, unknown and potential compatibility concerns.
 
-## Implementation status
+## Current boundaries
 
-**beta.** Compatibility data is not necessarily authoritative for every mod or game patch. Scans cannot safely prove every conflict. Raw mod content is not uploaded by default and future modifications require recoverable backups.
+**beta.** Unknown metadata is not confirmed breakage. Neither scanning nor registry signals can guarantee compatibility across every patch; raw mods and save files stay local unless a separately authorized workflow says otherwise.
 
-**Source evidence:** [Read-only package parser](docs/dbpf/READ_ONLY_PARSER.md) · [Script archive inspection](docs/ts4script/SAFE_INSPECTOR.md) · [Windows beta validation](docs/releases/WINDOWS_BETA_VALIDATION.md).
+**Implementation evidence:** [DBPF inspection](docs/dbpf/READ_ONLY_PARSER.md) · [Script archive security](docs/ts4script/SAFE_INSPECTOR.md) · [Release validation](docs/releases/WINDOWS_BETA_VALIDATION.md).
 
 ## Mod scanning journey
 
 ```text
-Local Mods directory -> safe package/archive inspection
-→ fingerprints and local inventory → evidence-linked health report
+Local Mods folder → bounded package/archive inspection
+→ artifact fingerprints → local inventory → evidence-aware report
 ```
 
-Inspectors must **never execute** `.ts4script` contents. A shared metadata registry may provide identification hints but does not need raw personal files. Findings may be **Unknown**, and possible conflicts should not be promoted into guaranteed breakage. [Parser rules](docs/dbpf/READ_ONLY_PARSER.md) · [Threat model](docs/security/THREAT_MODEL.md).
+The application must **not execute** `.ts4script` payloads. Scans should preserve `Unknown` states and explicitly identify possible conflicts as uncertain. [Safe package parser](docs/dbpf/READ_ONLY_PARSER.md) · [Archive safety](docs/ts4script/SAFE_INSPECTOR.md).
 
 
 
