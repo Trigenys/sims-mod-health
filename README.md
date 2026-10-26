@@ -1,4 +1,42 @@
+<!-- appfactory:hero:start -->
+<div align="center">
+
 # Sims Mod Health
+
+### Understand your Mods folder before changing it.
+
+**An offline-first Windows companion for The Sims 4 mods and custom content, focused on safe diagnostics and evidence-aware compatibility checks.**
+
+[![Maturity: beta](https://img.shields.io/badge/Maturity-beta-0969da)](#implementation-status)
+[![Principle: Local first](https://img.shields.io/badge/Principle-Local%20first-263238)](#implementation-status)
+
+[**Summary**](#why-it-matters) · [**Status**](#implementation-status) · [**Scan**](#mod-scanning-journey) · [**Privacy**](#security-and-privacy) · [**Status**](#product-status) · [**Architecture**](#target-architecture) · [**Local**](#development)
+
+</div>
+
+---
+<!-- appfactory:hero:end -->
+
+## Why it matters
+
+A Windows user selects a Mods folder, scans local package/script metadata without running it and reviews a report that distinguishes identified, unverified and potentially conflicting files.
+
+## Implementation status
+
+**beta.** Compatibility data is not necessarily authoritative for every mod or game patch. Scans cannot safely prove every conflict. Raw mod content is not uploaded by default and future modifications require recoverable backups.
+
+**Source evidence:** [Read-only package parser](docs/dbpf/READ_ONLY_PARSER.md) · [Script archive inspection](docs/ts4script/SAFE_INSPECTOR.md) · [Windows beta validation](docs/releases/WINDOWS_BETA_VALIDATION.md).
+
+## Mod scanning journey
+
+```text
+Local Mods directory -> safe package/archive inspection
+→ fingerprints and local inventory → evidence-linked health report
+```
+
+Inspectors must **never execute** `.ts4script` contents. A shared metadata registry may provide identification hints but does not need raw personal files. Findings may be **Unknown**, and possible conflicts should not be promoted into guaranteed breakage. [Parser rules](docs/dbpf/READ_ONLY_PARSER.md) · [Threat model](docs/security/THREAT_MODEL.md).
+
+
 
 > Offline-first health manager for The Sims 4 mods and custom content.
 
