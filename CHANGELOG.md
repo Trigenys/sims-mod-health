@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-beta.7](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.6...v0.1.0-beta.7) (2026-10-27)
+
+
+### Documentation
+
+* **security:** finish P2 README and patch TS4Script ZIP dependency ([#121](https://github.com/Trigenys/sims-mod-health/issues/121)) ([7906e43](https://github.com/Trigenys/sims-mod-health/commit/7906e432c3e050d45f6fc3972f1f1d6bbf154053))
+
 ## [0.1.0-beta.6](https://github.com/Trigenys/sims-mod-health/compare/v0.1.0-beta.5...v0.1.0-beta.6) (2026-09-30)
 
 
