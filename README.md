@@ -1,4 +1,42 @@
+<!-- appfactory:hero:start -->
+<div align="center">
+
 # Sims Mod Health
+
+### Understand your Mods folder before changing it.
+
+**An offline-first Windows companion for The Sims 4 mods and custom content, focused on safe diagnostics and evidence-aware compatibility checks.**
+
+[![Stage: beta](https://img.shields.io/badge/Stage-beta-0969da)](#current-boundaries)
+[![Engineering: Local first](https://img.shields.io/badge/Engineering-Local%20first-263238)](#current-boundaries)
+
+[**Purpose**](#what-it-does) · [**Status**](#current-boundaries) · [**Scan**](#mod-scanning-journey) · [**Architecture**](#target-architecture) · [**Security**](#security-and-privacy) · [**Status**](#product-status) · [**Run**](#development)
+
+</div>
+
+---
+<!-- appfactory:hero:end -->
+
+## What it does
+
+The desktop utility inspects local Mods data without executing scripts and produces a diagnostic view of known, unknown and potential compatibility concerns.
+
+## Current boundaries
+
+**beta.** Unknown metadata is not confirmed breakage. Neither scanning nor registry signals can guarantee compatibility across every patch; raw mods and save files stay local unless a separately authorized workflow says otherwise.
+
+**Implementation evidence:** [DBPF inspection](docs/dbpf/READ_ONLY_PARSER.md) · [Script archive security](docs/ts4script/SAFE_INSPECTOR.md) · [Release validation](docs/releases/WINDOWS_BETA_VALIDATION.md).
+
+## Mod scanning journey
+
+```text
+Local Mods folder → bounded package/archive inspection
+→ artifact fingerprints → local inventory → evidence-aware report
+```
+
+The application must **not execute** `.ts4script` payloads. Scans should preserve `Unknown` states and explicitly identify possible conflicts as uncertain. [Safe package parser](docs/dbpf/READ_ONLY_PARSER.md) · [Archive safety](docs/ts4script/SAFE_INSPECTOR.md).
+
+
 
 > Offline-first health manager for The Sims 4 mods and custom content.
 

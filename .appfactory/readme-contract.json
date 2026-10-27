@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "name": "Sims Mod Health",
+  "stage": "beta",
+  "tagline": "An offline-first Windows companion for The Sims 4 mods and custom content, focused on safe diagnostics and evidence-aware compatibility checks.",
+  "problem": "Players often cannot distinguish duplicates, unsupported mods, partial metadata and actual conflicts across a changing collection of Sims 4 custom content.",
+  "scenario": "The desktop utility inspects local Mods data without executing scripts and produces a diagnostic view of known, unknown and potential compatibility concerns.",
+  "differentiation": "Bounded local inspection and fingerprinting keep raw mod assets on the device while preserving uncertainty in shared registry evidence.",
+  "architecture": "Windows Mods path -> safe DBPF and script-archive scanning -> local SQLite records -> optional registry version hints -> user-visible health report.",
+  "limitations": "Unknown metadata is not confirmed breakage. Neither scanning nor registry signals can guarantee compatibility across every patch; raw mods and save files stay local unless a separately authorized workflow says otherwise.",
+  "capabilities": [
+    {
+      "name": "DBPF inspection",
+      "description": "Read the linked repository source or contract for dbpf inspection and its bounded implementation.",
+      "status": "shipped",
+      "evidence": "docs/dbpf/READ_ONLY_PARSER.md"
+    },
+    {
+      "name": "Script archive security",
+      "description": "Read the linked repository source or contract for script archive security and its bounded implementation.",
+      "status": "shipped",
+      "evidence": "docs/ts4script/SAFE_INSPECTOR.md"
+    },
+    {
+      "name": "Release validation",
+      "description": "Read the linked repository source or contract for release validation and its bounded implementation.",
+      "status": "shipped",
+      "evidence": "docs/releases/WINDOWS_BETA_VALIDATION.md"
+    }
+  ],
+  "roadmap": [
+    {
+      "name": "Reproducible diagnostics",
+      "exitCriteria": "Publish fixture-driven examples that distinguish unknown and likely-conflict classes."
+    },
+    {
+      "name": "Windows validation",
+      "exitCriteria": "Test controlled scanning and exception paths before candidate release."
+    },
+    {
+      "name": "Safe modifications",
+      "exitCriteria": "Document backup and recoverability before adding destructive mod actions."
+    }
+  ],
+  "references": [
+    {
+      "name": "AppFactory README contract",
+      "url": "https://github.com/Trigenys/appfactory/blob/main/docs/product-readme-contract.md",
+      "relevance": "Shared evidence-based documentation validation."
+    }
+  ],
+  "requiredHeadings": [
+    "What it does",
+    "Current boundaries"
+  ],
+  "requiredTerms": [
+    "Windows",
+    "offline",
+    "SQLite",
+    "mods",
+    "privacy"
+  ],
+  "requiredFiles": [
+    "docs/dbpf/READ_ONLY_PARSER.md",
+    "docs/ts4script/SAFE_INSPECTOR.md",
+    "docs/security/THREAT_MODEL.md"
+  ],
+  "presentation": {
+    "variant": "centered",
+    "headline": "Understand your Mods folder before changing it.",
+    "summary": "An offline-first Windows companion for The Sims 4 mods and custom content, focused on safe diagnostics and evidence-aware compatibility checks.",
+    "badges": [
+      {
+        "label": "Stage",
+        "value": "beta",
+        "color": "0969da",
+        "href": "#current-boundaries"
+      },
+      {
+        "label": "Engineering",
+        "value": "Local first",
+        "color": "263238",
+        "href": "#current-boundaries"
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Purpose",
+        "href": "#what-it-does"
+      },
+      {
+        "label": "Status",
+        "href": "#current-boundaries"
+      },
+      {
+        "label": "Scan",
+        "href": "#mod-scanning-journey"
+      },
+      {
+        "label": "Architecture",
+        "href": "#target-architecture"
+      },
+      {
+        "label": "Security",
+        "href": "#security-and-privacy"
+      },
+      {
+        "label": "Status",
+        "href": "#product-status"
+      },
+      {
+        "label": "Run",
+        "href": "#development"
+      }
+    ]
+  }
+}

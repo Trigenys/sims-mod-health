@@ -214,7 +214,7 @@ fn inspect_reader<R: Read + Seek>(mut reader: R) -> Result<ScriptArchiveMetadata
 
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index)?;
-        let name = entry.name().to_string();
+        let name = entry.name()?.into_owned();
 
         validate_entry_path(&name)?;
 
